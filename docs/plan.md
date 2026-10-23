@@ -22,8 +22,9 @@ It is single-user, runs locally with Docker Compose, and keeps all financial dat
 
 **Later**
 
-- Stocks, funds and crypto holdings, with price feeds and net worth including investments
-- Budgets, recurring payment detection, notifications
+- Stocks, funds and crypto holdings, with price feeds and net worth including investments (M4)
+- Backups and failure notifications (M5)
+- Budgets and recurring-payment detection ([backlog](tickets/README.md#backlog-not-in-the-feature-list-yet))
 
 **Out of scope**
 
@@ -32,23 +33,21 @@ It is single-user, runs locally with Docker Compose, and keeps all financial dat
 
 ## Decisions
 
-| Decision      | Choice                                                        | Details                                       |
-| ------------- | ------------------------------------------------------------- | --------------------------------------------- |
-| Tech stack    | TypeScript full-stack: Next.js, PostgreSQL, Drizzle           | [Tech stack](tech-stack.md)                   |
-| Hosting       | Local, with Docker Compose. Data never leaves my machine.     | [Architecture](architecture.md)               |
-| Runtime       | Node.js 24 LTS (pinned in `.nvmrc`, `engines`, Docker images) | [Tech stack](tech-stack.md)                   |
-| Bank access   | Enable Banking (free restricted production), CSV as fallback  | [API access research](api-access-research.md) |
-| Investments   | Nordnet via CSV import, Kraken via its read-only REST API     | [API access research](api-access-research.md) |
-| Work tracking | Feature tickets as Markdown files in `docs/tickets/`          | [Ticket index](tickets/README.md)             |
+| Decision        | Choice                                                                           | Details                                       |
+| --------------- | -------------------------------------------------------------------------------- | --------------------------------------------- |
+| Tech stack      | TypeScript full-stack: Next.js, PostgreSQL, Drizzle                              | [Tech stack](tech-stack.md)                   |
+| Hosting         | Local, with Docker Compose. Data never leaves my machine.                        | [Architecture](architecture.md)               |
+| Runtime         | Node.js 24 LTS, pnpm 10 via corepack                                             | [Tech stack](tech-stack.md)                   |
+| Bank access     | Enable Banking (free restricted production), CSV as fallback                     | [API access research](api-access-research.md) |
+| Investments     | Nordnet via CSV import, Kraken via its read-only REST API                        | [API access research](api-access-research.md) |
+| How work is run | Agent harness: one feature per session, evidence-gated, optional unattended loop | [Decisions](DECISIONS.md) D-001 – D-003       |
 
 ## Status
 
-_Last updated 2026-10-23._
+Status is not kept in this document, so it cannot go stale:
 
-- ✅ Plan, architecture, tech stack and ticket docs written
-- ✅ API access research done for Nordea, S-Pankki, Nordnet and Kraken
-- ✅ **FIN-002 project scaffold** done. The app, worker, database, migrations, Docker Compose and test/lint/format tooling all run. No features yet.
-- ⏭️ **Next:** FIN-001 (sign up for Enable Banking and verify sandbox and restricted production access), then FIN-003 (database schema)
+- **Current state and next steps:** [PROGRESS.md](../PROGRESS.md)
+- **Per-feature status and evidence:** [feature_list.json](../feature_list.json), or `pnpm harness:feature list`
 
 ## Key constraint: bank API access
 
@@ -56,39 +55,49 @@ Nordea and S-Pankki only give production API access to licensed third-party prov
 
 **The full comparison of free options is in [API access research](api-access-research.md).** It covers banks, Nordnet and Kraken. In short:
 
-| Source                      | Route                                                                                                                                                                                                        |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Nordea, S-Pankki**        | **Enable Banking** in free _restricted production_ mode: real data for accounts you link yourself, personal use only. To be confirmed hands-on in [FIN-001](tickets/FIN-001-spike-enable-banking-access.md). |
-| Nordea, S-Pankki (fallback) | **CSV import** of netbank exports ([FIN-012](tickets/FIN-012-csv-import.md))                                                                                                                                 |
-| **Nordnet** (investments)   | No API available (not onboarding new customers), so **CSV export → import** ([FIN-023](tickets/FIN-023-stocks-and-funds.md))                                                                                 |
-| **Kraken** (crypto)         | Official REST API, free, with a **read-only key** ([FIN-024](tickets/FIN-024-crypto-holdings.md))                                                                                                            |
+| Source                      | Route                                                                                                                                                                                                  |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Nordea, S-Pankki**        | **Enable Banking** in free _restricted production_ mode: real data for accounts you link yourself, personal use only. Confirmed hands-on in [FIN-001](tickets/FIN-001-enable-banking-access-spike.md). |
+| Nordea, S-Pankki (fallback) | **CSV import** of netbank exports ([FIN-012](tickets/FIN-012-csv-import.md))                                                                                                                           |
+| **Nordnet** (investments)   | No API available (not onboarding new customers), so **CSV export → import** ([FIN-020](tickets/FIN-020-nordnet-import-and-stock-prices.md))                                                            |
+| **Kraken** (crypto)         | Official REST API, free, with a **read-only key** ([FIN-021](tickets/FIN-021-kraken-and-crypto-prices.md))                                                                                             |
 
 GoCardless Bank Account Data (ex-Nordigen) stopped accepting new signups in July 2025. Tink, Yapily, Salt Edge and TrueLayer only offer sandboxes for free, and production needs a business contract.
 
 Consequences built into the plan:
 
-- **Consent expires.** Users must re-authorize access periodically, typically after 90–180 days. The app tracks expiry and offers a re-consent flow ([FIN-011](tickets/FIN-011-consent-expiry-and-reconsent.md)).
+- **Consent expires.** Users must re-authorize access periodically, typically after 90–180 days. The app tracks expiry and offers a renewal flow ([FIN-011](tickets/FIN-011-consent-expiry-and-renewal.md)).
 - **Data access is behind an interface.** All data sources implement a common `FinancialProvider` interface, so changing aggregator, or adding a broker or crypto exchange, doesn't touch the rest of the app.
+- **Code never needs real credentials.** Every code feature is verified against a fake provider and anonymised recorded fixtures, so it can be built unattended. Real accounts are only touched in three small human-only acceptance features (F-001, F-013, F-023).
+
+## How the work is executed: the agent harness
+
+The project is built with the agent harness ported from Metsävahti ([docs/harness/README.md](harness/README.md), [AGENTS.md](../AGENTS.md)):
+
+1. **The queue** is [feature_list.json](../feature_list.json): 25 features (F-000 – F-024), each one session in size, with `depends_on` and exact verification commands per layer (L1 `pnpm check`, L2 integration, L3 end-to-end, `manual:` for human-only steps). Each feature's spec is its ticket in [docs/tickets/](tickets/README.md) (`FIN-NNN` ↔ `F-NNN`).
+2. **A session** clocks in (reads PROGRESS.md, picks the next ready feature, runs `./init.sh`), implements exactly one feature, runs `pnpm harness:verify F-NNN` (which records evidence and sets `passing`), and clocks out (clean-state check, PROGRESS.md, commit). Status only changes through the harness scripts.
+3. **Unattended:** `pnpm harness:loop` runs that same session per ready feature in its own git worktree, re-checks the result, has a separate evaluator session review it, and opens one PR per feature. It skips human-only features; those are done interactively (`/clock-in F-001`).
+4. **Layers grow with the code:** L1 exists now; F-002 adds L2 (Testcontainers Postgres) and F-003 adds L3 (Playwright).
 
 ## Milestones
 
-| Milestone                   | Tickets           | Result                                                        |
-| --------------------------- | ----------------- | ------------------------------------------------------------- |
-| **M0: Foundation**          | FIN-001 – FIN-004 | Running app skeleton, DB schema, login, bank access confirmed |
-| **M1: Bank data**           | FIN-005 – FIN-012 | Accounts, balances and transactions syncing automatically     |
-| **M2: Categorization**      | FIN-013 – FIN-015 | Transactions categorized, own transfers excluded              |
-| **M3: Dashboard**           | FIN-016 – FIN-021 | Graphs for spending, cash flow and balances                   |
-| **M4: Investments** (later) | FIN-022 – FIN-025 | Stocks and crypto included in net worth                       |
-| **M5: Operations**          | FIN-026 – FIN-027 | Backups and failure notifications                             |
+| Milestone                   | Features      | Result                                                                            | Human-only |
+| --------------------------- | ------------- | --------------------------------------------------------------------------------- | ---------- |
+| **M0: Foundation**          | F-000 – F-004 | Scaffold + harness, bank access confirmed, DB schema + L2, app shell + L3, login  | F-001      |
+| **M1: Bank data**           | F-005 – F-013 | Accounts, balances and transactions syncing automatically; CSV import; live check | F-013      |
+| **M2: Categorization**      | F-014 – F-015 | Transactions categorized, own transfers excluded, transactions view               | —          |
+| **M3: Dashboard**           | F-016 – F-018 | Overview, spending and cash-flow reports, balance history                         | —          |
+| **M4: Investments** (later) | F-019 – F-023 | Nordnet and Kraken holdings, prices, net worth including investments              | F-023      |
+| **M5: Operations**          | F-024         | Encrypted backups and failure notifications                                       | —          |
 
-Recommended order for a first usable version (MVP):
+**MVP** = M0 – M3 passing (F-000 – F-018). The harness works through the queue in `priority` order whenever dependencies allow, so there is no separate ordering to maintain. The critical path is F-001 (human) → F-006 → F-007 → F-010 → F-013 (human); everything that doesn't need Enable Banking (F-002 – F-005, F-008, F-009, F-012, F-014) can proceed unattended before F-001 is done.
 
-FIN-001 → FIN-002 ✅ → FIN-003 → FIN-004 → FIN-005 → FIN-006 → FIN-007 → FIN-008 → FIN-009 → FIN-016 → FIN-013 → FIN-014 → FIN-017 → FIN-018 → FIN-010
-
-All tickets, with status and dependencies, are listed in the [ticket index](tickets/README.md).
+All features with their dependencies are listed in the [ticket index](tickets/README.md).
 
 ## Related docs
 
 - [API access research](api-access-research.md): free API options for Nordea, S-Pankki, Nordnet and Kraken
 - [Architecture](architecture.md): components, data model and data flow
 - [Tech stack](tech-stack.md): chosen technologies and why
+- [Decisions](DECISIONS.md): decision log
+- [Agent harness](harness/README.md): how sessions and the unattended loop work

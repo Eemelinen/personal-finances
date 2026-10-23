@@ -1,22 +1,26 @@
-# FIN-007: "Connect bank" flow
+# FIN-007: Connect-bank flow
 
-**Milestone:** M1 Bank data · **Status:** Todo · **Depends on:** FIN-004, FIN-006
+**Feature:** F-007 · **Milestone:** M1 Bank data · **Area:** banking · **Depends on:** [F-004](FIN-004-single-user-auth.md), [F-006](FIN-006-enable-banking-client.md) · **Runs:** unattended
 
-## Description
+> Status, verification commands and evidence live in [feature_list.json](../../feature_list.json): `pnpm harness:feature show F-007`. This ticket is the spec the session reads first.
 
-UI and server flow to link a Nordea or S-Pankki account: choose the bank, authenticate at the bank, return to the app, store the connection.
+## Goal
+
+`/connections` lists connections (bank, status, consent expiry, last sync) and connects Nordea or S-Pankki: the app redirects to the bank with a server-stored state, `/connections/callback` validates the state, creates the session and stores the encrypted session id, institution and accounts, and I can name accounts and mark them checking or savings. A cancelled or invalid callback shows an error; a connection can be removed (revoked at the provider) or archived with its history.
 
 ## Acceptance criteria
 
-- [ ] `/connections` page lists existing connections (bank, status, consent expiry, last sync) and has a "Connect bank" button
-- [ ] Choosing Nordea or S-Pankki starts authorization with an unguessable `state` stored server-side. The app redirects to the bank.
-- [ ] Callback route `/connections/callback` validates `state`, exchanges the code for a session, and stores `connections`, `institutions` and `accounts`
-- [ ] The session ID is encrypted at rest (AES-256-GCM, `ENCRYPTION_KEY`), using a small `crypto.ts` helper with unit tests
-- [ ] The user can name or rename accounts and mark them as `checking` or `savings`
-- [ ] The first sync starts right after connecting (it can call the FIN-008 function directly)
-- [ ] Error states shown clearly: cancelled at the bank, invalid state, API error
-- [ ] A connection can be removed: revoke the session at Enable Banking, then delete it locally, or archive it while keeping history
+- Unguessable `state` stored server-side and single-use
+- Request the maximum consent validity per bank (F-001 findings)
+- Error states: cancelled at the bank, invalid state, provider error
+- Remove = revoke at Enable Banking, then delete; archive keeps history
+
+## Tests (what the verification proves)
+
+- **L2** `tests/integration/connections.int.test.ts`: callback stores connection and accounts, rejects a bad state, revoke and archive
+- **L3** `tests/e2e/connect-bank.spec.ts`: connect through the fake provider, rename an account, cancelled flow shows an error
 
 ## Notes
 
-- Request the maximum consent validity the bank allows (from FIN-001 findings).
+- Replaces old FIN-007. Real banks are checked in F-013; here the e2e environment uses the fake provider.
+- The first sync after connecting is triggered by F-010.

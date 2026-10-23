@@ -53,14 +53,21 @@ src/
       enable-banking/  Enable Banking client and provider                (FIN-006)
       csv/             CSV import provider                               (FIN-012)
     sync/              Sync orchestration: accounts, balances, txns      (FIN-008/009)
-    categorization/    Rule engine, transfer detection                   (FIN-013/014)
+    categorization/    Rule engine, transfer detection                   (FIN-014)
     queries/           Read models for the dashboard                     (FIN-016+)
   worker/
     index.ts           Worker entrypoint: registers jobs, graceful shutdown
     jobs.ts            Job registry (name, cron schedule, run function)
+tests/
+  unit/                Vitest unit project (L1), incl. tests/unit/harness/
+  integration/         Vitest + Testcontainers Postgres (L2)                 (FIN-002)
+  e2e/                 Playwright against the built app (L3)                 (FIN-003)
+  fixtures/            Synthetic or anonymised fixtures only, never real data
 drizzle/               Generated SQL migrations (committed)
 secrets/               Private keys (gitignored), mounted into containers
-docs/                  Plan, architecture, tech stack, tickets
+scripts/               Agent harness scripts (feature list, verify, clean-state, loop driver)
+.claude/               Claude Code settings, hooks, skills and the evaluator subagent
+docs/                  Plan, architecture, tech stack, tickets, decisions, harness docs
 ```
 
 Folders marked with a ticket number don't exist yet. They are created by that ticket.
@@ -95,7 +102,7 @@ sequenceDiagram
 
 ## Data model
 
-These are the planned core tables (FIN-003). Amounts are stored as **integer minor units** (cents) together with an ISO-4217 currency code. Floats are never used for money.
+These are the planned core tables (FIN-002). Amounts are stored as **integer minor units** (cents) together with an ISO-4217 currency code. Floats are never used for money.
 
 | Table               | Purpose                                   | Key columns                                                                                                                                                                                                        |
 | ------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -108,7 +115,7 @@ These are the planned core tables (FIN-003). Amounts are stored as **integer min
 | `category_rules`    | Auto-categorization rules                 | `id`, `category_id`, `match_field`, `match_type`, `pattern`, `priority`                                                                                                                                            |
 | `sync_runs`         | Sync log                                  | `id`, `connection_id`, `started_at`, `finished_at`, `status`, `error`, counts                                                                                                                                      |
 
-Planned investment tables (FIN-022): `assets` (ticker or coin, asset class), `holdings` (account + asset + quantity), `investment_transactions` (buy, sell, dividend) and `prices` (asset, date, price). Brokerage and crypto accounts reuse `accounts`, so net worth is a single query across every account type.
+Planned investment tables (FIN-019): `assets` (ticker or coin, asset class), `holdings` (account + asset + quantity), `investment_transactions` (buy, sell, dividend) and `prices` (asset, date, price). Brokerage and crypto accounts reuse `accounts`, so net worth is a single query across every account type.
 
 ## Provider abstraction
 

@@ -1,18 +1,22 @@
-# FIN-015: Transactions view
+# FIN-015: Transactions view and category management
 
-**Milestone:** M2 Categorization · **Status:** Todo · **Depends on:** FIN-013
+**Feature:** F-015 · **Milestone:** M2 Categorization · **Area:** categorization · **Depends on:** [F-004](FIN-004-single-user-auth.md), [F-014](FIN-014-categorization-engine.md) · **Runs:** unattended
 
-## Description
+> Status, verification commands and evidence live in [feature_list.json](../../feature_list.json): `pnpm harness:feature show F-015`. This ticket is the spec the session reads first.
 
-A fast, filterable list of all transactions, where categories can be fixed and new rules created directly from a transaction.
+## Goal
+
+`/transactions` lists all transactions (date, account, counterparty or description, category, signed amount, pending badge) with filters kept in the URL (date range, accounts, category, text, income or expense, transfers), pagination that works with 10k+ rows and totals for the filter; I can change a category inline (marked manual), add a note, mark or unlink a transfer and create a rule from a transaction, optionally applying it to similar past ones. `/settings/categories` manages categories and rules.
 
 ## Acceptance criteria
 
-- [ ] `/transactions`: table with date, account, counterparty or description, category, amount (colored by sign) and a pending badge
-- [ ] Filters: date range, account(s), category, text search, income or expense, include or exclude transfers. Filters live in the URL search params, so a filtered view can be shared or bookmarked.
-- [ ] Pagination or infinite scroll (works with 10k+ rows)
-- [ ] Inline category change (sets `category_source = manual`)
-- [ ] "Create rule from this transaction": prefilled with the counterparty, and offers to apply the rule to similar past transactions
-- [ ] Optional note on a transaction
-- [ ] Totals for the current filter (sum in and out)
-- [ ] shadcn/ui set up (first UI-heavy ticket)
+- One-sided transfers (to an unconnected account) can be marked manually
+
+## Tests (what the verification proves)
+
+- **L3** `tests/e2e/transactions.spec.ts`: filters via the URL, inline category change persists, create rule from a transaction
+- **L3** `tests/e2e/categories-settings.spec.ts`: create, reorder and delete a rule
+
+## Notes
+
+- Replaces old FIN-015 plus the `/settings/categories` UI from old FIN-013.

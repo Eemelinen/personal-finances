@@ -1,0 +1,500 @@
+{
+  "project": "personal-finances",
+  "last_updated": "2026-10-23",
+  "rules": {
+    "single_active_feature": true,
+    "passing_requires_evidence": true,
+    "do_not_skip_verification": true
+  },
+  "status_legend": {
+    "not_started": "Work has not begun.",
+    "in_progress": "The feature is the current active task (at most one at a time).",
+    "blocked": "Work cannot continue until the blocker in `notes` is resolved.",
+    "passing": "Required verification ran and the evidence is recorded."
+  },
+  "features": [
+    {
+      "id": "F-000",
+      "priority": 0,
+      "area": "harness",
+      "title": "Project scaffold and agent harness bootstrap",
+      "user_visible_behavior": "A fresh agent session can answer what the repo does, how to start it, how to verify it, what is unfinished and what to do next, using only AGENTS.md, PROGRESS.md and this file; `./init.sh` installs and runs the L1 baseline, and `pnpm harness:loop --dry-run` passes preflight.",
+      "status": "not_started",
+      "depends_on": [],
+      "ticket": "FIN-000",
+      "spec": "docs/tickets/FIN-000-scaffold-and-harness.md",
+      "verification": ["L1: pnpm check", "L1: pnpm harness:check"],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Ported from the Metsävahti harness (tag harness-reference), see docs/DECISIONS.md D-001."
+    },
+    {
+      "id": "F-001",
+      "priority": 1,
+      "area": "banking",
+      "title": "Enable Banking access spike and sandbox fixtures",
+      "user_visible_behavior": "Enable Banking sandbox access works for Nordea FI and S-Pankki: an application whose RSA private key lives in `secrets/` (gitignored) authorises against both mock banks and fetches accounts, balances and transactions. Anonymised responses are committed under `tests/fixtures/enable-banking/`, and the facts later features depend on (consent validity, history depth, fetch limits, pending support, restricted-production terms) are recorded in this ticket's Findings.",
+      "status": "not_started",
+      "depends_on": ["F-000"],
+      "ticket": "FIN-001",
+      "spec": "docs/tickets/FIN-001-enable-banking-access-spike.md",
+      "verification": [
+        "L1: pnpm check",
+        "manual: sandbox authorisation, accounts, balances and transactions fetched for Nordea FI and S-Pankki (needs the Enable Banking account and private key)",
+        "manual: anonymised fixtures under tests/fixtures/enable-banking/ contain no real names, IBANs, tokens or session ids",
+        "manual: Findings in docs/tickets/FIN-001 filled in, docs/plan.md updated if the approach changed"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Human-only: needs an Enable Banking account and network access. The fixtures are what makes F-006 verifiable unattended. Research so far: [API access research](../api-access-research.md#1-banks-nordea-and-s-pankki) — restricted production is free for own accounts, consent ~180 days, ~4 unattended fetches per day per bank (unverified). Enable Banking authenticates applications with an RS256 JWT signed with the application's private key; the application id is the `kid`."
+    },
+    {
+      "id": "F-002",
+      "priority": 2,
+      "area": "foundation",
+      "title": "Database schema, first migration and L2 integration layer",
+      "user_visible_behavior": "`pnpm db:migrate` creates the core tables (institutions, connections, accounts, balance_snapshots, transactions, categories, category_rules, sync_runs) with money as bigint minor units plus a currency code and idempotency constraints on transactions and balance snapshots. `pnpm test:integration` (L2) runs Vitest integration tests against a throwaway Postgres 18 started by Testcontainers.",
+      "status": "not_started",
+      "depends_on": ["F-000"],
+      "ticket": "FIN-002",
+      "spec": "docs/tickets/FIN-002-database-schema.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/server/dedupe-hash.test.ts (dedupe hash normalises date, amount, counterparty and description)",
+        "L2: pnpm test:integration tests/integration/schema.int.test.ts (migrations apply to a fresh Postgres 18; duplicate provider_txn_ref and dedupe_hash rows per account are rejected)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Replaces old FIN-003. Investment tables are F-019. `casing: \"snake_case\"` is configured: TS fields camelCase, columns snake_case."
+    },
+    {
+      "id": "F-003",
+      "priority": 3,
+      "area": "foundation",
+      "title": "App shell and L3 end-to-end layer",
+      "user_visible_behavior": "Every page shares an app shell with navigation (Dashboard, Transactions, Reports, Connections, Settings) and a header; pages without content yet show an empty state. `pnpm test:e2e` (L3) builds and serves the app and runs Playwright tests against it.",
+      "status": "not_started",
+      "depends_on": ["F-000"],
+      "ticket": "FIN-003",
+      "spec": "docs/tickets/FIN-003-app-shell-and-e2e-layer.md",
+      "verification": [
+        "L1: pnpm check",
+        "L3: pnpm test:e2e tests/e2e/app-shell.spec.ts (every navigation link opens its page; the shell renders at desktop and mobile widths)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Moved from old FIN-016 (the app shell part), so every UI feature after it can be verified end to end. Cache Components are on: request-time data must sit behind `<Suspense>` (see node_modules/next/dist/docs/)."
+    },
+    {
+      "id": "F-004",
+      "priority": 4,
+      "area": "foundation",
+      "title": "Single-user authentication",
+      "user_visible_behavior": "Every page and route except `/login` and `/api/health` requires a session. `/login` accepts the password whose argon2 hash is in `AUTH_PASSWORD_HASH` and sets an encrypted, httpOnly session cookie (iron-session, 30-day sliding expiry); logout clears it; repeated wrong passwords are slowed down. `pnpm auth:hash` prints a hash for a password.",
+      "status": "not_started",
+      "depends_on": ["F-003"],
+      "ticket": "FIN-004",
+      "spec": "docs/tickets/FIN-004-single-user-auth.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/auth/session.test.ts (password check, session sealing and expiry, login backoff)",
+        "L3: pnpm test:e2e tests/e2e/auth.spec.ts (logged-out redirect to /login, login, logout, wrong password rejected)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Replaces old FIN-004. Follow `node_modules/next/dist/docs/01-app/02-guides/authentication-with-cache-components.md`."
+    },
+    {
+      "id": "F-005",
+      "priority": 5,
+      "area": "banking",
+      "title": "Provider contract, fake provider and token encryption",
+      "user_visible_behavior": "`src/server/providers` defines the `FinancialProvider` interface with normalised account, balance and transaction DTOs (minor units plus currency), a registry by provider id, typed errors (auth expired, rate limited, unavailable) and a deterministic in-memory fake provider used by tests and the e2e environment. `src/server/crypto.ts` encrypts and decrypts stored session ids with AES-256-GCM using `ENCRYPTION_KEY`.",
+      "status": "not_started",
+      "depends_on": ["F-002"],
+      "ticket": "FIN-005",
+      "spec": "docs/tickets/FIN-005-provider-contract.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/providers/registry.test.ts (registry lookup, typed error mapping, fake provider determinism)",
+        "L1: pnpm test:unit tests/unit/server/crypto.test.ts (round trip, tampered ciphertext and wrong key rejected)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Replaces old FIN-005 plus the encryption helper from old FIN-007. Plain Node only: the worker imports it."
+    },
+    {
+      "id": "F-006",
+      "priority": 6,
+      "area": "banking",
+      "title": "Enable Banking client and provider",
+      "user_visible_behavior": "`EnableBankingProvider` implements `FinancialProvider` over a typed Enable Banking client: RS256 application JWT, authorisation start, session creation, account details, balances and paginated transactions, zod-validated responses, retries on 429 and 5xx, and mapping to normalised DTOs (amount sign, booking and value date, counterparty, remittance info, pending vs booked). Tests run only against the fixtures recorded in F-001; no network.",
+      "status": "not_started",
+      "depends_on": ["F-001", "F-005"],
+      "ticket": "FIN-006",
+      "spec": "docs/tickets/FIN-006-enable-banking-client.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/providers/enable-banking.test.ts (JWT claims, continuation_key pagination, error mapping and DTO mapping against recorded fixtures)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Replaces old FIN-006. JWT signing with `jose`."
+    },
+    {
+      "id": "F-007",
+      "priority": 7,
+      "area": "banking",
+      "title": "Connect-bank flow",
+      "user_visible_behavior": "`/connections` lists connections (bank, status, consent expiry, last sync) and connects Nordea or S-Pankki: the app redirects to the bank with a server-stored state, `/connections/callback` validates the state, creates the session and stores the encrypted session id, institution and accounts, and I can name accounts and mark them checking or savings. A cancelled or invalid callback shows an error; a connection can be removed (revoked at the provider) or archived with its history.",
+      "status": "not_started",
+      "depends_on": ["F-004", "F-006"],
+      "ticket": "FIN-007",
+      "spec": "docs/tickets/FIN-007-connect-bank-flow.md",
+      "verification": [
+        "L1: pnpm check",
+        "L2: pnpm test:integration tests/integration/connections.int.test.ts (callback stores connection and accounts, rejects a bad state, revoke and archive)",
+        "L3: pnpm test:e2e tests/e2e/connect-bank.spec.ts (connect through the fake provider, rename an account, cancelled flow shows an error)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Replaces old FIN-007. Real banks are checked in F-013; here the e2e environment uses the fake provider. The first sync after connecting is triggered by F-010."
+    },
+    {
+      "id": "F-008",
+      "priority": 8,
+      "area": "banking",
+      "title": "Sync accounts and balances",
+      "user_visible_behavior": "`syncBalances(connectionId)` adds new accounts, archives vanished ones, upserts one balance snapshot per account per day and balance type, writes a `sync_runs` row with status and counts, updates `last_synced_at`, and marks the connection expired instead of failing when the provider reports an auth error.",
+      "status": "not_started",
+      "depends_on": ["F-002", "F-005"],
+      "ticket": "FIN-008",
+      "spec": "docs/tickets/FIN-008-sync-accounts-and-balances.md",
+      "verification": [
+        "L1: pnpm check",
+        "L2: pnpm test:integration tests/integration/sync-balances.int.test.ts (fake provider: new and archived accounts, same-day upsert, auth error marks the connection expired)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Replaces old FIN-008. Depends only on the provider contract, so it can be built before the connect flow."
+    },
+    {
+      "id": "F-009",
+      "priority": 9,
+      "area": "banking",
+      "title": "Sync transactions",
+      "user_visible_behavior": "`syncTransactions(connectionId)` backfills from the oldest available date, then syncs incrementally from `last_synced_at` minus a 7-day overlap; it upserts on `provider_txn_ref` with `dedupe_hash` as fallback, replaces pending transactions with their booked version, removes stale pending ones, never overwrites manual category or note edits, follows pagination and records fetched / inserted / updated counts in `sync_runs`. Running it twice changes nothing.",
+      "status": "not_started",
+      "depends_on": ["F-008"],
+      "ticket": "FIN-009",
+      "spec": "docs/tickets/FIN-009-sync-transactions.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/sync/transaction-merge.test.ts (pending to booked matching, overlap window, missing provider ids)",
+        "L2: pnpm test:integration tests/integration/sync-transactions.int.test.ts (backfill, idempotent re-run, manual edits preserved)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Replaces old FIN-009."
+    },
+    {
+      "id": "F-010",
+      "priority": 10,
+      "area": "banking",
+      "title": "Scheduled sync, Sync now and sync log",
+      "user_visible_behavior": "The worker runs a `bank-sync` job on `SYNC_CRON` (default every 6 hours) for every active connection; a Postgres advisory lock prevents two syncs of one connection at once, and a failing connection is logged and retried on the next tick without stopping the others or crashing the worker. A Sync now button on the dashboard and `/connections` runs the same sync with a pending state, the first sync runs right after connecting, the connection page shows the last sync runs (status, duration, counts, errors) and the header shows the last successful sync.",
+      "status": "not_started",
+      "depends_on": ["F-007", "F-009"],
+      "ticket": "FIN-010",
+      "spec": "docs/tickets/FIN-010-scheduled-sync.md",
+      "verification": [
+        "L1: pnpm check",
+        "L2: pnpm test:integration tests/integration/bank-sync-job.int.test.ts (advisory lock blocks a concurrent run; a failing connection does not stop the others)",
+        "L3: pnpm test:e2e tests/e2e/sync-now.spec.ts (Sync now through the fake provider updates balances and the sync log)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Replaces old FIN-010."
+    },
+    {
+      "id": "F-011",
+      "priority": 11,
+      "area": "banking",
+      "title": "Consent expiry and renewal",
+      "user_visible_behavior": "Connections store `consent_expires_at`; a warning banner appears on every page 14 days before expiry and an error banner after it; syncs skip expired connections and log the skip. Renew runs the authorisation again and attaches the new session to the existing connection and accounts (matched by IBAN, then provider account id), so history continues.",
+      "status": "not_started",
+      "depends_on": ["F-007"],
+      "ticket": "FIN-011",
+      "spec": "docs/tickets/FIN-011-consent-expiry-and-renewal.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/connections/account-matching.test.ts (renewed accounts match by IBAN, then provider id)",
+        "L2: pnpm test:integration tests/integration/consent-renewal.int.test.ts (renewal keeps account ids and history; expired connections are skipped)",
+        "L3: pnpm test:e2e tests/e2e/consent-banner.spec.ts (expiring and expired banners, renew through the fake provider)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Replaces old FIN-011."
+    },
+    {
+      "id": "F-012",
+      "priority": 12,
+      "area": "banking",
+      "title": "CSV import for Nordea and S-Pankki exports",
+      "user_visible_behavior": "`/import` uploads a Nordea or S-Pankki netbank CSV export (or a generic CSV with chosen columns), previews the parsed rows for a chosen or new manual account and imports them through the same upsert and dedupe path as API sync; the summary shows rows read, inserted, skipped as duplicates and errors with row numbers.",
+      "status": "not_started",
+      "depends_on": ["F-004", "F-009"],
+      "ticket": "FIN-012",
+      "spec": "docs/tickets/FIN-012-csv-import.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/csv/bank-csv.test.ts (Nordea and S-Pankki formats: decimal comma, dd.mm.yyyy dates, Windows-1252, synthetic fixtures)",
+        "L2: pnpm test:integration tests/integration/csv-import.int.test.ts (overlapping imports and API data do not duplicate)",
+        "L3: pnpm test:e2e tests/e2e/csv-import.spec.ts (upload, preview, import summary)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Replaces old FIN-012. Can be pulled forward right after F-009 if API access is delayed."
+    },
+    {
+      "id": "F-013",
+      "priority": 13,
+      "area": "banking",
+      "title": "Live bank acceptance with real accounts",
+      "user_visible_behavior": "My real Nordea and S-Pankki checking and savings accounts are connected through Enable Banking restricted production mode, the scheduled sync keeps balances and transactions current, a second sync creates no duplicates and the consent expiry shown matches the bank's.",
+      "status": "not_started",
+      "depends_on": ["F-010", "F-011"],
+      "ticket": "FIN-013",
+      "spec": "docs/tickets/FIN-013-live-bank-acceptance.md",
+      "verification": [
+        "L1: pnpm check",
+        "manual: Enable Banking production application in restricted mode with my accounts linked in the control panel; ENABLE_BANKING_* set in .env",
+        "manual: Nordea and S-Pankki connected via /connections; balances match the netbank",
+        "manual: the last 30 days of transactions match the netbank; a second Sync now inserts nothing",
+        "manual: findings (fetch limits, history depth, surprises) recorded in docs/tickets/FIN-013"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Human-only: real credentials and bank authentication. The first real use of the MVP."
+    },
+    {
+      "id": "F-014",
+      "priority": 14,
+      "area": "categorization",
+      "title": "Categorization engine and own-transfer detection",
+      "user_visible_behavior": "Seeded two-level default categories and rules for common Finnish merchants categorise new transactions after every sync and import; rules match counterparty or description (contains, equals, regex) and optionally amount sign or range, applied by priority, first match wins; manual categories are never overwritten; re-apply rules recategorises all non-manual transactions. A debit and a credit of the same absolute amount between my own accounts within ±3 days (or to an own IBAN) are linked as a transfer pair with the Transfers category and excluded from spending and income.",
+      "status": "not_started",
+      "depends_on": ["F-009"],
+      "ticket": "FIN-014",
+      "spec": "docs/tickets/FIN-014-categorization-engine.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/categorization/rules.test.ts (match types, priority, manual always wins)",
+        "L1: pnpm test:unit tests/unit/categorization/transfers.test.ts (same day, cross-bank delay, equal amounts that are not transfers)",
+        "L2: pnpm test:integration tests/integration/categorization.int.test.ts (seeds load, the sync hook categorises, re-apply keeps manual categories)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Replaces old FIN-013 (engine part) and FIN-014. The management UI is F-015."
+    },
+    {
+      "id": "F-015",
+      "priority": 15,
+      "area": "categorization",
+      "title": "Transactions view and category management",
+      "user_visible_behavior": "`/transactions` lists all transactions (date, account, counterparty or description, category, signed amount, pending badge) with filters kept in the URL (date range, accounts, category, text, income or expense, transfers), pagination that works with 10k+ rows and totals for the filter; I can change a category inline (marked manual), add a note, mark or unlink a transfer and create a rule from a transaction, optionally applying it to similar past ones. `/settings/categories` manages categories and rules.",
+      "status": "not_started",
+      "depends_on": ["F-004", "F-014"],
+      "ticket": "FIN-015",
+      "spec": "docs/tickets/FIN-015-transactions-view.md",
+      "verification": [
+        "L1: pnpm check",
+        "L3: pnpm test:e2e tests/e2e/transactions.spec.ts (filters via the URL, inline category change persists, create rule from a transaction)",
+        "L3: pnpm test:e2e tests/e2e/categories-settings.spec.ts (create, reorder and delete a rule)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Replaces old FIN-015 plus the `/settings/categories` UI from old FIN-013."
+    },
+    {
+      "id": "F-016",
+      "priority": 16,
+      "area": "dashboard",
+      "title": "Dashboard overview",
+      "user_visible_behavior": "The dashboard shows net worth, totals in checking and in savings and the change vs 30 days ago, accounts grouped by bank with current balance, last sync and a 90-day sparkline, and connection status (OK, expiring, expired) linking to `/connections`; with no data it guides to Connect bank or Import CSV. Amounts are formatted fi-FI in EUR.",
+      "status": "not_started",
+      "depends_on": ["F-004", "F-008"],
+      "ticket": "FIN-016",
+      "spec": "docs/tickets/FIN-016-dashboard-overview.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/format/money.test.ts (fi-FI EUR formatting of minor units)",
+        "L2: pnpm test:integration tests/integration/dashboard-queries.int.test.ts (net worth, per-type totals and 30-day change from snapshots)",
+        "L3: pnpm test:e2e tests/e2e/dashboard.spec.ts (seeded data renders the tiles and account list; empty state)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Replaces old FIN-016 minus the app shell (now F-003). Month income/expense tiles come with F-017, which can exclude transfers."
+    },
+    {
+      "id": "F-017",
+      "priority": 17,
+      "area": "dashboard",
+      "title": "Spending and cash-flow reports",
+      "user_visible_behavior": "`/reports/spending` shows spending per category for a chosen period (chart with amounts and %, drill-down to subcategories and to the filtered transaction list), a 12-month stacked bar per category, comparison to the previous period and the 6-month average, and the top merchants with normalised names. `/reports/cash-flow` shows monthly income vs expenses with a net line, savings rate and year-to-date totals, and the dashboard gets this month's income, expenses and net. Transfers are excluded, refunds net against their category, and months are grouped in `APP_TIMEZONE` in SQL.",
+      "status": "not_started",
+      "depends_on": ["F-014", "F-016"],
+      "ticket": "FIN-017",
+      "spec": "docs/tickets/FIN-017-spending-and-cash-flow-reports.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/reports/merchant-name.test.ts (merchant name normalisation)",
+        "L2: pnpm test:integration tests/integration/report-queries.int.test.ts (category and monthly aggregates, transfers excluded, refunds netted, Helsinki month boundaries)",
+        "L3: pnpm test:e2e tests/e2e/reports.spec.ts (period switch, drill-down to transactions, cash-flow chart)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Replaces old FIN-017, FIN-018 and the top-merchants part of FIN-020. Recurring-payment detection moved to the backlog."
+    },
+    {
+      "id": "F-018",
+      "priority": 18,
+      "area": "dashboard",
+      "title": "Balance and net-worth history",
+      "user_visible_behavior": "`/reports/balances` shows a net-worth line and a stacked per-account area chart for 3 months, 6 months, 1 year or all, carrying the last known balance over days without a sync and reconstructing history before the first sync from transactions (marked estimated), with a tooltip of the per-account breakdown.",
+      "status": "not_started",
+      "depends_on": ["F-016"],
+      "ticket": "FIN-018",
+      "spec": "docs/tickets/FIN-018-balance-history.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/reports/balance-series.test.ts (gap filling, backward reconstruction)",
+        "L2: pnpm test:integration tests/integration/balance-history.int.test.ts (series built from snapshots and transactions)",
+        "L3: pnpm test:e2e tests/e2e/balance-history.spec.ts (range selector changes the series)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Replaces old FIN-019."
+    },
+    {
+      "id": "F-019",
+      "priority": 19,
+      "area": "investments",
+      "title": "Investment data model and valuation",
+      "user_visible_behavior": "The schema adds assets (symbol, ISIN or CoinGecko id, asset class, currency), holdings with quantity snapshots, investment transactions (buy, sell, dividend, fee, transfer), daily prices and ECB FX rates; brokerage and crypto accounts reuse `accounts`. A valuation function returns an account's EUR value on a date as Σ quantity × price × FX, and `FinancialProvider` gains an optional `getHoldings()`.",
+      "status": "not_started",
+      "depends_on": ["F-002"],
+      "ticket": "FIN-019",
+      "spec": "docs/tickets/FIN-019-investment-data-model.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/investments/valuation.test.ts (quantity × price × FX; a missing price falls back to the last known one)",
+        "L2: pnpm test:integration tests/integration/investment-schema.int.test.ts (migration applies; numeric quantities keep 18 decimals)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Replaces old FIN-022."
+    },
+    {
+      "id": "F-020",
+      "priority": 20,
+      "area": "investments",
+      "title": "Nordnet import and stock prices",
+      "user_visible_behavior": "Importing a Nordnet transaction export (Sivuni → Tapahtumat ja laskelmat → Vie CSV-tiedostoon) records buys, sells, dividends, fees and deposits, derives holdings and dedupes overlapping imports; a daily price-update job fetches closing prices and ECB FX rates through a price client that respects the free-tier limit; `/investments` lists holdings with quantity, price, value, gain or loss and portfolio weight, and their value is included in net worth.",
+      "status": "not_started",
+      "depends_on": ["F-004", "F-019"],
+      "ticket": "FIN-020",
+      "spec": "docs/tickets/FIN-020-nordnet-import-and-stock-prices.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/investments/nordnet-csv.test.ts (synthetic Nordnet export parsed into investment transactions)",
+        "L1: pnpm test:unit tests/unit/investments/price-client.test.ts (mocked API: parsing, rate limit, unknown symbol)",
+        "L2: pnpm test:integration tests/integration/nordnet-import.int.test.ts (holdings derived from transactions; re-import dedupes)",
+        "L3: pnpm test:e2e tests/e2e/investments.spec.ts (import, then the holdings table)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Replaces old FIN-023. Nordnet's API is closed to new customers, so CSV is the route ([research](../api-access-research.md#2-nordnet-stocks-funds-osakesäästötili))."
+    },
+    {
+      "id": "F-021",
+      "priority": 21,
+      "area": "investments",
+      "title": "Kraken holdings and crypto prices",
+      "user_visible_behavior": "`KrakenProvider` signs private REST calls (HMAC-SHA512 with a nonce) with a read-only key from `KRAKEN_API_KEY` / `KRAKEN_API_SECRET`, maps `BalanceEx` to holdings and `Ledgers` to investment transactions (deposits, withdrawals, trades, staking); manual holdings cover wallets without an API; CoinGecko prices are added to the price-update job; crypto appears on `/investments` and in net worth.",
+      "status": "not_started",
+      "depends_on": ["F-019"],
+      "ticket": "FIN-021",
+      "spec": "docs/tickets/FIN-021-kraken-and-crypto-prices.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/investments/kraken.test.ts (signature against Kraken's documented example; BalanceEx and Ledgers mapping from fixtures)",
+        "L2: pnpm test:integration tests/integration/crypto-holdings.int.test.ts (holdings and prices stored; a manual holding is valued)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Replaces old FIN-024. See [research: Kraken](../api-access-research.md#3-kraken-crypto)."
+    },
+    {
+      "id": "F-022",
+      "priority": 22,
+      "area": "investments",
+      "title": "Net worth and allocation including investments",
+      "user_visible_behavior": "Net-worth history and the dashboard tiles include brokerage and crypto accounts valued with historical prices; an allocation chart breaks wealth down by asset class (cash, stocks and ETFs, funds, crypto) and by account; portfolio performance over time separates contributions from market gains.",
+      "status": "not_started",
+      "depends_on": ["F-018", "F-020", "F-021"],
+      "ticket": "FIN-022",
+      "spec": "docs/tickets/FIN-022-net-worth-with-investments.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/investments/performance.test.ts (contributions vs market gain)",
+        "L2: pnpm test:integration tests/integration/net-worth-investments.int.test.ts (historical valuation in the net-worth series)",
+        "L3: pnpm test:e2e tests/e2e/allocation.spec.ts (allocation and performance charts render seeded data)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Replaces old FIN-025."
+    },
+    {
+      "id": "F-023",
+      "priority": 23,
+      "area": "investments",
+      "title": "Live investments acceptance",
+      "user_visible_behavior": "A real Nordnet export imports with holdings matching Nordnet, a read-only, IP-restricted Kraken key syncs balances matching Kraken, and the price APIs (with my keys) value both in net worth.",
+      "status": "not_started",
+      "depends_on": ["F-022"],
+      "ticket": "FIN-023",
+      "spec": "docs/tickets/FIN-023-live-investments-acceptance.md",
+      "verification": [
+        "L1: pnpm check",
+        "manual: a real Nordnet transaction export imports; holdings and quantities match Nordnet",
+        "manual: a read-only, IP-whitelisted Kraken key syncs; balances match Kraken",
+        "manual: price API keys set in .env; holdings are valued and appear in net worth",
+        "manual: findings recorded in docs/tickets/FIN-023"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Human-only: real exports, API keys and network access."
+    },
+    {
+      "id": "F-024",
+      "priority": 24,
+      "area": "ops",
+      "title": "Backups and notifications",
+      "user_visible_behavior": "A nightly job writes an encrypted `pg_dump` (age) to `BACKUP_DIR` with 7 daily, 4 weekly and 12 monthly backups kept, and `docs/operations.md` documents backup and restore. A notifier (ntfy; disabled when `NTFY_URL` is unset) sends at most one message per issue per day when a connection fails N syncs in a row, when a consent expires within 7 days and when it has expired.",
+      "status": "not_started",
+      "depends_on": ["F-010", "F-011"],
+      "ticket": "FIN-024",
+      "spec": "docs/tickets/FIN-024-backups-and-notifications.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/ops/retention.test.ts (which backups are kept)",
+        "L1: pnpm test:unit tests/unit/ops/notifier.test.ts (one message per issue per day; disabled without config)",
+        "L2: pnpm test:integration tests/integration/backup-restore.int.test.ts (a dump of a Testcontainers database restores into a fresh one with the same rows)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Replaces old FIN-026 and FIN-027."
+    }
+  ]
+}

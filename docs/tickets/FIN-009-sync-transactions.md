@@ -1,21 +1,23 @@
 # FIN-009: Sync transactions
 
-**Milestone:** M1 Bank data · **Status:** Todo · **Depends on:** FIN-008
+**Feature:** F-009 · **Milestone:** M1 Bank data · **Area:** banking · **Depends on:** [F-008](FIN-008-sync-accounts-and-balances.md) · **Runs:** unattended
 
-## Description
+> Status, verification commands and evidence live in [feature_list.json](../../feature_list.json): `pnpm harness:feature show F-009`. This ticket is the spec the session reads first.
 
-Fetch transactions for each account: a full backfill on first sync, then incremental syncs. The result must be idempotent: running a sync twice never creates duplicates.
+## Goal
+
+`syncTransactions(connectionId)` backfills from the oldest available date, then syncs incrementally from `last_synced_at` minus a 7-day overlap; it upserts on `provider_txn_ref` with `dedupe_hash` as fallback, replaces pending transactions with their booked version, removes stale pending ones, never overwrites manual category or note edits, follows pagination and records fetched / inserted / updated counts in `sync_runs`. Running it twice changes nothing.
 
 ## Acceptance criteria
 
-- [ ] `syncTransactions(connectionId)` does a backfill from the oldest available date (per FIN-001), then incremental syncs from `last_synced_at` minus an overlap window (e.g. 7 days)
-- [ ] Upserts on `provider_txn_ref`, falling back to `dedupe_hash` when the bank gives no stable ID
-- [ ] Pending → booked: a pending transaction is replaced or updated by its booked version, not duplicated. Stale pending items are removed.
-- [ ] Manual edits (category, note) are never overwritten by a re-sync
-- [ ] Handles pagination (`continuation_key`) and rate-limit errors
-- [ ] `sync_runs` counts: fetched, inserted, updated
-- [ ] Unit tests: duplicate payloads, pending → booked, overlap window, no stable ID
+- Rate-limit errors stop the run cleanly and are recorded
+- A categorisation hook is called after insert (no-op until F-014)
+
+## Tests (what the verification proves)
+
+- **L1** `tests/unit/sync/transaction-merge.test.ts`: pending to booked matching, overlap window, missing provider ids
+- **L2** `tests/integration/sync-transactions.int.test.ts`: backfill, idempotent re-run, manual edits preserved
 
 ## Notes
 
-- After inserting, call the categorization hook (a no-op until FIN-013).
+- Replaces old FIN-009.

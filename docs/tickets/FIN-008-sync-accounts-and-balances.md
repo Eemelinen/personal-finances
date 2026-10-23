@@ -1,17 +1,22 @@
-# FIN-008: Sync accounts & balances
+# FIN-008: Sync accounts and balances
 
-**Milestone:** M1 Bank data · **Status:** Todo · **Depends on:** FIN-007
+**Feature:** F-008 · **Milestone:** M1 Bank data · **Area:** banking · **Depends on:** [F-002](FIN-002-database-schema.md), [F-005](FIN-005-provider-contract.md) · **Runs:** unattended
 
-## Description
+> Status, verification commands and evidence live in [feature_list.json](../../feature_list.json): `pnpm harness:feature show F-008`. This ticket is the spec the session reads first.
 
-Fetch account details and current balances for a connection and store a daily balance snapshot for each account.
+## Goal
+
+`syncBalances(connectionId)` adds new accounts, archives vanished ones, upserts one balance snapshot per account per day and balance type, writes a `sync_runs` row with status and counts, updates `last_synced_at`, and marks the connection expired instead of failing when the provider reports an auth error.
 
 ## Acceptance criteria
 
-- [ ] `src/server/sync/sync-balances.ts` exports `syncBalances(connectionId)`
-- [ ] New accounts on a connection are added. Accounts that disappear are marked archived, not deleted.
-- [ ] One `balance_snapshots` row per account per day per balance type (upsert, so later syncs that day update it)
-- [ ] The preferred balance type for display is chosen per bank (e.g. `ITAV`/`CLBD`), based on FIN-001 findings
-- [ ] `connections.last_synced_at` updated. A row is written to `sync_runs` with its status and counts.
-- [ ] `ProviderAuthError` marks the connection `expired` instead of failing the whole run
-- [ ] Unit tests with the fake provider from FIN-005
+- `src/server/sync/sync-balances.ts`
+- Preferred display balance type per bank (e.g. `ITAV` / `CLBD`), from F-001 findings, with a sensible default
+
+## Tests (what the verification proves)
+
+- **L2** `tests/integration/sync-balances.int.test.ts`: fake provider: new and archived accounts, same-day upsert, auth error marks the connection expired
+
+## Notes
+
+- Replaces old FIN-008. Depends only on the provider contract, so it can be built before the connect flow.

@@ -41,26 +41,28 @@ TypeScript end to end, running locally in Docker Compose.
 
 ## Planned additions (added by the ticket that needs them)
 
-| Purpose                                | Candidate                               | Ticket            |
-| -------------------------------------- | --------------------------------------- | ----------------- |
-| UI components                          | shadcn/ui (Radix + Tailwind)            | FIN-015, FIN-016  |
-| Charts                                 | Recharts                                | FIN-017 – FIN-019 |
-| Sessions                               | iron-session (encrypted cookie)         | FIN-004           |
-| Password hashing                       | `@node-rs/argon2`                       | FIN-004           |
-| JWT signing (RS256) for Enable Banking | jose                                    | FIN-006           |
-| CSV parsing                            | papaparse                               | FIN-012           |
-| Stock prices                           | Twelve Data / Alpha Vantage (free tier) | FIN-023           |
-| Crypto prices                          | CoinGecko API                           | FIN-024           |
-| Notifications                          | ntfy (self-hostable push)               | FIN-027           |
+| Purpose                                | Candidate                                     | Ticket            |
+| -------------------------------------- | --------------------------------------------- | ----------------- |
+| UI components                          | shadcn/ui (Radix + Tailwind)                  | FIN-003           |
+| Charts                                 | Recharts                                      | FIN-016 – FIN-018 |
+| Sessions                               | iron-session (encrypted cookie)               | FIN-004           |
+| Password hashing                       | `@node-rs/argon2`                             | FIN-004           |
+| JWT signing (RS256) for Enable Banking | jose                                          | FIN-006           |
+| CSV parsing                            | papaparse                                     | FIN-012           |
+| Stock prices                           | Twelve Data / Alpha Vantage (free tier)       | FIN-020           |
+| Crypto prices                          | CoinGecko API                                 | FIN-021           |
+| Notifications                          | ntfy (self-hostable push)                     | FIN-024           |
+| Integration tests (L2)                 | Testcontainers (`@testcontainers/postgresql`) | FIN-002           |
+| End-to-end tests (L3)                  | Playwright                                    | FIN-003           |
 
 ## External services
 
 | Service                                      | Used for                                                                                             |
 | -------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | [Enable Banking](https://enablebanking.com/) | PSD2 account information for Nordea and S-Pankki, free restricted production mode (FIN-001, FIN-006) |
-| [Kraken REST API](https://docs.kraken.com/)  | Crypto balances and ledger, free, read-only key (FIN-024)                                            |
-| Twelve Data / Alpha Vantage (free tier)      | Stock and fund prices (FIN-023)                                                                      |
-| CoinGecko API (free tier)                    | Crypto prices (FIN-024)                                                                              |
+| [Kraken REST API](https://docs.kraken.com/)  | Crypto balances and ledger, free, read-only key (FIN-021)                                            |
+| Twelve Data / Alpha Vantage (free tier)      | Stock and fund prices (FIN-020)                                                                      |
+| CoinGecko API (free tier)                    | Crypto prices (FIN-021)                                                                              |
 
 Why these were chosen, and which free alternatives were ruled out: [API access research](api-access-research.md).
 

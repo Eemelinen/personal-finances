@@ -1,20 +1,24 @@
-# FIN-012: CSV import (Nordea, S-Pankki)
+# FIN-012: CSV import for Nordea and S-Pankki exports
 
-**Milestone:** M1 Bank data · **Status:** Todo · **Depends on:** FIN-005
+**Feature:** F-012 · **Milestone:** M1 Bank data · **Area:** banking · **Depends on:** [F-004](FIN-004-single-user-auth.md), [F-009](FIN-009-sync-transactions.md) · **Runs:** unattended
 
-## Description
+> Status, verification commands and evidence live in [feature_list.json](../../feature_list.json): `pnpm harness:feature show F-012`. This ticket is the spec the session reads first.
 
-Import transactions from the banks' own CSV exports. This is the fallback if API access is unavailable or delayed, and also a way to load history older than the API provides.
+## Goal
+
+`/import` uploads a Nordea or S-Pankki netbank CSV export (or a generic CSV with chosen columns), previews the parsed rows for a chosen or new manual account and imports them through the same upsert and dedupe path as API sync; the summary shows rows read, inserted, skipped as duplicates and errors with row numbers.
 
 ## Acceptance criteria
 
-- [ ] `/import` page: upload a CSV, choose the target account (or create a manual account), preview the parsed rows, confirm
-- [ ] Parsers for the **Nordea** and **S-Pankki** netbank export formats: delimiter, decimal comma, `dd.mm.yyyy` dates, encoding (UTF-8 or Windows-1252), column names
-- [ ] A generic CSV mapping (choose the columns) for other formats
-- [ ] Rows go through the same upsert and dedupe path as API sync (FIN-009), so overlapping imports and API data don't duplicate
-- [ ] An import summary: rows read, inserted, skipped as duplicates, errors with row numbers
-- [ ] Unit tests with anonymized sample files for both banks in `src/server/providers/csv/__fixtures__/`
+- Fixtures are synthetic and live in `tests/fixtures/csv/`; real exports are never committed
+- Generic mapping: choose date, amount, counterparty and description columns
+
+## Tests (what the verification proves)
+
+- **L1** `tests/unit/csv/bank-csv.test.ts`: Nordea and S-Pankki formats: decimal comma, dd.mm.yyyy dates, Windows-1252, synthetic fixtures
+- **L2** `tests/integration/csv-import.int.test.ts`: overlapping imports and API data do not duplicate
+- **L3** `tests/e2e/csv-import.spec.ts`: upload, preview, import summary
 
 ## Notes
 
-- Never commit real bank exports. Fixtures must be synthetic.
+- Replaces old FIN-012. Can be pulled forward right after F-009 if API access is delayed.

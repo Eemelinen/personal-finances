@@ -1,23 +1,24 @@
-# FIN-006: Enable Banking API client
+# FIN-006: Enable Banking client and provider
 
-**Milestone:** M1 Bank data · **Status:** Todo · **Depends on:** FIN-001, FIN-005
+**Feature:** F-006 · **Milestone:** M1 Bank data · **Area:** banking · **Depends on:** [F-001](FIN-001-enable-banking-access-spike.md), [F-005](FIN-005-provider-contract.md) · **Runs:** unattended
 
-## Description
+> Status, verification commands and evidence live in [feature_list.json](../../feature_list.json): `pnpm harness:feature show F-006`. This ticket is the spec the session reads first.
 
-A typed client for the Enable Banking API, plus an `EnableBankingProvider` that implements `FinancialProvider`.
+## Goal
+
+`EnableBankingProvider` implements `FinancialProvider` over a typed Enable Banking client: RS256 application JWT, authorisation start, session creation, account details, balances and paginated transactions, zod-validated responses, retries on 429 and 5xx, and mapping to normalised DTOs (amount sign, booking and value date, counterparty, remittance info, pending vs booked). Tests run only against the fixtures recorded in F-001; no network.
 
 ## Acceptance criteria
 
-- [ ] `src/server/providers/enable-banking/client.ts` handles:
-  - [ ] application JWT (RS256, `kid` = application ID, short expiry) signed with the key from `ENABLE_BANKING_PRIVATE_KEY_PATH`
-  - [ ] endpoints: list ASPSPs, start authorization, create session from code, get session, account details, balances, transactions (with `continuation_key` pagination)
-  - [ ] responses validated with zod
-  - [ ] HTTP errors mapped to the typed provider errors from FIN-005, with retry/backoff on 429 and 5xx
-- [ ] `EnableBankingProvider` maps API payloads to normalized DTOs: amount sign (credit/debit indicator), booking and value dates, counterparty name, remittance info, pending vs booked
-- [ ] Env vars added: `ENABLE_BANKING_APP_ID`, `ENABLE_BANKING_PRIVATE_KEY_PATH`, `ENABLE_BANKING_REDIRECT_URL`, `ENABLE_BANKING_ENV` (`sandbox`/`production`)
-- [ ] The private key is mounted read-only into the `app` and `worker` containers (`./secrets:/app/secrets:ro`)
-- [ ] Unit tests with recorded sandbox fixtures (no network in tests)
+- `src/server/providers/enable-banking/client.ts` and `provider.ts`
+- Env: `ENABLE_BANKING_APP_ID`, `ENABLE_BANKING_PRIVATE_KEY_PATH`, `ENABLE_BANKING_REDIRECT_URL`, `ENABLE_BANKING_ENV` (`sandbox` / `production`)
+- Private key mounted read-only into `app` and `worker` (`./secrets:/app/secrets:ro`)
+- Never logs the JWT, session ids or full IBANs
+
+## Tests (what the verification proves)
+
+- **L1** `tests/unit/providers/enable-banking.test.ts`: JWT claims, continuation_key pagination, error mapping and DTO mapping against recorded fixtures
 
 ## Notes
 
-- Never log the JWT, session IDs or full IBANs.
+- Replaces old FIN-006. JWT signing with `jose`.

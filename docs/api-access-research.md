@@ -8,8 +8,8 @@ _Researched 2026-10-23. Provider terms change often, so recheck before relying o
 | ------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------ | ----------------- |
 | **Nordea** (FI)           | Yes, via Enable Banking restricted production mode       | Enable Banking (PSD2 AIS), with CSV import as fallback             | FIN-001, 006, 012 |
 | **S-Pankki**              | Yes, via Enable Banking restricted production mode       | Enable Banking (PSD2 AIS), with CSV import as fallback             | FIN-001, 006, 012 |
-| **Nordnet** (investments) | No. The official API is not onboarding new customers.    | CSV export of transactions → import. Prices from a free price API. | FIN-023           |
-| **Kraken** (crypto)       | Yes. The official REST API is free, with read-only keys. | Kraken REST API, using a key limited to query permissions          | FIN-024           |
+| **Nordnet** (investments) | No. The official API is not onboarding new customers.    | CSV export of transactions → import. Prices from a free price API. | FIN-020           |
+| **Kraken** (crypto)       | Yes. The official REST API is free, with read-only keys. | Kraken REST API, using a key limited to query permissions          | FIN-021           |
 
 ## 1. Banks: Nordea and S-Pankki
 
@@ -49,7 +49,7 @@ Nordea and S-Pankki expose PSD2 APIs, but production access is only for **licens
 | **CSV export → import**              | In Nordnet: _Sivuni → Tapahtumat ja laskelmat_, choose the date range, then **Vie CSV-tiedostoon**. Tools like Sharesight, Snowball and Portfolio Performance import this format. Later imports can cover only the period since the last upload.     | ✅ **Recommended**                         |
 | Unofficial / scraped web API         | Needs login credentials and breaks without warning. May violate the terms of service.                                                                                                                                                                | ❌ Not recommended                         |
 
-**Plan for FIN-023:** import Nordnet transaction CSVs (buys, sells, dividends, fees, deposits), compute holdings from the transactions, and value them with daily prices from a free price API (e.g. Twelve Data or Alpha Vantage free tier). Recheck the Nordnet API status when the ticket starts.
+**Plan for FIN-020:** import Nordnet transaction CSVs (buys, sells, dividends, fees, deposits), compute holdings from the transactions, and value them with daily prices from a free price API (e.g. Twelve Data or Alpha Vantage free tier). Recheck the Nordnet API status when the ticket starts.
 
 ## 3. Kraken (crypto)
 
@@ -70,7 +70,7 @@ The **official Kraken REST API is free** to use with any Kraken account.
 - **Rate limits.** There is a per-key counter that decays over time. Ledger and trade-history calls cost more (reportedly 2 points vs 1) **(unverified figures)**. A sync every few hours is far below the limit.
 - **Prices.** Kraken's public `Ticker` endpoint (no key needed) or CoinGecko, both free.
 
-**Plan for FIN-024:** a `KrakenProvider` implementing `getHoldings()` from `BalanceEx`, with ledger history from `Ledgers` for cost basis and performance.
+**Plan for FIN-021:** a `KrakenProvider` implementing `getHoldings()` from `BalanceEx`, with ledger history from `Ledgers` for cost basis and performance.
 
 ## Sources
 
