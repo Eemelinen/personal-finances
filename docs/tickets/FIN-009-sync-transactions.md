@@ -29,3 +29,4 @@
   - Pending → booked: matched by ref, then hash, then same amount and currency within 7 days (same counterparty first). Unmatched stored pending rows are deleted; booked rows are never deleted.
   - Identical transactions in one listing get an occurrence number in their `dedupe_hash` (resolves the FIN-002 known limit for synced data).
   - Categorisation hook: `categorize(tx, insertedIds)` option, called after inserts in the same database transaction, default no-op.
+  - Known gaps from the review (D-010 Consequences): the next-free-occurrence hash is checked against loaded rows only; the pending reach-back can exceed a bank's history limit (F-006 clamps); the fuzzy pending match is greedy in listing order.

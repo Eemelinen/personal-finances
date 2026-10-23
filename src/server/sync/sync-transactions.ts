@@ -202,7 +202,8 @@ export async function syncTransactions(
       counts,
     };
   } catch (error) {
-    await failRunOnBug(db, runId, error, now);
+    // Accounts written before the error stay written: so do their counts.
+    await failRunOnBug(db, runId, error, now, runCounts(counts));
     throw error;
   }
 }

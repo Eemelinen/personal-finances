@@ -170,15 +170,24 @@ export async function recordProviderFailure(
   };
 }
 
-/** A bug or a database failure: keep the run from staying `running`. */
+/**
+ * A bug or a database failure: keep the run from staying `running`, with
+ * the counts of whatever was already committed.
+ */
 export async function failRunOnBug(
   db: Db,
   runId: string,
   error: unknown,
   now: () => Date,
+  counts: Partial<typeof syncRuns.$inferInsert> = {},
 ): Promise<void> {
   await db
     .update(syncRuns)
-    .set({ status: "failed", finishedAt: now(), error: errorMessage(error) })
+    .set({
+      ...counts,
+      status: "failed",
+      finishedAt: now(),
+      error: errorMessage(error),
+    })
     .where(and(eq(syncRuns.id, runId), eq(syncRuns.status, "running")));
 }

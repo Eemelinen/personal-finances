@@ -697,18 +697,24 @@ describe("syncTransactions: failures", () => {
     expect(await runsOf(connection.id)).toMatchObject([{ status: "failed" }]);
   });
 
-  it("records and rethrows an unexpected error", async () => {
+  it("records and rethrows an unexpected error, with the counts of the accounts written", async () => {
     const fake = controllableFake();
     const connection = await connectionWithAccounts(fake);
-    fake.state.failTransactionsOf = "fake-checking";
+    const checking = await accountOf(connection.id, "fake-checking");
+    fake.state.failTransactionsOf = "fake-savings";
     fake.state.failWith = () => new TypeError("bug in the mapping");
 
     await expect(
       syncTransactions(connection.id, fake.options()),
     ).rejects.toThrow("bug in the mapping");
+    const written = (await transactionsOf(checking.id)).length;
+    expect(written).toBeGreaterThan(0);
     expect((await runsOf(connection.id)).at(-1)).toMatchObject({
       status: "failed",
       error: "bug in the mapping",
+      accountsCount: 1,
+      fetchedCount: written,
+      insertedCount: written,
     });
   });
 
