@@ -3,7 +3,8 @@
  * throwaway Postgres 18 with Testcontainers, applies the committed migrations,
  * builds the app and serves the standalone output, which is what the Docker
  * image runs, on 127.0.0.1:E2E_PORT, logging in with the test-only password
- * from ./credentials.ts. It never touches the dev database.
+ * from ./credentials.ts and the deterministic fake bank (`BANK_PROVIDER=fake`).
+ * It never touches the dev database.
  *
  *   E2E_PORT=3100        port to serve on (playwright.config.ts sets it)
  *   E2E_SKIP_BUILD=1     reuse an existing `pnpm build` (CI builds once)
@@ -22,7 +23,11 @@ import { createInterface } from "node:readline";
 import type { Readable, Writable } from "node:stream";
 import { encodePasswordHash } from "@/server/auth/hash-encoding";
 import { hashPassword } from "@/server/auth/password";
-import { E2E_PASSWORD, E2E_SESSION_SECRET } from "./credentials";
+import {
+  E2E_ENCRYPTION_KEY,
+  E2E_PASSWORD,
+  E2E_SESSION_SECRET,
+} from "./credentials";
 import { ERRORS_FILE, isServerErrorLine } from "./server-errors";
 import {
   startTestDatabase,
@@ -114,6 +119,8 @@ async function main(): Promise<void> {
       DATABASE_URL: database.url,
       AUTH_PASSWORD_HASH: encodePasswordHash(await hashPassword(E2E_PASSWORD)),
       SESSION_SECRET: E2E_SESSION_SECRET,
+      BANK_PROVIDER: "fake",
+      ENCRYPTION_KEY: E2E_ENCRYPTION_KEY,
     },
   });
   watchOutput(server.stdout!, process.stdout);

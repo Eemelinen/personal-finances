@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { decodePasswordHash } from "@/server/auth/hash-encoding";
+import { BANK_PROVIDER_IDS } from "@/server/providers/types";
 
 // Shared by the Next.js app, the worker and scripts, so it must not import
 // anything Next-specific. New variables are added here as features need them.
@@ -9,6 +10,8 @@ const envSchema = z.object({
     .default("development"),
   DATABASE_URL: z.url(),
   APP_TIMEZONE: z.string().default("Europe/Helsinki"),
+  // `fake` (the deterministic in-memory bank) is for tests and e2e only.
+  BANK_PROVIDER: z.enum(BANK_PROVIDER_IDS).default("enable_banking"),
 });
 
 // Only the web app needs these, so they are validated separately: the worker
@@ -29,8 +32,28 @@ const authEnvSchema = z.object({
   SESSION_SECRET: z.string().min(32, "must be at least 32 characters"),
 });
 
+// The app and the worker need this once they store or read provider
+// sessions; the migrate job does not, so it is validated separately too.
+const encryptionEnvSchema = z.object({
+  // 32 random bytes in canonical base64 (`openssl rand -base64 32`), so the
+  // key has one spelling; holds the bytes after parsing.
+  ENCRYPTION_KEY: z.string().transform((value, ctx) => {
+    const trimmed = value.trim();
+    const key = Buffer.from(trimmed, "base64");
+    if (key.length !== 32 || key.toString("base64") !== trimmed) {
+      ctx.addIssue({
+        code: "custom",
+        message: "must be 32 bytes, base64-encoded (openssl rand -base64 32)",
+      });
+      return z.NEVER;
+    }
+    return key;
+  }),
+});
+
 export type Env = z.infer<typeof envSchema>;
 export type AuthEnv = z.infer<typeof authEnvSchema>;
+export type EncryptionEnv = z.infer<typeof encryptionEnvSchema>;
 
 function parseWith<T extends z.ZodType>(
   schema: T,
@@ -55,8 +78,15 @@ export function parseAuthEnv(
   return parseWith(authEnvSchema, source);
 }
 
+export function parseEncryptionEnv(
+  source: Record<string, string | undefined>,
+): EncryptionEnv {
+  return parseWith(encryptionEnvSchema, source);
+}
+
 let cached: Env | undefined;
 let cachedAuth: AuthEnv | undefined;
+let cachedEncryption: EncryptionEnv | undefined;
 
 // Parsed lazily so that `next build` works without a database configured.
 export function getEnv(): Env {
@@ -66,4 +96,9 @@ export function getEnv(): Env {
 // Parsed lazily, on the first request that needs a session.
 export function getAuthEnv(): AuthEnv {
   return (cachedAuth ??= parseAuthEnv(process.env));
+}
+
+// Parsed lazily, on the first encryption or decryption.
+export function getEncryptionEnv(): EncryptionEnv {
+  return (cachedEncryption ??= parseEncryptionEnv(process.env));
 }

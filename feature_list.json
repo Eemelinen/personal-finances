@@ -130,7 +130,7 @@
       "area": "banking",
       "title": "Provider contract, fake provider and token encryption",
       "user_visible_behavior": "`src/server/providers` defines the `FinancialProvider` interface with normalised account, balance and transaction DTOs (minor units plus currency), a registry by provider id, typed errors (auth expired, rate limited, unavailable) and a deterministic in-memory fake provider used by tests and the e2e environment. `src/server/crypto.ts` encrypts and decrypts stored session ids with AES-256-GCM using `ENCRYPTION_KEY`.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-002"],
       "ticket": "FIN-005",
       "spec": "docs/tickets/FIN-005-provider-contract.md",
@@ -139,7 +139,14 @@
         "L1: pnpm test:unit tests/unit/providers/registry.test.ts (registry lookup, typed error mapping, fake provider determinism)",
         "L1: pnpm test:unit tests/unit/server/crypto.test.ts (round trip, tampered ciphertext and wrong key rejected)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-23 pnpm check → pass (commit 52599d9)",
+        "2026-10-23 pnpm test:unit tests/unit/providers/registry.test.ts → pass (commit 52599d9)",
+        "2026-10-23 pnpm test:unit tests/unit/server/crypto.test.ts → pass (commit 52599d9)",
+        "2026-10-23 pnpm check → pass (commit de24df3)",
+        "2026-10-23 pnpm test:unit tests/unit/providers/registry.test.ts → pass (commit de24df3)",
+        "2026-10-23 pnpm test:unit tests/unit/server/crypto.test.ts → pass (commit de24df3)"
+      ],
       "attempts": 0,
       "notes": "Replaces old FIN-005 plus the encryption helper from old FIN-007. Plain Node only: the worker imports it."
     },

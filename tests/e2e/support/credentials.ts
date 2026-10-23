@@ -6,5 +6,9 @@ export const E2E_PASSWORD = "e2e-test-password";
 export const E2E_SESSION_SECRET =
   "e2e-only-session-secret-not-for-real-use-0001";
 
+/** Test-only `ENCRYPTION_KEY`: the 32 bytes `e2e-only-encryption-key-00000001`. */
+export const E2E_ENCRYPTION_KEY =
+  "ZTJlLW9ubHktZW5jcnlwdGlvbi1rZXktMDAwMDAwMDE=";
+
 /** Playwright storage state of a logged-in browser (written by auth.setup.ts). */
 export const E2E_AUTH_STATE = "test-results/.auth/session.json";
