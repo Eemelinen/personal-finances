@@ -2,11 +2,15 @@ import { and, asc, eq } from "drizzle-orm";
 import { getDb, type Db } from "@/server/db/client";
 import { accounts, institutions, transactions } from "@/server/db/schema";
 import type { ProviderTransaction } from "@/server/providers/types";
+import type { Tx } from "@/server/sync/runs";
 import {
   noCategorization,
   type CategorizeHook,
 } from "@/server/sync/sync-transactions";
-import { identifyTransactions } from "@/server/sync/transaction-merge";
+import {
+  identifyTransactions,
+  type TransactionValues,
+} from "@/server/sync/transaction-merge";
 import type { CsvFormat, CsvRowError, ParsedCsv } from "./bank-csv";
 
 // Writes parsed CSV rows into an account (F-012, D-011). The rows take the
@@ -46,7 +50,6 @@ export async function importCsvRows(
   options: ImportOptions = {},
 ): Promise<ImportSummary> {
   const db = options.db ?? getDb();
-  const categorize = options.categorize ?? noCategorization;
   const [account] = await db
     .select({ currency: accounts.currency, archived: accounts.archived })
     .from(accounts)
@@ -54,14 +57,53 @@ export async function importCsvRows(
   if (!account || account.archived) {
     throw new ImportAccountError("The account does not exist or is archived.");
   }
+  const { values, errors } = prepareRows(parsed, account.currency);
+  const inserted = await db.transaction((tx) =>
+    insertRows(tx, accountId, values, options),
+  );
+  return summarise(parsed, values.length, inserted, errors);
+}
 
+/**
+ * Creates a manual account (see `createManualAccount()`) and imports into
+ * it in one transaction, so a failed import leaves no empty account behind;
+ * a file without a single importable row creates none.
+ */
+export async function importCsvIntoNewAccount(
+  input: NewManualAccount,
+  parsed: Pick<ParsedCsv, "rowsRead" | "rows" | "errors">,
+  options: ImportOptions = {},
+): Promise<{ accountId: string; summary: ImportSummary }> {
+  const db = options.db ?? getDb();
+  const name = checkName(input.name);
+  const { values, errors } = prepareRows(parsed, MANUAL_CURRENCY);
+  if (values.length === 0) {
+    throw new ImportAccountError(
+      "No row can be imported, so no account was created.",
+    );
+  }
+  return db.transaction(async (tx) => {
+    const accountId = await insertManualAccount(tx, { ...input, name });
+    const inserted = await insertRows(tx, accountId, values, options);
+    return {
+      accountId,
+      summary: summarise(parsed, values.length, inserted, errors),
+    };
+  });
+}
+
+/** Rows in another currency than the account's become errors. */
+function prepareRows(
+  parsed: Pick<ParsedCsv, "rows" | "errors">,
+  currency: string,
+): { values: TransactionValues[]; errors: CsvRowError[] } {
   const errors = [...parsed.errors];
   const listing: ProviderTransaction[] = [];
   for (const row of parsed.rows) {
-    if (row.currency !== null && row.currency !== account.currency) {
+    if (row.currency !== null && row.currency !== currency) {
       errors.push({
         row: row.row,
-        message: `The currency ${row.currency} is not the account's ${account.currency}`,
+        message: `The currency ${row.currency} is not the account's ${currency}`,
       });
       continue;
     }
@@ -70,38 +112,52 @@ export async function importCsvRows(
       bookingDate: row.bookingDate,
       valueDate: row.valueDate,
       amountMinor: row.amountMinor,
-      currency: account.currency,
+      currency,
       counterparty: row.counterparty,
       description: row.description,
       status: "booked",
     });
   }
-  const values = identifyTransactions(listing);
+  return { values: identifyTransactions(listing), errors };
+}
 
-  const inserted = await db.transaction(async (tx) => {
-    const ids: string[] = [];
-    for (let start = 0; start < values.length; start += INSERT_BATCH) {
-      const rows = await tx
-        .insert(transactions)
-        .values(
-          values
-            .slice(start, start + INSERT_BATCH)
-            .map((value) => ({ ...value, accountId })),
-        )
-        .onConflictDoNothing({
-          target: [transactions.accountId, transactions.dedupeHash],
-        })
-        .returning({ id: transactions.id });
-      ids.push(...rows.map((row) => row.id));
-    }
-    if (ids.length > 0) await categorize(tx, ids);
-    return ids.length;
-  });
+/** Inserts what is not stored yet; returns how many rows were inserted. */
+async function insertRows(
+  tx: Tx,
+  accountId: string,
+  values: readonly TransactionValues[],
+  options: ImportOptions,
+): Promise<number> {
+  const categorize = options.categorize ?? noCategorization;
+  const ids: string[] = [];
+  for (let start = 0; start < values.length; start += INSERT_BATCH) {
+    const rows = await tx
+      .insert(transactions)
+      .values(
+        values
+          .slice(start, start + INSERT_BATCH)
+          .map((value) => ({ ...value, accountId })),
+      )
+      .onConflictDoNothing({
+        target: [transactions.accountId, transactions.dedupeHash],
+      })
+      .returning({ id: transactions.id });
+    ids.push(...rows.map((row) => row.id));
+  }
+  if (ids.length > 0) await categorize(tx, ids);
+  return ids.length;
+}
 
+function summarise(
+  parsed: Pick<ParsedCsv, "rowsRead">,
+  importable: number,
+  inserted: number,
+  errors: CsvRowError[],
+): ImportSummary {
   return {
     rowsRead: parsed.rowsRead,
     inserted,
-    duplicates: values.length - inserted,
+    duplicates: importable - inserted,
     errors: errors.sort((a, b) => a.row - b.row),
   };
 }
@@ -113,51 +169,69 @@ const MANUAL_INSTITUTIONS: Record<CsvFormat, string> = {
   generic: "Other bank",
 };
 
+const MANUAL_CURRENCY = "EUR";
+
 export type ManualAccountType = "checking" | "savings";
+
+export interface NewManualAccount {
+  name: string;
+  type: ManualAccountType;
+  format: CsvFormat;
+}
+
+function checkName(name: string): string {
+  const trimmed = name.trim();
+  if (trimmed === "") throw new ImportAccountError("Name the new account.");
+  return trimmed;
+}
 
 /**
  * A manual account (no connection) for imports, under the `csv`
  * institution of the export's format, in EUR.
  */
 export async function createManualAccount(
-  input: { name: string; type: ManualAccountType; format: CsvFormat },
+  input: NewManualAccount,
   options: { db?: Db } = {},
 ): Promise<string> {
   const db = options.db ?? getDb();
-  const name = input.name.trim();
-  if (name === "") throw new ImportAccountError("Name the new account.");
-  return db.transaction(async (tx) => {
-    await tx
-      .insert(institutions)
-      .values({
-        name: MANUAL_INSTITUTIONS[input.format],
-        country: "FI",
-        provider: "csv",
-        providerRef: input.format,
-      })
-      .onConflictDoNothing({
-        target: [institutions.provider, institutions.providerRef],
-      });
-    const [institution] = await tx
-      .select({ id: institutions.id })
-      .from(institutions)
-      .where(
-        and(
-          eq(institutions.provider, "csv"),
-          eq(institutions.providerRef, input.format),
-        ),
-      );
-    const [account] = await tx
-      .insert(accounts)
-      .values({
-        institutionId: institution.id,
-        type: input.type,
-        name,
-        currency: "EUR",
-      })
-      .returning({ id: accounts.id });
-    return account.id;
-  });
+  const name = checkName(input.name);
+  return db.transaction((tx) => insertManualAccount(tx, { ...input, name }));
+}
+
+async function insertManualAccount(
+  tx: Tx,
+  input: NewManualAccount,
+): Promise<string> {
+  await tx
+    .insert(institutions)
+    .values({
+      name: MANUAL_INSTITUTIONS[input.format],
+      country: "FI",
+      provider: "csv",
+      providerRef: input.format,
+    })
+    .onConflictDoNothing({
+      target: [institutions.provider, institutions.providerRef],
+    });
+  const [institution] = await tx
+    .select({ id: institutions.id })
+    .from(institutions)
+    .where(
+      and(
+        eq(institutions.provider, "csv"),
+        eq(institutions.providerRef, input.format),
+      ),
+    );
+  const [account] = await tx
+    .insert(accounts)
+    .values({
+      institutionId: institution.id,
+      type: input.type,
+      name: input.name,
+      currency: MANUAL_CURRENCY,
+    })
+    .returning({ id: accounts.id });
+  return account.id;
 }
 
 export interface ImportAccount {

@@ -13,8 +13,8 @@ import {
   type ParsedCsv,
 } from "@/server/csv/bank-csv";
 import {
-  createManualAccount,
   ImportAccountError,
+  importCsvIntoNewAccount,
   importCsvRows,
   type ImportSummary,
 } from "@/server/csv/import-csv";
@@ -118,19 +118,23 @@ export async function importCsv(formData: FormData): Promise<ImportResult> {
     }
     const target = String(formData.get("account") ?? "");
     let accountId: string;
+    let summary: ImportSummary;
     if (target === "new") {
       const type = String(formData.get("newAccountType") ?? "checking");
-      accountId = await createManualAccount({
-        name: String(formData.get("newAccountName") ?? ""),
-        type: type === "savings" ? "savings" : "checking",
-        format: parsed.format,
-      });
+      ({ accountId, summary } = await importCsvIntoNewAccount(
+        {
+          name: String(formData.get("newAccountName") ?? ""),
+          type: type === "savings" ? "savings" : "checking",
+          format: parsed.format,
+        },
+        parsed,
+      ));
     } else if (z.uuid().safeParse(target).success) {
       accountId = target;
+      summary = await importCsvRows(accountId, parsed);
     } else {
       throw new ImportAccountError("Choose an account.");
     }
-    const summary = await importCsvRows(accountId, parsed);
     console.info(
       `[import] ${summary.inserted} inserted, ${summary.duplicates} duplicates, ${summary.errors.length} errors`,
     );

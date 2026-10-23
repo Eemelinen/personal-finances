@@ -7,6 +7,7 @@ import { readBankCsv } from "@/server/csv/bank-csv";
 import {
   createManualAccount,
   ImportAccountError,
+  importCsvIntoNewAccount,
   importCsvRows,
   listImportAccounts,
 } from "@/server/csv/import-csv";
@@ -311,6 +312,63 @@ describe("CSV import into a manual account", () => {
     expect(
       (await listImportAccounts({ db: testDb.db })).map((row) => row.id),
     ).not.toContain(accountId);
+  });
+
+  it("creates the new account and its rows in one transaction", async () => {
+    const name = `New ${randomUUID()}`;
+    const parsed = readBankCsv(fixture("s-pankki.csv"));
+    const { accountId, summary } = await importCsvIntoNewAccount(
+      { name, type: "savings", format: "s-pankki" },
+      parsed,
+      { db: testDb.db },
+    );
+    expect(summary).toMatchObject({ inserted: 5, duplicates: 0 });
+    const [account] = await testDb.db
+      .select()
+      .from(accounts)
+      .where(eq(accounts.id, accountId));
+    expect(account).toMatchObject({ name, type: "savings", currency: "EUR" });
+    expect(await transactionsOf(accountId)).toHaveLength(5);
+  });
+
+  it("leaves no empty account behind when the import fails", async () => {
+    const accountNamed = async (name: string) =>
+      testDb.db.select().from(accounts).where(eq(accounts.name, name));
+
+    // Nothing importable: every row is in another currency.
+    const sek = `SEK ${randomUUID()}`;
+    const parsed = readBankCsv(
+      Uint8Array.from(
+        Buffer.from(
+          "Kirjauspäivä;Määrä;Nimi;Valuutta\n1.3.2026;-1,00;Kioski;SEK\n",
+          "latin1",
+        ),
+      ),
+    );
+    await expect(
+      importCsvIntoNewAccount(
+        { name: sek, type: "checking", format: "nordea" },
+        parsed,
+        { db: testDb.db },
+      ),
+    ).rejects.toThrow(/no account was created/);
+    expect(await accountNamed(sek)).toEqual([]);
+
+    // The write fails halfway (here: in the categorisation hook).
+    const failing = `Failing ${randomUUID()}`;
+    await expect(
+      importCsvIntoNewAccount(
+        { name: failing, type: "checking", format: "nordea" },
+        readBankCsv(fixture("nordea.csv")),
+        {
+          db: testDb.db,
+          categorize: async () => {
+            throw new Error("rule engine down");
+          },
+        },
+      ),
+    ).rejects.toThrow("rule engine down");
+    expect(await accountNamed(failing)).toEqual([]);
   });
 
   it("refuses an empty name for a new account", async () => {

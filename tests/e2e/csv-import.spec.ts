@@ -178,3 +178,26 @@ test("rejects a file that is not the chosen bank's export", async ({
   ).toHaveText("This is not a Nordea export: its header row was not found.");
   await expect(page.getByRole("table")).toBeHidden();
 });
+
+test("previews a file larger than the default 1 MB action limit", async ({
+  page,
+}) => {
+  const lines = ["Kirjauspäivä;Määrä;Saaja/Maksaja;Viesti"];
+  for (let i = 0; i < 40_000; i++) {
+    const day = String((i % 28) + 1).padStart(2, "0");
+    lines.push(`${day}.01.2026;-${i % 100},50;Kauppa ${i};Ostos numero ${i}`);
+  }
+  const buffer = Buffer.from(`${lines.join("\n")}\n`, "utf8");
+  expect(buffer.length).toBeGreaterThan(1.2 * 1024 * 1024);
+
+  await preview(page, { name: "large.csv", mimeType: "text/csv", buffer });
+  await expect(page.getByTestId("csv-detected")).toHaveText(
+    "large.csv: Nordea, UTF-8, 40000 rows, 40000 readable, 0 with errors.",
+  );
+  await expect(page.getByRole("table")).toContainText(
+    "The first 200 of 40000 rows",
+  );
+  await expect(
+    page.getByRole("button", { name: "Import 40000 rows" }),
+  ).toBeVisible();
+});
