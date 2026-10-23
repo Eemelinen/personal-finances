@@ -31,7 +31,8 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm format:check
-      - name: Unit tests (incl. feature_list.json validation)
+      - run: pnpm harness:check
+      - name: Unit tests
         run: pnpm test:unit
       - name: Build
         run: pnpm build

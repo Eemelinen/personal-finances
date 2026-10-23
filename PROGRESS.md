@@ -8,17 +8,26 @@ Repository-local session log. Read it at clock-in, update it at clock-out (AGENT
 - Standard startup path: `./init.sh` (`FAST=1` skips the baseline; `RUN_START_COMMAND=1` also starts the dev database, applies migrations and runs `pnpm dev`). The full stack runs with `docker compose up --build -d` (Postgres on host port 5434; `/api/health`).
 - Standard verification path: L1 `pnpm check`. L2 (`pnpm test:integration`) is added by F-002 and L3 (`pnpm test:e2e`) by F-003. Per feature: `pnpm harness:verify F-NNN`.
 - Session 001 (harness bootstrap): scaffold from before plus the agent harness ported from Metsävahti (D-001, D-002), pnpm 10.15 via corepack instead of npm (D-003), unit tests under `tests/unit/` (Vitest project `unit`), 27 tickets re-sliced into 25 features `F-000` – `F-024` with tickets `FIN-000` – `FIN-024` in `docs/tickets/`.
+- Session 002 (interactive: shared harness): the copied harness is replaced by `@eemelinen/harness` (devDependency, tag `v0.1.0`; the CLI behind every `pnpm harness:*`, new `pnpm harness:doctor`, also run by `./init.sh`) and the plugin `harness@eemelinen-harness` (skills `/harness:clock-in`, `/harness:verify-feature`, `/harness:clock-out`, agent `harness:evaluator`, hooks). Project rules live in `harness.config.json` and `docs/harness/generator-notes.md`; `pnpm check` runs `pnpm harness:check`. D-004.
 - Last verified commit: `6577dd4` + the F-000 evidence commit — `pnpm check` (27 unit tests incl. the harness tests) and `pnpm harness:check` green on 2026-10-23 (F-000 evidence in `feature_list.json`).
 - Queue: `pnpm harness:feature list`. F-000 is `passing`; ready now: F-001 (human-only: Enable Banking sandbox and fixtures), F-002 (DB schema + L2) and F-003 (app shell + L3) — both unattended.
 - Current blocker: none. The unattended loop additionally needs `gh` and `claude` on `PATH`, `gh auth login`, and the GitHub settings in docs/harness/README.md § 4.
 
 ## Next Steps
 
-1. Do F-001 interactively (`/clock-in F-001`): create the Enable Banking sandbox application, record anonymised fixtures under `tests/fixtures/enable-banking/`, fill the Findings in `docs/tickets/FIN-001-enable-banking-access-spike.md`.
+1. Do F-001 interactively (`/harness:clock-in F-001`): create the Enable Banking sandbox application, record anonymised fixtures under `tests/fixtures/enable-banking/`, fill the Findings in `docs/tickets/FIN-001-enable-banking-access-spike.md`.
 2. In parallel, run the loop for the unattended foundation: `pnpm harness:loop --once` (F-002), then F-003. Read the first traces and evaluator verdicts and record a row in the rubric's tuning log.
 3. After branch protection with the required `Verify` check exists, set `"merge": "auto"` in `harness.config.json`.
 
 ## Session Log
+
+### Session 002 — 2026-10-23 (interactive: move to the shared harness)
+
+- Goal: stop carrying a copy of the harness (D-001) now that it lives in `Eemelinen/harness`, so fixes made for any project reach this one by a version bump.
+- Completed: installed `@eemelinen/harness` and enabled the plugin (both `v0.1.0`); deleted the copied `scripts/` (feature list, feature, verify, events, loop, clean-state), `.claude/hooks`, `.claude/skills`, `.claude/agents/evaluator.md`, `docs/harness/prompts/` and `tests/unit/harness/`; moved the project values into `harness.config.json` (FIN ticket format, guard rules, clean-state checks, services, session-start lines) and `docs/harness/generator-notes.md`; `pnpm check` runs `pnpm harness:check`; `init.sh` runs `pnpm harness:doctor`; lint-staged runs `harness check`; docs: AGENTS.md, CLAUDE.md, README, `docs/architecture.md`, `docs/harness/README.md` (now the project page), the checklist and the rubric, D-004. The release also brings the loop's stop on a failed CI check (Metsävahti) and the command-start guard matching (Ideaforge).
+- Verification run: `pnpm check` green (lint, typecheck, format, `harness:check`, unit tests) with the package installed from the `v0.1.0` tag; `pnpm harness:doctor` ok; `pnpm harness:check` accepts the 25 features and a write through `harness feature attempt` (on a copy) leaves the file byte-identical apart from `attempts`; `pnpm harness:feature next` still picks F-002; `pnpm harness:clean-state --base main` after the commit.
+- Known risk: interactive sessions need the folder trusted once for the plugin marketplace and `.claude/settings.json` permissions; driver sessions load the plugin from the package.
+- Next best step: Next Steps 1–2.
 
 ### Session 001 — 2026-10-23 (interactive: harness bootstrap, F-000)
 

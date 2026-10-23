@@ -1,6 +1,6 @@
 import { defineConfig } from "vitest/config";
 
-/** Fast, hermetic unit tests: no database, no network. Includes the harness tests. */
+/** Fast, hermetic unit tests: no database, no network. */
 export default defineConfig({
   resolve: {
     tsconfigPaths: true,

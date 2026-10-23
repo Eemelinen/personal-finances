@@ -59,14 +59,14 @@ src/
     index.ts           Worker entrypoint: registers jobs, graceful shutdown
     jobs.ts            Job registry (name, cron schedule, run function)
 tests/
-  unit/                Vitest unit project (L1), incl. tests/unit/harness/
+  unit/                Vitest unit project (L1)
   integration/         Vitest + Testcontainers Postgres (L2)                 (FIN-002)
   e2e/                 Playwright against the built app (L3)                 (FIN-003)
   fixtures/            Synthetic or anonymised fixtures only, never real data
 drizzle/               Generated SQL migrations (committed)
 secrets/               Private keys (gitignored), mounted into containers
-scripts/               Agent harness scripts (feature list, verify, clean-state, loop driver)
-.claude/               Claude Code settings, hooks, skills and the evaluator subagent
+.claude/               Claude Code permissions and the harness plugin pin (hooks, skills and the
+                       evaluator come from the shared harness; project rules in harness.config.json)
 docs/                  Plan, architecture, tech stack, tickets, decisions, harness docs
 ```
 

@@ -17,9 +17,7 @@
       "Bash(git show*)",
       "Bash(docker ps*)",
       "Bash(docker info*)",
-      "Bash(pnpm harness:*)",
-      "Bash(scripts/clean-state-check.sh*)",
-      "Bash(./scripts/clean-state-check.sh*)"
+      "Bash(pnpm harness:*)"
     ],
     "deny": [
       "Read(./.env)",
@@ -35,62 +33,16 @@
       "Bash(git reset --hard*)"
     ]
   },
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session-start.sh",
-            "timeout": 10
-          }
-        ]
+  "extraKnownMarketplaces": {
+    "eemelinen-harness": {
+      "source": {
+        "source": "github",
+        "repo": "Eemelinen/harness",
+        "ref": "v0.1.0"
       }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/guard.sh",
-            "timeout": 30
-          }
-        ]
-      },
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/guard.sh",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/format.sh",
-            "timeout": 20
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-guard.sh",
-            "timeout": 60
-          }
-        ]
-      }
-    ]
+    }
+  },
+  "enabledPlugins": {
+    "harness@eemelinen-harness": true
   }
 }
