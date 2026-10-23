@@ -1,3 +1,4 @@
+import { io } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getAuthEnv, getEnv } from "@/server/env";
@@ -16,6 +17,11 @@ import { LOGIN_PATH } from "./routes";
  * Server Actions, Route Handlers) calls `verifySession()` itself.
  */
 export async function getSession(): Promise<Session | null> {
+  // Checking the expiry reads the clock (here and inside iron-session's
+  // unseal). `io()` keeps that out of every prerender, including the
+  // runtime prefetch where `cookies()` already resolves; during a request
+  // it resolves at once.
+  await io();
   const seal = (await cookies()).get(SESSION_COOKIE)?.value;
   return unsealSession(seal, getAuthEnv().SESSION_SECRET, Date.now());
 }

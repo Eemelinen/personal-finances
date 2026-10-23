@@ -25,6 +25,18 @@ export function isApiPath(pathname: string): boolean {
   return pathname === "/api" || pathname.startsWith("/api/");
 }
 
+/**
+ * A Server Action call: a POST with the `Next-Action` header. The proxy does
+ * not re-issue the session cookie on these, because the action may set or
+ * delete the cookie itself (logout does) in the same response.
+ */
+export function isServerActionRequest(
+  method: string,
+  headers: Pick<Headers, "has">,
+): boolean {
+  return method === "POST" && headers.has("next-action");
+}
+
 export type AccessDecision =
   "allow" | "redirect-to-login" | "unauthorized" | "redirect-to-app";
 

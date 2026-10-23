@@ -1,7 +1,21 @@
-import { expect, test } from "@playwright/test";
-import { E2E_PASSWORD } from "./support/credentials";
+import { expect, test, type BrowserContext } from "@playwright/test";
+import { SESSION_COOKIE, sealSession } from "@/server/auth/session";
+import { E2E_PASSWORD, E2E_SESSION_SECRET } from "./support/credentials";
 
-const SESSION_COOKIE = "pf_session";
+const DAY_MS = 86_400_000;
+
+/** Puts a valid session issued `ageMs` ago into the browser. */
+async function addSessionIssued(
+  context: BrowserContext,
+  baseURL: string,
+  ageMs: number,
+): Promise<string> {
+  const seal = await sealSession(E2E_SESSION_SECRET, Date.now() - ageMs);
+  await context.addCookies([
+    { name: SESSION_COOKIE, value: seal, url: baseURL, httpOnly: true },
+  ]);
+  return seal;
+}
 
 // Every test here starts logged out.
 test.use({ storageState: { cookies: [], origins: [] } });
@@ -92,5 +106,52 @@ test("login sets a session cookie, logout clears it", async ({
     (await context.cookies()).find((c) => c.name === SESSION_COOKIE),
   ).toBeUndefined();
   await page.goto("/transactions");
+  await expect(page).toHaveURL("/login");
+});
+
+test("a day-old session is re-issued with a fresh 30-day expiry", async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  const oldSeal = await addSessionIssued(context, baseURL!, 2 * DAY_MS);
+
+  await page.goto("/settings");
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Settings" }),
+  ).toBeVisible();
+
+  const session = (await context.cookies()).find(
+    (c) => c.name === SESSION_COOKIE,
+  );
+  expect(session?.value).toBeDefined();
+  expect(session?.value).not.toBe(oldSeal);
+  const days = ((session?.expires ?? 0) * 1000 - Date.now()) / DAY_MS;
+  expect(days).toBeGreaterThan(29.9);
+});
+
+test("logout clears a day-old session instead of re-issuing it", async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await addSessionIssued(context, baseURL!, 2 * DAY_MS);
+  // Back to "old" after the navigation re-issued it.
+  await page.goto("/settings");
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Settings" }),
+  ).toBeVisible();
+  await addSessionIssued(context, baseURL!, 2 * DAY_MS);
+
+  await page
+    .getByRole("banner")
+    .getByRole("button", { name: "Log out" })
+    .click();
+
+  await expect(page).toHaveURL("/login");
+  expect(
+    (await context.cookies()).find((c) => c.name === SESSION_COOKIE),
+  ).toBeUndefined();
+  await page.goto("/");
   await expect(page).toHaveURL("/login");
 });

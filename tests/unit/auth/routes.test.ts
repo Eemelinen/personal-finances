@@ -4,6 +4,7 @@ import {
   isApiPath,
   isHealthPath,
   isPublicPath,
+  isServerActionRequest,
 } from "@/lib/auth/routes";
 
 describe("isPublicPath", () => {
@@ -58,5 +59,14 @@ describe("accessDecision", () => {
     expect(accessDecision("/api/accounts", true)).toBe("allow");
     expect(accessDecision("/login", true)).toBe("redirect-to-app");
     expect(accessDecision("/login/", true)).toBe("redirect-to-app");
+  });
+});
+
+describe("isServerActionRequest", () => {
+  it("matches only POSTs that carry the Next-Action header", () => {
+    const action = new Headers({ "Next-Action": "7f3a" });
+    expect(isServerActionRequest("POST", action)).toBe(true);
+    expect(isServerActionRequest("GET", action)).toBe(false);
+    expect(isServerActionRequest("POST", new Headers())).toBe(false);
   });
 });

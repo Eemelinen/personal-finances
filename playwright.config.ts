@@ -11,6 +11,8 @@ import { E2E_AUTH_STATE } from "./tests/e2e/support/credentials";
  *
  * The `setup` project logs in once (tests/e2e/auth.setup.ts); specs start
  * logged in from its storage state unless they reset it (auth.spec.ts).
+ * The run fails if the app server logged an error line
+ * (tests/e2e/support/server-errors.ts), even when every test passed.
  */
 const port = process.env.E2E_PORT ?? "3100";
 const baseURL = `http://127.0.0.1:${port}`;
@@ -21,6 +23,7 @@ export default defineConfig({
   outputDir: "test-results",
   fullyParallel: true,
   forbidOnly: true,
+  globalTeardown: "./tests/e2e/support/server-errors.ts",
   retries: 0,
   reporter: process.env.CI ? [["github"], ["list"]] : "list",
   use: {

@@ -80,7 +80,9 @@ tests/
   unit/                Vitest unit project (L1)
   integration/         Vitest + Testcontainers Postgres 18 (L2); helpers/postgres.ts
   e2e/                 Playwright against the built app (L3); support/server.ts is the
-                       webServer (Testcontainers Postgres + build + standalone server)
+                       webServer (Testcontainers Postgres + build + standalone server);
+                       the run fails if the app server logs an error line
+                       (support/server-errors.ts), even when every test passed
   fixtures/            Synthetic or anonymised fixtures only, never real data
 drizzle/               Generated SQL migrations (committed)
 secrets/               Private keys (gitignored), mounted into containers
@@ -177,8 +179,8 @@ Providers return **normalized** DTOs. Mapping from provider-specific JSON happen
 
 ## Security
 
-- Single-user login protects every page and route except `/login` and `/api/health` (FIN-004, D-007), even though the app runs locally. `AUTH_PASSWORD_HASH` holds an argon2id hash of the one password (`pnpm auth:hash`). A login sets `pf_session`: an iron-session seal (`SESSION_SECRET`) of the issue time, `httpOnly`, `sameSite=lax`, `secure` in production, valid 30 days and re-issued by the proxy once a day, so it expires 30 days after the last visit. Sessions are stateless: logout deletes the cookie, rotating `SESSION_SECRET` signs out every browser. After 5 consecutive wrong passwords each attempt waits 1 s, 2 s, 4 s, … (at most 15 min) after the last failure; the counter is in memory and global, so a persistent attacker who can reach the app could keep the owner locked out (accepted: the app is bound to `127.0.0.1`; a restart clears it). `/api/health` is answered before the session check, so it works even when the login secrets are missing.
-- `src/proxy.ts` only redirects optimistically. Server Components, Server Actions and Route Handlers that touch data call `verifySession()` (`src/lib/auth/session.ts`) themselves; a Server Action is a POST to its page and must never rely on the proxy matcher.
+- Single-user login protects every page and route except `/login` and `/api/health` (FIN-004, D-007), even though the app runs locally. `AUTH_PASSWORD_HASH` holds an argon2id hash of the one password (`pnpm auth:hash`). A login sets `pf_session`: an iron-session seal (`SESSION_SECRET`) of the issue time, `httpOnly`, `sameSite=lax`, `secure` in production, valid 30 days and re-issued by the proxy once a day (not on Server Action calls, which may change the cookie themselves: logout deletes it), so it expires 30 days after the last visit. Sessions are stateless: logout deletes the cookie, rotating `SESSION_SECRET` signs out every browser. After 5 consecutive wrong passwords each attempt waits 1 s, 2 s, 4 s, … (at most 15 min) after the last failure; the counter is in memory and global, so a persistent attacker who can reach the app could keep the owner locked out (accepted: the app is bound to `127.0.0.1`; a restart clears it). `/api/health` is answered before the session check, so it works even when the login secrets are missing.
+- `src/proxy.ts` only redirects optimistically. Server Components, Server Actions and Route Handlers that touch data call `verifySession()` (`src/lib/auth/session.ts`) themselves; a Server Action is a POST to its page and must never rely on the proxy matcher. `getSession()` awaits `io()` (`next/cache`) before it checks the expiry, because with Cache Components a clock read after `cookies()` still counts as prerendering in the runtime prefetch (`Date.now()` → logged `blocking-prerender-current-time` error); other request-time code that reads the clock needs the same.
 - The Enable Banking private key lives in `./secrets/` (gitignored) and is mounted read-only.
 - Session and consent identifiers are encrypted at rest with AES-256-GCM, using `ENCRYPTION_KEY`.
 - The database and app ports are bound to `127.0.0.1`.
