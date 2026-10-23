@@ -24,3 +24,12 @@ Every page and route except `/login` and `/api/health` requires a session. `/log
 ## Notes
 
 - Replaces old FIN-004. Follow `node_modules/next/dist/docs/01-app/02-guides/authentication-with-cache-components.md`.
+- Implemented in F-004 (D-007). Choices made without a human:
+  - `AUTH_PASSWORD_HASH` is the argon2id PHC string **base64url-encoded** (what `pnpm auth:hash` prints), because the Next.js `.env` loader expands the `$` signs of a raw hash even inside quotes. A raw PHC string is accepted too.
+  - Sliding expiry: the proxy re-issues the cookie once the session is a day old (not on every request); the session ends 30 days after it was last re-issued.
+  - Backoff: global, in memory; after 5 consecutive failures every attempt waits 1 s, 2 s, 4 s, … (max 15 min) after the last failure. Attempts are serialised. A persistent attacker who can reach the app could keep the owner locked out; accepted because the app is bound to `127.0.0.1`, and a restart clears it.
+  - Without a session, `/api/*` answers 401 instead of redirecting. After login the app opens `/` (no return-to parameter).
+  - The login secrets are validated by `getAuthEnv()`, separate from `getEnv()`, so the worker runs without them.
+  - The DAL check: `verifySession()` in `src/lib/auth/session.ts`, used by the header's logout button for now; future data access calls it too. `getSession()` awaits `io()` before it reads the clock, otherwise every logged-in render logs a `Date.now()` prerender error (found by the attempt-1 review).
+  - The proxy does not re-issue the cookie on Server Action calls (`Next-Action` POSTs), so it never competes with the action's own cookie change (logout). In Next 16.4.2 the action's delete already wins; the skip keeps that independent of how Next merges the two responses, and L3 covers logout with a day-old session.
+  - L3 fails when the app server logs an error line, so runtime errors that do not break a page are caught.

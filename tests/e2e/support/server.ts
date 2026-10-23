@@ -2,18 +2,28 @@
  * Playwright's `webServer` for L3 (playwright.config.ts). It starts a
  * throwaway Postgres 18 with Testcontainers, applies the committed migrations,
  * builds the app and serves the standalone output, which is what the Docker
- * image runs, on 127.0.0.1:E2E_PORT. It never touches the dev database.
+ * image runs, on 127.0.0.1:E2E_PORT, logging in with the test-only password
+ * from ./credentials.ts. It never touches the dev database.
  *
  *   E2E_PORT=3100        port to serve on (playwright.config.ts sets it)
  *   E2E_SKIP_BUILD=1     reuse an existing `pnpm build` (CI builds once)
+ *
+ * Error lines the app prints also go to ./server-errors.ts's file, which
+ * fails the run in the global teardown.
  *
  * Playwright sends SIGTERM when the run ends; the server and the database are
  * stopped then. If the process is killed outright, Testcontainers' reaper
  * removes the container.
  */
 import { spawn, type ChildProcess } from "node:child_process";
-import { cpSync, existsSync } from "node:fs";
+import { appendFileSync, cpSync, existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
+import { createInterface } from "node:readline";
+import type { Readable, Writable } from "node:stream";
+import { encodePasswordHash } from "@/server/auth/hash-encoding";
+import { hashPassword } from "@/server/auth/password";
+import { E2E_PASSWORD, E2E_SESSION_SECRET } from "./credentials";
+import { ERRORS_FILE, isServerErrorLine } from "./server-errors";
 import {
   startTestDatabase,
   type TestDatabase,
@@ -36,6 +46,16 @@ function run(command: string, args: string[]): Promise<void> {
         ? resolve()
         : reject(new Error(`${command} ${args.join(" ")} exited with ${code}`)),
     );
+  });
+}
+
+/** Passes the app's output through and records its error lines. */
+function watchOutput(from: Readable, to: Writable): void {
+  createInterface({ input: from, crlfDelay: Infinity }).on("line", (line) => {
+    to.write(`${line}\n`);
+    if (isServerErrorLine(line)) {
+      appendFileSync(path.join(root, ERRORS_FILE), `${line}\n`);
+    }
   });
 }
 
@@ -80,18 +100,24 @@ async function main(): Promise<void> {
     recursive: true,
   });
 
+  mkdirSync(path.dirname(path.join(root, ERRORS_FILE)), { recursive: true });
+
   console.info(`[e2e] serving the standalone build on 127.0.0.1:${port}`);
   server = spawn(process.execPath, [serverJs], {
     cwd: standaloneDir,
-    stdio: "inherit",
+    stdio: ["ignore", "pipe", "pipe"],
     env: {
       ...process.env,
       NODE_ENV: "production",
       PORT: port,
       HOSTNAME: "127.0.0.1",
       DATABASE_URL: database.url,
+      AUTH_PASSWORD_HASH: encodePasswordHash(await hashPassword(E2E_PASSWORD)),
+      SESSION_SECRET: E2E_SESSION_SECRET,
     },
   });
+  watchOutput(server.stdout!, process.stdout);
+  watchOutput(server.stderr!, process.stderr);
   server.on("exit", (code) => {
     if (!stopping) {
       console.error(`[e2e] the app server exited with ${code}`);

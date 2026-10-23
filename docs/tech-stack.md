@@ -23,6 +23,13 @@ TypeScript end to end, running locally in Docker Compose.
 | DB driver  | **postgres** (postgres.js) | 3.4     | Fast, pure JS, works in both Next.js and the worker.                                       |
 | Validation | **zod**                    | 4.6     | Environment validation now; later API payloads, CSV rows and forms.                        |
 
+## Authentication
+
+| Layer            | Choice              | Version | Why                                                                                        |
+| ---------------- | ------------------- | ------- | ------------------------------------------------------------------------------------------ |
+| Sessions         | **iron-session**    | 9.0     | Encrypted, signed cookie sessions without a session table; the pattern the Next docs use.  |
+| Password hashing | **@node-rs/argon2** | 2.2     | argon2id with prebuilt binaries (glibc and musl), no build script; external to the bundle. |
+
 ## Background jobs
 
 | Layer        | Choice        | Version | Why                                                                                 |
@@ -47,8 +54,6 @@ TypeScript end to end, running locally in Docker Compose.
 | Purpose                                | Candidate                               | Ticket            |
 | -------------------------------------- | --------------------------------------- | ----------------- |
 | Charts                                 | Recharts                                | FIN-016 – FIN-018 |
-| Sessions                               | iron-session (encrypted cookie)         | FIN-004           |
-| Password hashing                       | `@node-rs/argon2`                       | FIN-004           |
 | JWT signing (RS256) for Enable Banking | jose                                    | FIN-006           |
 | CSV parsing                            | papaparse                               | FIN-012           |
 | Stock prices                           | Twelve Data / Alpha Vantage (free tier) | FIN-020           |

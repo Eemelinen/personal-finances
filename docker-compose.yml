@@ -41,6 +41,8 @@ services:
     environment:
       DATABASE_URL: *database-url
       APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Helsinki}
+      AUTH_PASSWORD_HASH: ${AUTH_PASSWORD_HASH:?set AUTH_PASSWORD_HASH in .env (pnpm auth:hash)}
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env}
     ports:
       - "127.0.0.1:${APP_PORT:-3000}:3000"
     depends_on:
