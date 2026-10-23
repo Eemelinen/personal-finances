@@ -1,4 +1,5 @@
 import { and, asc, eq, inArray, isNotNull, sql } from "drizzle-orm";
+import { categorizeTransactions } from "@/server/categorization/categorize";
 import { getDb } from "@/server/db/client";
 import { accounts, connections, transactions } from "@/server/db/schema";
 import { getEnv } from "@/server/env";
@@ -44,16 +45,15 @@ import {
 export { ConnectionNotFoundError } from "./runs";
 
 /**
- * Runs inside the account's database transaction after new transactions
- * are inserted, with their ids. The rule engine (F-014) plugs in here.
+ * Runs inside the account's database transaction after the merge is
+ * written, with the ids of the transactions it inserted or changed (a
+ * pending one booked, a text corrected). The default is the rule engine and
+ * transfer detection (F-014, `categorizeTransactions`).
  */
 export type CategorizeHook = (
   tx: Tx,
   transactionIds: string[],
 ) => Promise<void>;
-
-/** The default hook until F-014: categorises nothing. */
-export const noCategorization: CategorizeHook = async () => {};
 
 export interface SyncTransactionsOptions extends SyncOptions {
   /** Whose calendar days the overlap is counted in; `APP_TIMEZONE`. */
@@ -116,7 +116,7 @@ export async function syncTransactions(
       return failed(await failNotActive(db, runId, connection, now));
     }
     const timeZone = options.timeZone ?? getEnv().APP_TIMEZONE;
-    const categorize = options.categorize ?? noCategorization;
+    const categorize = options.categorize ?? categorizeTransactions;
 
     const synced = await db
       .select({
@@ -155,7 +155,11 @@ export async function syncTransactions(
           const stored = await loadStored(tx, account.id, listing);
           const plan = mergeTransactions(stored, listing);
           const insertedIds = await applyPlan(tx, account.id, plan);
-          if (insertedIds.length > 0) await categorize(tx, insertedIds);
+          const changedIds = [
+            ...insertedIds,
+            ...plan.update.map((update) => update.id),
+          ];
+          if (changedIds.length > 0) await categorize(tx, changedIds);
           await tx
             .update(accounts)
             .set({ transactionsSyncedAt: startedAt })

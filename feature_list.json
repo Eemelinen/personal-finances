@@ -331,7 +331,7 @@
       "area": "categorization",
       "title": "Categorization engine and own-transfer detection",
       "user_visible_behavior": "Seeded two-level default categories and rules for common Finnish merchants categorise new transactions after every sync and import; rules match counterparty or description (contains, equals, regex) and optionally amount sign or range, applied by priority, first match wins; manual categories are never overwritten; re-apply rules recategorises all non-manual transactions. A debit and a credit of the same absolute amount between my own accounts within ±3 days (or to an own IBAN) are linked as a transfer pair with the Transfers category and excluded from spending and income.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-009"],
       "ticket": "FIN-014",
       "spec": "docs/tickets/FIN-014-categorization-engine.md",
@@ -341,7 +341,20 @@
         "L1: pnpm test:unit tests/unit/categorization/transfers.test.ts (same day, cross-bank delay, equal amounts that are not transfers)",
         "L2: pnpm test:integration tests/integration/categorization.int.test.ts (seeds load, the sync hook categorises, re-apply keeps manual categories)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-23 pnpm check → pass (commit 7d1e306)",
+        "2026-10-23 pnpm test:unit tests/unit/categorization/rules.test.ts → pass (commit 7d1e306)",
+        "2026-10-23 pnpm test:unit tests/unit/categorization/transfers.test.ts → pass (commit 7d1e306)",
+        "2026-10-23 pnpm test:integration tests/integration/categorization.int.test.ts → pass (commit 7d1e306, Docker available)",
+        "2026-10-23 pnpm check → pass (commit da41ef7)",
+        "2026-10-23 pnpm test:unit tests/unit/categorization/rules.test.ts → pass (commit da41ef7)",
+        "2026-10-23 pnpm test:unit tests/unit/categorization/transfers.test.ts → pass (commit da41ef7)",
+        "2026-10-23 pnpm test:integration tests/integration/categorization.int.test.ts → pass (commit da41ef7, Docker available)",
+        "2026-10-23 pnpm check → pass (commit 4b0d1d5)",
+        "2026-10-23 pnpm test:unit tests/unit/categorization/rules.test.ts → pass (commit 4b0d1d5)",
+        "2026-10-23 pnpm test:unit tests/unit/categorization/transfers.test.ts → pass (commit 4b0d1d5)",
+        "2026-10-23 pnpm test:integration tests/integration/categorization.int.test.ts → pass (commit 4b0d1d5, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Replaces old FIN-013 (engine part) and FIN-014. The management UI is F-015."
     },

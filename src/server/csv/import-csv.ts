@@ -1,12 +1,10 @@
 import { and, asc, eq } from "drizzle-orm";
+import { categorizeTransactions } from "@/server/categorization/categorize";
 import { getDb, type Db } from "@/server/db/client";
 import { accounts, institutions, transactions } from "@/server/db/schema";
 import type { ProviderTransaction } from "@/server/providers/types";
 import type { Tx } from "@/server/sync/runs";
-import {
-  noCategorization,
-  type CategorizeHook,
-} from "@/server/sync/sync-transactions";
+import type { CategorizeHook } from "@/server/sync/sync-transactions";
 import {
   identifyTransactions,
   type TransactionValues,
@@ -37,7 +35,10 @@ export interface ImportSummary {
 
 export interface ImportOptions {
   db?: Db;
-  /** Runs inside the import's transaction with the new ids (F-014). */
+  /**
+   * Runs inside the import's transaction with the new ids; defaults to the
+   * rule engine and transfer detection (F-014).
+   */
   categorize?: CategorizeHook;
 }
 
@@ -128,7 +129,7 @@ async function insertRows(
   values: readonly TransactionValues[],
   options: ImportOptions,
 ): Promise<number> {
-  const categorize = options.categorize ?? noCategorization;
+  const categorize = options.categorize ?? categorizeTransactions;
   const ids: string[] = [];
   for (let start = 0; start < values.length; start += INSERT_BATCH) {
     const rows = await tx
