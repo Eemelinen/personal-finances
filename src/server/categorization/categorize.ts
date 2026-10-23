@@ -96,14 +96,12 @@ const CANDIDATE_COLUMNS = {
   categoryId: transactions.categoryId,
   categorySource: transactions.categorySource,
   transferGroupId: transactions.transferGroupId,
-  categoryKind: categories.kind,
 };
 
 function selectRows(tx: Tx, where: SQL | undefined) {
   return tx
     .select(CANDIDATE_COLUMNS)
     .from(transactions)
-    .leftJoin(categories, eq(transactions.categoryId, categories.id))
     .where(where)
     .orderBy(asc(transactions.bookingDate), asc(transactions.id));
 }
@@ -190,7 +188,11 @@ async function applyRules(tx: Tx, scope: Scope): Promise<number> {
   return changed;
 }
 
-/** Booked, not manual, and in no group or the only member of one. */
+/**
+ * Booked, not manual, and in no group or the only member of one. The
+ * subquery's `other` alias hides the outer table, so
+ * `"transactions"."transfer_group_id"` is the outer row's group.
+ */
 const FREE_LEG = and(
   eq(transactions.status, "booked"),
   ne(transactions.categorySource, "manual"),
@@ -201,7 +203,10 @@ const FREE_LEG = and(
   ),
 );
 
-function toCandidate(row: CandidateRow): TransferCandidate {
+function toCandidate(
+  row: CandidateRow,
+  transfersId: string | null,
+): TransferCandidate {
   return {
     id: row.id,
     accountId: row.accountId,
@@ -211,8 +216,10 @@ function toCandidate(row: CandidateRow): TransferCandidate {
     counterparty: row.counterparty,
     description: row.description,
     transferGroupId: row.transferGroupId,
-    // A rule's spending or income category speaks against a transfer.
-    eligible: row.categoryId === null || row.categoryKind === "transfer",
+    // Any category a rule gave but Transfers speaks against a transfer
+    // (a Nordnet payment is Savings & investments until Nordnet is an
+    // own account, F-020).
+    eligible: row.categoryId === null || row.categoryId === transfersId,
   };
 }
 
@@ -256,14 +263,15 @@ async function linkTransfers(tx: Tx, scope: Scope): Promise<number> {
     .select({ id: accounts.id, iban: accounts.iban })
     .from(accounts);
 
+  const transfersId = await findTransfersCategory(tx);
   const { pairs, oneSided } = findTransfers({
-    subjects: subjects.map(toCandidate),
-    pool: pool.map(toCandidate),
+    subjects: subjects.map((row) => toCandidate(row, transfersId)),
+    pool: pool.map((row) => toCandidate(row, transfersId)),
     accounts: ownAccounts,
   });
   if (pairs.length === 0 && oneSided.length === 0) return 0;
 
-  const categoryId = await transfersCategoryId(tx);
+  const categoryId = transfersId ?? (await createTransfersCategory(tx));
   const link = async (ids: string[], groupId: string) => {
     await tx
       .update(transactions)
@@ -282,24 +290,25 @@ async function linkTransfers(tx: Tx, scope: Scope): Promise<number> {
   return linked;
 }
 
-/** The top-level Transfers category; created when it is missing. */
-async function transfersCategoryId(tx: Tx): Promise<string> {
-  const where = and(
-    isNull(categories.parentId),
-    eq(categories.name, TRANSFERS_CATEGORY),
-  );
-  const [existing] = await tx
+const TRANSFERS_WHERE = and(
+  isNull(categories.parentId),
+  eq(categories.name, TRANSFERS_CATEGORY),
+);
+
+/** The top-level Transfers category, if it exists. */
+async function findTransfersCategory(tx: Tx): Promise<string | null> {
+  const [row] = await tx
     .select({ id: categories.id })
     .from(categories)
-    .where(where);
-  if (existing) return existing.id;
+    .where(TRANSFERS_WHERE);
+  return row?.id ?? null;
+}
+
+/** Creates the top-level Transfers category (unseeded databases). */
+async function createTransfersCategory(tx: Tx): Promise<string> {
   await tx
     .insert(categories)
     .values({ name: TRANSFERS_CATEGORY, kind: "transfer", color: "#64748b" })
     .onConflictDoNothing();
-  const [created] = await tx
-    .select({ id: categories.id })
-    .from(categories)
-    .where(where);
-  return created.id;
+  return (await findTransfersCategory(tx))!;
 }

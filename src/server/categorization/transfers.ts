@@ -8,8 +8,8 @@ import type { IsoDate } from "@/server/providers/types";
 // one-sided transfer when that account has no matching leg (yet).
 //
 // Guards against equal amounts that are not transfers: both legs on one
-// account never pair (a refund), and a leg a rule put into a spending or
-// income category (`eligible: false`, e.g. a grocery purchase that happens to
+// account never pair (a refund), and a leg a rule put into any category but
+// Transfers (`eligible: false`, e.g. a grocery purchase that happens to
 // equal a payment a friend sent to the savings account) pairs only when an
 // IBAN names one of them. Each leg is used once: the pairs closest in days
 // are taken first, then the earlier ones.
@@ -29,7 +29,7 @@ export interface TransferCandidate {
   description: string | null;
   /** Set on a one-sided transfer: a partner found later joins its group. */
   transferGroupId: string | null;
-  /** False when a rule put it in a spending or income category. */
+  /** False when a rule put it in a category other than Transfers. */
   eligible: boolean;
 }
 
@@ -121,13 +121,24 @@ export function findTransfers(input: {
     return distance;
   };
 
-  // Every possible pair, nearest first; then each leg is used once.
+  // Every possible pair, nearest first; then each leg is used once. The
+  // pool is indexed by amount and currency, so only opposite legs are tried.
+  const byAmount = new Map<string, TransferCandidate[]>();
+  for (const leg of input.pool) {
+    const key = `${leg.amountMinor}|${leg.currency}`;
+    const legs = byAmount.get(key);
+    if (legs) legs.push(leg);
+    else byAmount.set(key, [leg]);
+  }
   const edges = new Map<
     string,
     { debit: TransferCandidate; credit: TransferCandidate; distance: number }
   >();
   for (const subject of input.subjects) {
-    for (const leg of input.pool) {
+    const opposite = byAmount.get(
+      `${-subject.amountMinor}|${subject.currency}`,
+    );
+    for (const leg of opposite ?? []) {
       const distance = distanceIfPair(subject, leg);
       if (distance === null) continue;
       const [debit, credit] =

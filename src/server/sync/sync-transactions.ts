@@ -55,9 +55,6 @@ export type CategorizeHook = (
   transactionIds: string[],
 ) => Promise<void>;
 
-/** A hook that categorises nothing. */
-export const noCategorization: CategorizeHook = async () => {};
-
 export interface SyncTransactionsOptions extends SyncOptions {
   /** Whose calendar days the overlap is counted in; `APP_TIMEZONE`. */
   timeZone?: string;

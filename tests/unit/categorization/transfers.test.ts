@@ -127,7 +127,7 @@ describe("equal amounts that are not transfers", () => {
     ).toEqual([]);
   });
 
-  it("a leg a rule put in a spending or income category", () => {
+  it("a leg a rule put in a category other than Transfers", () => {
     // A grocery purchase that equals a payment a friend sent to savings.
     expect(
       detect([

@@ -366,6 +366,24 @@ describe("the import hook", () => {
     );
   });
 
+  it("does not pair a leg a rule categorised, even in a transfer-kind category", async () => {
+    const checkingId = await newManualAccount("Broker payer");
+    const otherId = await newManualAccount("Broker other");
+    await importRows(checkingId, [
+      ["16.03.2026", "-345,00", "Nordnet Bank", "Kuukausisäästö"],
+    ]);
+    await importRows(otherId, [
+      ["17.03.2026", "345,00", "Kaveri", "Mökkivuokra"],
+    ]);
+    const [nordnet] = await transactionsOf(checkingId);
+    const [credit] = await transactionsOf(otherId);
+    expect(nordnet).toMatchObject({
+      categoryId: await categoryId("Savings & investments/Investments"),
+      transferGroupId: null,
+    });
+    expect(credit.transferGroupId).toBeNull();
+  });
+
   it("marks a payment to an own IBAN as a transfer, joined later by its other leg", async () => {
     const savingsId = await newManualAccount("Savings");
     const iban = `FI${String(randomBytes(4).readUInt32BE()).padStart(16, "0")}`;
