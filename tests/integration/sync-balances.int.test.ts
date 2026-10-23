@@ -475,6 +475,43 @@ describe("syncBalances", () => {
     expect(await accountsOf(connection.id)).toEqual([]);
   });
 
+  it("keeps the previous sync's data when the provider fails halfway", async () => {
+    const connection = await createConnection();
+    const { state, options } = controllableFake();
+    await syncBalances(connection.id, options());
+    const [checking] = await accountsOf(connection.id);
+    const before = await snapshotsOf(checking.id);
+
+    // Next day, with the savings account gone and new amounts: the checking
+    // account would get new snapshots and savings would be archived, but
+    // fetching the checking balances fails after the account list arrived.
+    state.now = DAY_2;
+    state.balanceOffset = 500;
+    state.hiddenRefs.add("fake-savings");
+    state.failBalancesOf = "fake-checking";
+    const result = await syncBalances(connection.id, options());
+
+    expect(result).toMatchObject({
+      status: "failed",
+      errorKind: "unavailable",
+    });
+    expect((await accountsOf(connection.id)).map((a) => a.archived)).toEqual([
+      false,
+      false,
+    ]);
+    expect(await snapshotsOf(checking.id)).toEqual(before);
+    expect(await getConnection(connection.id)).toMatchObject({
+      status: "active",
+      lastSyncedAt: DAY_1,
+    });
+    const runs = await runsOf(connection.id);
+    expect(runs.map((r) => [r.status, r.insertedCount])).toEqual([
+      ["succeeded", 4],
+      ["failed", 0],
+    ]);
+    expect(runs[1].error).toBe("bank went away");
+  });
+
   it("does not call the provider for a connection that is not active", async () => {
     const connection = await createConnection({ status: "revoked" });
     const { state, options } = controllableFake();

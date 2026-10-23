@@ -92,7 +92,7 @@ interface FetchedAccount {
   balances: ProviderBalance[];
 }
 
-const NO_COUNTS: SyncBalancesCounts = {
+const NO_COUNTS: Readonly<SyncBalancesCounts> = {
   accounts: 0,
   accountsAdded: 0,
   accountsArchived: 0,
@@ -136,7 +136,7 @@ export async function syncBalances(
     error,
     errorKind,
     retryAfterMs,
-    counts: NO_COUNTS,
+    counts: { ...NO_COUNTS },
   });
 
   try {
@@ -261,7 +261,7 @@ async function recordProviderFailure(
     errorKind: error.kind,
     retryAfterMs:
       error instanceof ProviderRateLimitError ? error.retryAfterMs : null,
-    counts: NO_COUNTS,
+    counts: { ...NO_COUNTS },
   };
 }
 
