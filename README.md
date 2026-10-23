@@ -27,6 +27,7 @@ cp .env.example .env        # then set POSTGRES_PASSWORD and DATABASE_URL
 pnpm install
 pnpm auth:hash              # paste the printed AUTH_PASSWORD_HASH line into .env
 openssl rand -base64 32     # use as SESSION_SECRET in .env
+openssl rand -base64 32     # a second one as ENCRYPTION_KEY (keep it: it decrypts stored bank sessions)
 ```
 
 Every page asks for that password at `/login` (one user, no accounts); the session lasts 30 days from the last visit.

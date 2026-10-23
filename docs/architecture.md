@@ -57,7 +57,10 @@ src/
                        routes.ts: public paths and the proxy's accessDecision()
   server/              Server-side domain code, shared by app and worker
     env.ts             Typed, validated environment variables (zod; getAuthEnv() for
-                       the login secrets, which only the app needs)
+                       the login secrets, which only the app needs; getEncryptionEnv()
+                       for ENCRYPTION_KEY)
+    crypto.ts          encryptSecret()/decryptSecret(): AES-256-GCM for stored
+                       provider session ids, versioned `v1:` format
     auth/              Password hashing (argon2id), session sealing and re-issue
                        (iron-session), login check with backoff, `pnpm auth:hash` CLI
     db/
@@ -67,7 +70,10 @@ src/
       migrations.ts    applyMigrations(): shared by migrate.ts and the L2 tests
       migrate.ts       Migration runner (used by the `migrate` service and pnpm db:migrate)
     dedupe-hash.ts     Fallback identity of a transaction (normalised date, amount, text)
-    providers/         FinancialProvider interface + implementations     (FIN-005)
+    providers/         FinancialProvider contract: types.ts (interface, DTOs, ids),
+                       errors.ts (typed errors, HTTP status mapping), registry.ts
+                       (id → implementation, BANK_PROVIDER), fake.ts (deterministic
+                       in-memory bank for tests and e2e)
       enable-banking/  Enable Banking client and provider                (FIN-006)
       csv/             CSV import provider                               (FIN-012)
     sync/              Sync orchestration: accounts, balances, txns      (FIN-008/009)
@@ -148,30 +154,35 @@ Planned investment tables (FIN-019): `assets` (ticker or coin, asset class), `ho
 
 ## Provider abstraction
 
-Every data source implements one interface (to be finalized in FIN-005):
+Every data source implements one interface (`src/server/providers/types.ts`, F-005, D-008):
 
 ```ts
 interface FinancialProvider {
-  id: ProviderId; // "enable_banking" | "csv" | later "kraken", "nordnet_csv", ...
-  listAccounts(connection: Connection): Promise<ProviderAccount[]>;
+  readonly id: ProviderId; // "enable_banking" | "csv" | "fake"; later "kraken", ...
+  listAccounts(connection: ProviderConnection): Promise<ProviderAccount[]>;
   getBalances(
-    connection: Connection,
+    connection: ProviderConnection,
     account: ProviderAccountRef,
   ): Promise<ProviderBalance[]>;
   getTransactions(
-    connection: Connection,
+    connection: ProviderConnection,
     account: ProviderAccountRef,
-    range: { from: Date; to?: Date },
+    range: { from: IsoDate; to?: IsoDate }, // inclusive calendar days
   ): Promise<ProviderTransaction[]>;
+  getHoldings?(…): Promise<ProviderHolding[]>; // investment providers (F-019)
 }
 ```
 
-Providers return **normalized** DTOs. Mapping from provider-specific JSON happens inside the provider, and the sync layer only ever sees normalized data. Investment providers will add an optional `getHoldings()`.
+Providers return **normalized** DTOs whose fields mirror the table columns: amounts in signed integer minor units plus an ISO-4217 currency, calendar days as `YYYY-MM-DD` strings, the provider's own ids as `ref` (`provider_account_ref`, `provider_txn_ref`, nullable for transactions), balances with their ISO 20022 `balanceType`. Mapping from provider-specific JSON happens inside the provider, and the sync layer only ever sees normalized data. `ProviderConnection` carries the **decrypted** session id; the caller decrypts `connections.session_ref` with `decryptSecret()`.
+
+- **Errors.** The failures the sync layer handles are typed (`errors.ts`): `ProviderAuthError` (session or consent expired → reconnect), `ProviderRateLimitError` (with `retryAfterMs` when known) and `ProviderUnavailableError` (provider or bank down → retry later), all `ProviderError`s with a `kind` and the `providerId`. HTTP clients map responses with `providerErrorFromStatus()`: 401/403 → auth, 429 → rate limit (parses `Retry-After`), 408/5xx → unavailable, anything else stays a bug.
+- **Registry.** `registry.ts` maps the id stored in `provider` columns to its implementation (`getProvider(id)`, `UnknownProviderError` otherwise); `getBankProvider()` returns the one `BANK_PROVIDER` selects for new bank connections (`enable_banking` by default, registered by F-006).
+- **Fake provider.** `BANK_PROVIDER=fake` registers `createFakeProvider()`: two synthetic EUR accounts (`fake-checking`, `fake-savings`, open since 2025-01-01) whose transactions are a pure function of the account and the day (monthly rent, salary and savings transfer plus hashed card purchases), so every range, call and process sees the same data; balances (`CLBD` yesterday, `ITAV` today including today's pending transactions) equal the opening balance plus that history. Only "today" comes from the clock (`now` option). The session refs `fake:expired`, `fake:rate-limited` and `fake:unavailable` make every call fail with the matching typed error. The L3 server runs with `BANK_PROVIDER=fake`; without it the fake is not registered, so a real installation never serves fake data.
 
 ## Conventions
 
 - **Server code boundary.** Everything under `src/server` must run in plain Node, because the worker imports it. Don't import Next-only modules there (`next/headers`, `server-only`, and so on). Next-specific data access belongs in `src/app` or in `src/server/queries` files that only the app imports.
-- **Environment.** Read the environment only through `getEnv()` from `src/server/env.ts`. Add new variables to its zod schema and to `.env.example`. Variables only the web app needs (the login secrets) are in a second schema read by `getAuthEnv()`, so the worker runs without them.
+- **Environment.** Read the environment only through `getEnv()` from `src/server/env.ts`. Add new variables to its zod schema and to `.env.example`. Variables only the web app needs (the login secrets) are in a second schema read by `getAuthEnv()`, so the worker runs without them; `ENCRYPTION_KEY` has a third (`getEncryptionEnv()`, read on the first encryption), so the migrate job and `/api/health` run without it.
 - **DB access.** Use `getDb()`. It is created lazily, so `next build` works without a database.
 - **UI.** Pages that belong to the app go into `src/app/(app)/` and get the shell from its layout; a page that must not show it (e.g. login) lives outside the group. Components come from shadcn/ui (`pnpm dlx shadcn@latest add <name>` writes them to `src/components/ui`); a new navigation section is one entry in `NAV_ITEMS` (`src/lib/navigation.ts`). Next 16 keeps visited pages mounted but hidden, so e2e locators that are not role based (e.g. `getByTestId`) need `.filter({ visible: true })`.
 - **Cache Components** are enabled (`cacheComponents: true`). Anything reading cookies or DB data at request time must sit behind `<Suspense>` or call `connection()`. See `node_modules/next/dist/docs/` for Next 16 specifics.
@@ -182,6 +193,6 @@ Providers return **normalized** DTOs. Mapping from provider-specific JSON happen
 - Single-user login protects every page and route except `/login` and `/api/health` (FIN-004, D-007), even though the app runs locally. `AUTH_PASSWORD_HASH` holds an argon2id hash of the one password (`pnpm auth:hash`). A login sets `pf_session`: an iron-session seal (`SESSION_SECRET`) of the issue time, `httpOnly`, `sameSite=lax`, `secure` in production, valid 30 days and re-issued by the proxy once a day (not on Server Action calls, which may change the cookie themselves: logout deletes it), so it expires 30 days after the last visit. Sessions are stateless: logout deletes the cookie, rotating `SESSION_SECRET` signs out every browser. After 5 consecutive wrong passwords each attempt waits 1 s, 2 s, 4 s, … (at most 15 min) after the last failure; the counter is in memory and global, so a persistent attacker who can reach the app could keep the owner locked out (accepted: the app is bound to `127.0.0.1`; a restart clears it). `/api/health` is answered before the session check, so it works even when the login secrets are missing.
 - `src/proxy.ts` only redirects optimistically. Server Components, Server Actions and Route Handlers that touch data call `verifySession()` (`src/lib/auth/session.ts`) themselves; a Server Action is a POST to its page and must never rely on the proxy matcher. `getSession()` awaits `io()` (`next/cache`) before it checks the expiry, because with Cache Components a clock read after `cookies()` still counts as prerendering in the runtime prefetch (`Date.now()` → logged `blocking-prerender-current-time` error); other request-time code that reads the clock needs the same.
 - The Enable Banking private key lives in `./secrets/` (gitignored) and is mounted read-only.
-- Session and consent identifiers are encrypted at rest with AES-256-GCM, using `ENCRYPTION_KEY`.
+- Session and consent identifiers are encrypted at rest with AES-256-GCM, using `ENCRYPTION_KEY` (32 random bytes, base64): `encryptSecret()` / `decryptSecret()` in `src/server/crypto.ts` write `v1:<iv>:<ciphertext>:<tag>` (base64url, fresh 12-byte IV, 16-byte tag, the version authenticated as additional data) and reject tampered values, the wrong key and non-canonical encodings with `DecryptionError`. Losing the key means reconnecting the banks; rotating it needs a re-encryption step (a future `v2` or key id, not built yet).
 - The database and app ports are bound to `127.0.0.1`.
 - The integration is read-only (account information only). The app never initiates payments.

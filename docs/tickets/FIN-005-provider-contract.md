@@ -23,3 +23,4 @@
 ## Notes
 
 - Replaces old FIN-005 plus the encryption helper from old FIN-007. Plain Node only: the worker imports it.
+- Choices made without a human (D-008): ranges are inclusive `YYYY-MM-DD` strings, not the architecture sketch's `Date`s; providers get the decrypted session id (`ProviderConnection`); `ENCRYPTION_KEY` (32 bytes, base64) has its own schema `getEncryptionEnv()` in `src/server/env.ts` instead of joining the main one, so the migrate job runs without it; the fake is registered only when `BANK_PROVIDER=fake`; its failure modes are special session refs (`fake:expired`, `fake:rate-limited`, `fake:unavailable`); ciphertext format `v1:<iv>:<ciphertext>:<tag>` (base64url). Compose does not pass `ENCRYPTION_KEY` yet (F-007, the first runtime user).

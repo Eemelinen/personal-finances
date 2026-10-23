@@ -130,7 +130,7 @@
       "area": "banking",
       "title": "Provider contract, fake provider and token encryption",
       "user_visible_behavior": "`src/server/providers` defines the `FinancialProvider` interface with normalised account, balance and transaction DTOs (minor units plus currency), a registry by provider id, typed errors (auth expired, rate limited, unavailable) and a deterministic in-memory fake provider used by tests and the e2e environment. `src/server/crypto.ts` encrypts and decrypts stored session ids with AES-256-GCM using `ENCRYPTION_KEY`.",
-      "status": "not_started",
+      "status": "in_progress",
       "depends_on": ["F-002"],
       "ticket": "FIN-005",
       "spec": "docs/tickets/FIN-005-provider-contract.md",
