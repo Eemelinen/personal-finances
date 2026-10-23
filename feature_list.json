@@ -193,7 +193,7 @@
       "area": "banking",
       "title": "Sync accounts and balances",
       "user_visible_behavior": "`syncBalances(connectionId)` adds new accounts, archives vanished ones, upserts one balance snapshot per account per day and balance type, writes a `sync_runs` row with status and counts, updates `last_synced_at`, and marks the connection expired instead of failing when the provider reports an auth error.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-002", "F-005"],
       "ticket": "FIN-008",
       "spec": "docs/tickets/FIN-008-sync-accounts-and-balances.md",
@@ -201,7 +201,12 @@
         "L1: pnpm check",
         "L2: pnpm test:integration tests/integration/sync-balances.int.test.ts (fake provider: new and archived accounts, same-day upsert, auth error marks the connection expired)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-23 pnpm check → pass (commit 46964bb)",
+        "2026-10-23 pnpm test:integration tests/integration/sync-balances.int.test.ts → pass (commit 46964bb, Docker available)",
+        "2026-10-23 pnpm check → pass (commit 99afad4)",
+        "2026-10-23 pnpm test:integration tests/integration/sync-balances.int.test.ts → pass (commit 99afad4, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Replaces old FIN-008. Depends only on the provider contract, so it can be built before the connect flow."
     },

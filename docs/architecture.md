@@ -76,7 +76,9 @@ src/
                        in-memory bank for tests and e2e)
       enable-banking/  Enable Banking client and provider                (FIN-006)
       csv/             CSV import provider                               (FIN-012)
-    sync/              Sync orchestration: accounts, balances, txns      (FIN-008/009)
+    sync/              Sync orchestration: sync-balances.ts (accounts + balance
+                       snapshots, F-008), balance-types.ts (display balance type);
+                       transactions                                      (FIN-009)
     categorization/    Rule engine, transfer detection                   (FIN-014)
     queries/           Read models for the dashboard                     (FIN-016+)
   worker/
@@ -178,6 +180,17 @@ Providers return **normalized** DTOs whose fields mirror the table columns: amou
 - **Errors.** The failures the sync layer handles are typed (`errors.ts`): `ProviderAuthError` (session or consent expired → reconnect), `ProviderRateLimitError` (with `retryAfterMs` when known) and `ProviderUnavailableError` (provider or bank down → retry later), all `ProviderError`s with a `kind` and the `providerId`. HTTP clients map responses with `providerErrorFromStatus()`: 401/403 → auth, 429 → rate limit (parses `Retry-After`), 408/5xx → unavailable, anything else stays a bug.
 - **Registry.** `registry.ts` maps the id stored in `provider` columns to its implementation (`getProvider(id)`, `UnknownProviderError` otherwise); `getBankProvider()` returns the one `BANK_PROVIDER` selects for new bank connections (`enable_banking` by default, registered by F-006).
 - **Fake provider.** `BANK_PROVIDER=fake` registers `createFakeProvider()`: two synthetic EUR accounts (`fake-checking`, `fake-savings`, open since 2025-01-01) whose transactions are a pure function of the account and the day (monthly rent, salary and savings transfer plus hashed card purchases), so every range, call and process sees the same data; balances (`CLBD` yesterday, `ITAV` today including today's pending transactions) equal the opening balance plus that history. Only "today" comes from the clock (`now` option), as a UTC date, so between 00:00 and 03:00 Helsinki time the fake's today (and its pending day) is the previous local day; tests that compare against the app's local day should inject `now`. The session refs `fake:expired`, `fake:rate-limited` and `fake:unavailable` make every call fail with the matching typed error. The L3 server runs with `BANK_PROVIDER=fake`; without it the fake is not registered, so a real installation never serves fake data.
+
+## Balance sync
+
+`syncBalances(connectionId)` (`src/server/sync/sync-balances.ts`, F-008, D-009) syncs one connection's accounts and balances:
+
+- It writes one `sync_runs` row per call (`running` → `succeeded`/`failed`, `accounts_count` = accounts listed, `fetched_count` = balances returned, `inserted_count`/`updated_count` = snapshots added or changed) and, on success, sets `connections.last_synced_at`.
+- It fetches everything first (`listAccounts`, then `getBalances` per account, one request at a time) and writes in one transaction, so a provider failure halfway leaves the stored data unchanged.
+- Accounts are matched by `(connection_id, provider_account_ref)`: new ones are added under the connection's institution, known ones updated, archived ones the provider lists again restored, and the connection's accounts it no longer lists are archived with their history kept. Accounts of other connections and manual accounts are never touched.
+- Snapshots upsert on `(account_id, date, balance_type)` with the day the provider reports for the balance; a same-day re-sync overwrites the amount, an unchanged one is not rewritten.
+- A `ProviderError` is recorded on the run and returned (`status: "failed"`, `errorKind`, `retryAfterMs`), never thrown; `auth_expired` (or a connection without a session) also sets the connection to `expired`. A connection that is not `active` gets a failed run (`not_active`) without a provider call. Any other error (wrong `ENCRYPTION_KEY`, unknown provider, database failure) fails the run and is rethrown. Two syncs of one connection must not overlap; F-010's advisory lock ensures that.
+- Which balance type a view shows is `pickDisplayBalance()` in `balance-types.ts`: `ITAV`, `CLAV`, `ITBD`, `CLBD`, `XPCD`, `OPAV`, `OPBD` by default, with per-bank overrides keyed by `institutions.provider_ref` (empty until the F-001 findings).
 
 ## Conventions
 
