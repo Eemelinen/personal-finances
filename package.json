@@ -9,7 +9,7 @@
     "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "worker": "tsx --env-file-if-exists=.env src/worker/index.ts",
     "worker:dev": "tsx watch --env-file-if-exists=.env src/worker/index.ts",
     "db:generate": "drizzle-kit generate",

@@ -20,6 +20,7 @@ decision changes an earlier one, amend the earlier entry in place and say why.
   - Unit tests live in `tests/unit/**` (a Vitest project), so the harness tests in `tests/unit/harness/` validate the real `feature_list.json` on every `pnpm check`.
   - The clean-state check forbids added `console.log` in `src/` and allows `console.info/warn/error`, because the repo has no logger; there are no coverage thresholds yet, so that check was removed rather than kept as an always-pass.
   - CI is one job named `Verify`; the features that add L2/L3 add steps to it, so the required status check never changes name.
+  - `pnpm typecheck` runs `next typegen` before `tsc`: route types (`LayoutProps`, …) and `next-env.d.ts` are generated and gitignored, and a fresh worktree or CI runner has only committed files (acceptance check 9 caught this).
 - Consequences: one manual for every agent (`AGENTS.md`, imported by `CLAUDE.md`); the session loop (read state → one feature → verify → write state) is enforced by scripts and hooks rather than prose; status lives only in `feature_list.json` and only scripts change it.
 
 ## D-002 · Driver-run sessions: local loop, auto permissions, PR per feature, opt-in Stop hook (2026-10-23)
