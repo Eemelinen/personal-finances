@@ -90,6 +90,16 @@ describe("encryptSecret / decryptSecret", () => {
   });
 });
 
+const BASE64 =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+/** 32 bytes leave 2 unused bits in the last character: flip one of them. */
+function respellLastChar(encoded: string): string {
+  const last = encoded.at(-2)!;
+  const alias = BASE64[BASE64.indexOf(last) ^ 1];
+  return `${encoded.slice(0, -2)}${alias}=`;
+}
+
 describe("parseEncryptionEnv", () => {
   it("decodes a base64 key", () => {
     const env = parseEncryptionEnv({ ENCRYPTION_KEY: key.toString("base64") });
@@ -103,6 +113,9 @@ describe("parseEncryptionEnv", () => {
     "short",
     randomBytes(16).toString("base64"),
     "x".repeat(44),
+    // base64url and a respelled last character decode to 32 bytes too.
+    key.toString("base64url"),
+    respellLastChar(key.toString("base64")),
   ])("rejects %j", (value) => {
     expect(() => parseEncryptionEnv({ ENCRYPTION_KEY: value })).toThrow(
       /ENCRYPTION_KEY/,

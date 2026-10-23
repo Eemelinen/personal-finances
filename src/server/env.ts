@@ -35,14 +35,12 @@ const authEnvSchema = z.object({
 // The app and the worker need this once they store or read provider
 // sessions; the migrate job does not, so it is validated separately too.
 const encryptionEnvSchema = z.object({
-  // 32 random bytes, base64 (`openssl rand -base64 32`); holds the bytes after
-  // parsing.
+  // 32 random bytes in canonical base64 (`openssl rand -base64 32`), so the
+  // key has one spelling; holds the bytes after parsing.
   ENCRYPTION_KEY: z.string().transform((value, ctx) => {
     const trimmed = value.trim();
-    const key = /^[A-Za-z0-9+/_-]+={0,2}$/.test(trimmed)
-      ? Buffer.from(trimmed, "base64")
-      : undefined;
-    if (key?.length !== 32) {
+    const key = Buffer.from(trimmed, "base64");
+    if (key.length !== 32 || key.toString("base64") !== trimmed) {
       ctx.addIssue({
         code: "custom",
         message: "must be 32 bytes, base64-encoded (openssl rand -base64 32)",
