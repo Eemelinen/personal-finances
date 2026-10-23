@@ -2,14 +2,18 @@
 
 A self-hosted personal finance dashboard. It syncs balances and transactions from **Nordea** and **S-Pankki** through open banking APIs, shows what money is spent on, and is built to add **stocks and crypto** holdings later.
 
-> **Status:** the project scaffold is done (FIN-002). Features are next, ticket by ticket.
+> **Status:** scaffold and agent harness are in place (F-000). Features are built one per session from [feature_list.json](feature_list.json); current state is in [PROGRESS.md](PROGRESS.md).
 
 ## Documentation
 
 | Doc                                                | What's in it                                                        |
 | -------------------------------------------------- | ------------------------------------------------------------------- |
 | [Project plan](docs/plan.md)                       | Goals, scope, bank API access strategy, milestones, MVP order       |
-| [Feature tickets](docs/tickets/README.md)          | All tickets by milestone, with status and dependencies              |
+| [Feature tickets](docs/tickets/README.md)          | One ticket per harness feature, by milestone, with dependencies     |
+| [AGENTS.md](AGENTS.md)                             | Agent operating manual: session loop, verification layers, rules    |
+| [PROGRESS.md](PROGRESS.md)                         | Current verified state, next steps, session log                     |
+| [Agent harness](docs/harness/README.md)            | How sessions and the unattended loop work                           |
+| [Decisions](docs/DECISIONS.md)                     | Decision log                                                        |
 | [API access research](docs/api-access-research.md) | Free API options for Nordea, S-Pankki, Nordnet and Kraken           |
 | [Architecture](docs/architecture.md)               | Services, directory layout, sync data flow, data model, conventions |
 | [Tech stack](docs/tech-stack.md)                   | Technologies and versions, and why they were chosen                 |
@@ -39,25 +43,40 @@ docker compose up --build -d
 **Option B: database in Docker, app and worker on the host (best for development)**
 
 ```sh
-docker compose up -d db
+pnpm db:up
 pnpm db:migrate
 pnpm dev          # Next.js on http://localhost:3000
 pnpm worker:dev   # in another terminal: scheduled jobs
 ```
 
+## Working on it with the agent harness
+
+```sh
+./init.sh                  # install, tooling checks, L1 baseline
+pnpm harness:feature next  # next ready feature
+```
+
+In Claude Code: `/clock-in`, implement, `/verify-feature F-NNN`, `/clock-out`. Unattended: `pnpm harness:loop --once` (see [docs/harness/README.md](docs/harness/README.md) for prerequisites).
+
 ## Scripts
 
-| Script                              | Description                                   |
-| ----------------------------------- | --------------------------------------------- |
-| `pnpm dev`                          | Next.js dev server                            |
-| `pnpm build` / `pnpm start`         | Production build / start                      |
-| `pnpm worker` / `pnpm worker:dev`   | Run the background worker (with watch in dev) |
-| `pnpm db:generate`                  | Generate a SQL migration from schema changes  |
-| `pnpm db:migrate`                   | Apply migrations                              |
-| `pnpm db:studio`                    | Browse the database with Drizzle Studio       |
-| `pnpm test` / `pnpm test:watch`     | Unit tests (Vitest)                           |
-| `pnpm lint` / `pnpm typecheck`      | ESLint / TypeScript checks                    |
-| `pnpm format` / `pnpm format:check` | Prettier                                      |
+| Script                               | Description                                   |
+| ------------------------------------ | --------------------------------------------- |
+| `pnpm dev`                           | Next.js dev server                            |
+| `pnpm build` / `pnpm start`          | Production build / start                      |
+| `pnpm worker` / `pnpm worker:dev`    | Run the background worker (with watch in dev) |
+| `pnpm db:generate`                   | Generate a SQL migration from schema changes  |
+| `pnpm db:migrate`                    | Apply migrations                              |
+| `pnpm db:studio`                     | Browse the database with Drizzle Studio       |
+| `pnpm test:unit` / `pnpm test:watch` | Unit tests (Vitest project `unit`)            |
+| `pnpm check`                         | L1: lint, typecheck, format check, unit tests |
+| `pnpm check:full`                    | `check` + production build                    |
+| `pnpm db:up` / `pnpm db:down`        | Start / stop the dev database (Docker)        |
+| `pnpm harness:feature list`          | Feature queue with ready markers              |
+| `pnpm harness:verify F-NNN`          | Run a feature's layers, record evidence       |
+| `pnpm harness:loop`                  | Unattended loop: one session + PR per feature |
+| `pnpm lint` / `pnpm typecheck`       | ESLint / TypeScript checks                    |
+| `pnpm format` / `pnpm format:check`  | Prettier                                      |
 
 ## Project structure
 
@@ -67,7 +86,10 @@ src/server/     Domain code shared by the app and the worker (env, db, providers
 src/worker/     Background worker entrypoint and job registry
 drizzle/        Generated SQL migrations
 secrets/        Private keys, gitignored
-docs/           Plan, architecture, tech stack, tickets
+tests/          Unit (L1), later integration (L2) and e2e (L3) tests
+scripts/        Agent harness scripts
+.claude/        Claude Code settings, hooks, skills, evaluator
+docs/           Plan, architecture, tech stack, tickets, decisions, harness docs
 ```
 
 See [docs/architecture.md](docs/architecture.md) for details.

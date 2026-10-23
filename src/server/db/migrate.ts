@@ -7,13 +7,13 @@ const migrationsFolder = path.resolve("drizzle");
 
 async function main() {
   if (!existsSync(path.join(migrationsFolder, "meta", "_journal.json"))) {
-    console.log("No migrations generated yet, nothing to apply.");
+    console.info("No migrations generated yet, nothing to apply.");
     return;
   }
 
   try {
     await migrate(getDb(), { migrationsFolder });
-    console.log("Migrations applied.");
+    console.info("Migrations applied.");
   } finally {
     await closeDb();
   }

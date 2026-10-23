@@ -12,7 +12,7 @@ for (const job of jobs) {
       const startedAt = Date.now();
       try {
         await job.run();
-        console.log(`[${job.name}] ok in ${Date.now() - startedAt} ms`);
+        console.info(`[${job.name}] ok in ${Date.now() - startedAt} ms`);
       } catch (error) {
         console.error(`[${job.name}] failed:`, error);
       }
@@ -21,12 +21,12 @@ for (const job of jobs) {
   );
 }
 
-console.log(
+console.info(
   `Worker started with ${jobs.length} job(s): ${jobs.map((j) => j.name).join(", ")}`,
 );
 
 async function shutdown(signal: string) {
-  console.log(`Received ${signal}, shutting down worker.`);
+  console.info(`Received ${signal}, shutting down worker.`);
   await cron.shutdown();
   await closeDb();
   process.exit(0);

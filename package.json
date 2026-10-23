@@ -17,7 +17,17 @@
     "db:studio": "drizzle-kit studio",
     "test": "pnpm test:unit",
     "test:unit": "vitest run --project unit",
-    "test:watch": "vitest --project unit"
+    "test:watch": "vitest --project unit",
+    "db:up": "docker compose up -d --wait db",
+    "db:down": "docker compose down",
+    "check": "pnpm lint && pnpm typecheck && pnpm format:check && pnpm test:unit",
+    "check:full": "pnpm check && pnpm build",
+    "harness:check": "tsx scripts/validate-feature-list.ts",
+    "harness:feature": "tsx scripts/harness-feature.ts",
+    "harness:verify": "tsx scripts/verify-feature.ts",
+    "harness:clean-state": "bash scripts/clean-state-check.sh",
+    "harness:loop": "tsx scripts/harness-loop.ts",
+    "harness:report": "tsx scripts/harness-loop.ts --report"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.4",

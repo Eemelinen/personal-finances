@@ -44,3 +44,6 @@ next-env.d.ts
 # secrets (bank API private keys etc.)
 /secrets/*
 !/secrets/.gitkeep
+
+# harness — driver traces, run log and stop-hook counters (phase 2)
+.harness/
