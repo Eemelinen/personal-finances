@@ -47,8 +47,11 @@ src/
     env.ts             Typed, validated environment variables (zod)
     db/
       client.ts        Drizzle client (postgres.js pool), lazily created
-      schema/          Table definitions, one file per domain area
-      migrate.ts       Migration runner (used by the `migrate` service)
+      schema/          Table definitions, one file per domain area (banking, categories,
+                       transactions, sync; shared column builders in columns.ts)
+      migrations.ts    applyMigrations(): shared by migrate.ts and the L2 tests
+      migrate.ts       Migration runner (used by the `migrate` service and pnpm db:migrate)
+    dedupe-hash.ts     Fallback identity of a transaction (normalised date, amount, text)
     providers/         FinancialProvider interface + implementations     (FIN-005)
       enable-banking/  Enable Banking client and provider                (FIN-006)
       csv/             CSV import provider                               (FIN-012)
@@ -60,7 +63,7 @@ src/
     jobs.ts            Job registry (name, cron schedule, run function)
 tests/
   unit/                Vitest unit project (L1)
-  integration/         Vitest + Testcontainers Postgres (L2)                 (FIN-002)
+  integration/         Vitest + Testcontainers Postgres 18 (L2); helpers/postgres.ts
   e2e/                 Playwright against the built app (L3)                 (FIN-003)
   fixtures/            Synthetic or anonymised fixtures only, never real data
 drizzle/               Generated SQL migrations (committed)
@@ -102,7 +105,7 @@ sequenceDiagram
 
 ## Data model
 
-These are the planned core tables (FIN-002). Amounts are stored as **integer minor units** (cents) together with an ISO-4217 currency code. Floats are never used for money.
+The core tables (F-002, `src/server/db/schema/`, first migration `drizzle/0000_init.sql`). Amounts are stored as **integer minor units** (cents, `bigint`, read as a JS `number`) together with an ISO-4217 `char(3)` currency code. Floats are never used for money. Every id is a `uuid`; every point in time is `timestamptz`; calendar days (`booking_date`, `value_date`, snapshot `date`) are `date`. Every table has `created_at` / `updated_at`.
 
 | Table               | Purpose                                   | Key columns                                                                                                                                                                                                        |
 | ------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -114,6 +117,14 @@ These are the planned core tables (FIN-002). Amounts are stored as **integer min
 | `categories`        | Spending/income categories (hierarchical) | `id`, `name`, `parent_id?`, `kind` (`expense`, `income`, `transfer`), `color`                                                                                                                                      |
 | `category_rules`    | Auto-categorization rules                 | `id`, `category_id`, `match_field`, `match_type`, `pattern`, `priority`                                                                                                                                            |
 | `sync_runs`         | Sync log                                  | `id`, `connection_id`, `started_at`, `finished_at`, `status`, `error`, counts                                                                                                                                      |
+
+Enums: `account_type` (`checking`, `savings`, `brokerage`, `crypto`), `connection_status` (`active`, `expired`, `revoked`, `archived`), `transaction_status` (`booked`, `pending`), `category_source` (`none`, `rule`, `manual`), `category_kind` (`expense`, `income`, `transfer`), `rule_match_field` (`counterparty`, `description`), `rule_match_type` (`contains`, `equals`, `regex`), `sync_status` (`running`, `succeeded`, `failed`). `provider` columns are open text so a new provider needs no migration; `balance_type` holds the provider's ISO 20022 code (`CLBD`, `ITAV`, …).
+
+Idempotency constraints (syncs and imports upsert on them):
+
+- `transactions`: unique `(account_id, provider_txn_ref)` (NULL refs never collide) and unique `(account_id, dedupe_hash)`, where `dedupe_hash` is `dedupeHash()` from `src/server/dedupe-hash.ts`: SHA-256 of the normalised booking date, amount, counterparty and description. Indexes on `(account_id, booking_date)`, `category_id` and `transfer_group_id`.
+- `balance_snapshots`: unique `(account_id, date, balance_type)`.
+- `categories`: unique `(parent_id, name)` with `NULLS NOT DISTINCT`, so seeded top-level names are unique too; `institutions`: unique `(provider, provider_ref)`.
 
 Planned investment tables (FIN-019): `assets` (ticker or coin, asset class), `holdings` (account + asset + quantity), `investment_transactions` (buy, sell, dividend) and `prices` (asset, date, price). Brokerage and crypto accounts reuse `accounts`, so net worth is a single query across every account type.
 

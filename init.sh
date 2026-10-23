@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Standard startup and verification path (course: learn-harness-engineering).
 #   ./init.sh                 install + tooling checks + L1 baseline (`pnpm check`)
+#                             (L2 `pnpm test:integration` needs Docker; run it per feature)
 #   FAST=1 ./init.sh          skip the baseline (tooling checks only)
 #   RUN_START_COMMAND=1 ./init.sh   additionally start Docker services and `pnpm dev`
 set -euo pipefail
@@ -35,7 +36,7 @@ fi
 if docker info >/dev/null 2>&1; then
   echo "docker: running (dev database via pnpm db:up)"
 else
-  warn "Docker is not running — pnpm db:up and any L2/L3 layer (AGENTS.md) are unavailable"
+  warn "Docker is not running — pnpm db:up and L2 (pnpm test:integration, Testcontainers) are unavailable"
 fi
 
 step "Installing dependencies"
@@ -54,6 +55,7 @@ fi
 step "Start commands"
 echo "  pnpm db:up && pnpm db:migrate && pnpm dev   # http://localhost:3000 (health: /api/health)"
 echo "  pnpm worker:dev                              # scheduled jobs, in another terminal"
+echo "  pnpm test:integration                        # L2: Testcontainers Postgres 18 (needs Docker)"
 
 if [ "${RUN_START_COMMAND:-0}" = "1" ]; then
   step "Starting the app"

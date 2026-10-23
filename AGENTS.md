@@ -28,12 +28,12 @@ Claude Code: `/harness:clock-in` runs these steps; the SessionStart hook prints 
 | Layer | Command                 | Covers                                                    | Needs                                  |
 | ----- | ----------------------- | --------------------------------------------------------- | -------------------------------------- |
 | L1    | `pnpm check`            | lint, typecheck, format:check, unit tests (incl. harness) | nothing                                |
-| L2    | `pnpm test:integration` | DB schema, migrations, sync, queries (Testcontainers)     | Docker Desktop — **added by F-002**    |
+| L2    | `pnpm test:integration` | DB schema, migrations, sync, queries (Testcontainers)     | Docker Desktop                         |
 | L3    | `pnpm test:e2e`         | Playwright against the built app                          | Docker + browsers — **added by F-003** |
 
 - Layers run in order. Do not proceed to layer N+1 while layer N fails, and do not skip a layer a feature lists.
 - L3 is required when a change crosses component boundaries (UI + server/DB/worker).
-- The repository is in a consistent state when `pnpm check` exits 0. `pnpm check:full` adds a production build (and L2 once F-002 adds it).
+- The repository is in a consistent state when `pnpm check` exits 0. `pnpm check:full` adds L2 and a production build.
 - The feature that introduces L2 or L3 also updates this table, `check:full`, `init.sh`, the session-start hook and the CI `Verify` job.
 - `pnpm harness:check` validates `feature_list.json`; it also runs from `pnpm check` and lint-staged.
 - `pnpm harness:verify F-NNN` runs a feature's layers in order and records evidence; `manual:` steps fail closed. `pnpm harness:clean-state` is the machine-checkable clock-out gate.

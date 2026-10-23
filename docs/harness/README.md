@@ -31,7 +31,9 @@ repository, never here.
 
 - **Layers.**
   - L1 is `pnpm check`: lint, typecheck, format, `harness:check` and unit tests.
-  - L2 (`pnpm test:integration`, Testcontainers Postgres) arrives with F-002.
+  - L2 is `pnpm test:integration`: Vitest project `integration` (`tests/integration/**/*.int.test.ts`);
+    each file starts its own throwaway Postgres 18 with `startTestDatabase()` from
+    `tests/integration/helpers/postgres.ts`, which applies the committed migrations.
   - L3 (`pnpm test:e2e`, Playwright) arrives with F-003.
   - L2 and L3 need Docker. `harness verify` refuses to run them without it, and `services.up`
     (`pnpm db:up`) runs once in the driver preflight.

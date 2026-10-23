@@ -26,3 +26,11 @@
 
 - Replaces old FIN-003. Investment tables are F-019.
 - `casing: "snake_case"` is configured: TS fields camelCase, columns snake_case.
+- Implemented 2026-10-23 (D-005). Choices beyond the acceptance criteria, all made without a human:
+  - "`timestamptz` everywhere" is read as every _point in time_; calendar days (`transactions.booking_date`, `value_date`, `balance_snapshots.date`) are `date`, because banks report them as days and a timestamp would shift them across midnight.
+  - `bigint` money columns are read as JS `number` (`mode: "number"`, exact up to 2^53 minor units) so DTOs and JSON stay plain.
+  - `provider` is open `text`, not an enum; `balance_type` holds the provider's ISO 20022 code as text. The closed sets are Postgres enums (see docs/architecture.md → Data model).
+  - Every table has `created_at` / `updated_at` (also `balance_snapshots` and `sync_runs`, which syncs update). Extra constraints: unique `(provider, provider_ref)` on institutions and `(parent_id, name)` `NULLS NOT DISTINCT` on categories, for idempotent seeding (F-014).
+  - The unique constraints have explicit snake_case names (Drizzle would derive camelCase ones from the TS keys under `casing: "snake_case"`).
+  - "`docker compose up` applies it" is covered by an L2 test that runs `src/server/db/migrate.ts` (the `migrate` service's command) against a fresh database; unattended sessions may not run Docker Compose.
+- Known limit for F-009 / F-012: two genuinely identical transactions on one day (same amount, counterparty and description, no provider ref) share a `dedupe_hash`, so the second is rejected. The importer must disambiguate them (for example an occurrence counter in the hashed input) if the bank data contains such pairs.
