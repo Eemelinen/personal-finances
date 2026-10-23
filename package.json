@@ -10,13 +10,14 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
     "worker": "tsx --env-file-if-exists=.env src/worker/index.ts",
     "worker:dev": "tsx watch --env-file-if-exists=.env src/worker/index.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file-if-exists=.env src/server/db/migrate.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "test": "pnpm test:unit",
+    "test:unit": "vitest run --project unit",
+    "test:watch": "vitest --project unit"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.4",
