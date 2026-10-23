@@ -73,8 +73,8 @@ function controllableFake() {
         amountMinor: balance.amountMinor + state.balanceOffset,
       }));
     },
-    getTransactions: (connection, account, range) =>
-      fake.getTransactions(connection, account, range),
+    getTransactions: (connection, account, range, continuationKey) =>
+      fake.getTransactions(connection, account, range, continuationKey),
   };
   const options = (): SyncBalancesOptions => ({
     db: testDb.db,

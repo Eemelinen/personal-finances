@@ -13,7 +13,9 @@ import {
   FAKE_ACCOUNTS,
   FAKE_RETRY_AFTER_MS,
   FAKE_SESSION_REFS,
+  FAKE_TRANSACTION_PAGE_SIZE,
 } from "@/server/providers/fake";
+import { fetchAllTransactions } from "@/server/providers/paging";
 import {
   createProviderRegistry,
   defaultProviders,
@@ -35,7 +37,7 @@ function stubProvider(id: FinancialProvider["id"]): FinancialProvider {
     id,
     listAccounts: async () => [],
     getBalances: async () => [],
-    getTransactions: async () => [],
+    getTransactions: async () => ({ transactions: [], continuationKey: null }),
   };
 }
 
@@ -168,10 +170,18 @@ describe("fake provider", () => {
 
   it("returns the same transactions on every call and from every instance", async () => {
     const range = { from: "2026-09-01", to: "2026-09-30" };
-    const first = await fake.getTransactions(session, checking.ref, range);
-    const second = await createFakeProvider({
-      now: () => new Date("2027-01-01T00:00:00Z"),
-    }).getTransactions(session, checking.ref, range);
+    const first = await fetchAllTransactions(
+      fake,
+      session,
+      checking.ref,
+      range,
+    );
+    const second = await fetchAllTransactions(
+      createFakeProvider({ now: () => new Date("2027-01-01T00:00:00Z") }),
+      session,
+      checking.ref,
+      range,
+    );
 
     expect(first.length).toBeGreaterThan(3);
     expect(second).toEqual(first);
@@ -185,11 +195,11 @@ describe("fake provider", () => {
 
   it("returns a day's transactions the same whatever range contains it", async () => {
     const day = "2026-10-15";
-    const alone = await fake.getTransactions(session, checking.ref, {
+    const alone = await fetchAllTransactions(fake, session, checking.ref, {
       from: day,
       to: day,
     });
-    const month = await fake.getTransactions(session, checking.ref, {
+    const month = await fetchAllTransactions(fake, session, checking.ref, {
       from: "2026-10-01",
       to: "2026-10-20",
     });
@@ -204,7 +214,7 @@ describe("fake provider", () => {
   });
 
   it("returns well-formed DTOs in integer minor units with unique refs", async () => {
-    const txns = await fake.getTransactions(session, checking.ref, {
+    const txns = await fetchAllTransactions(fake, session, checking.ref, {
       from: "2025-01-01",
     });
     const refs = new Set(txns.map((txn) => txn.ref));
@@ -218,7 +228,7 @@ describe("fake provider", () => {
   });
 
   it("clamps the range to the account's life and today, today pending", async () => {
-    const txns = await fake.getTransactions(session, checking.ref, {
+    const txns = await fetchAllTransactions(fake, session, checking.ref, {
       from: "2020-01-01",
       to: "2030-01-01",
     });
@@ -229,7 +239,7 @@ describe("fake provider", () => {
     expect(dates.at(-1)! <= "2026-10-23").toBe(true);
     expect(pending.every((txn) => txn.bookingDate === "2026-10-23")).toBe(true);
     expect(
-      await fake.getTransactions(session, checking.ref, {
+      await fetchAllTransactions(fake, session, checking.ref, {
         from: "2026-10-24",
       }),
     ).toEqual([]);
@@ -245,7 +255,7 @@ describe("fake provider", () => {
       [checking, 250_000],
       [savings, 1_000_000],
     ] as const) {
-      const txns = await fake.getTransactions(session, account.ref, {
+      const txns = await fetchAllTransactions(fake, session, account.ref, {
         from: "2025-01-01",
       });
       const balances = await fake.getBalances(session, account.ref);
@@ -298,4 +308,87 @@ describe("fake provider", () => {
       fake.getTransactions(session, checking.ref, { from: "2026-02-30" }),
     ).rejects.toThrow(RangeError);
   });
+});
+
+describe("transaction paging", () => {
+  const range = { from: "2026-01-01", to: "2026-03-31" };
+
+  it("splits a listing into pages that add up to the whole", async () => {
+    const paged = createFakeProvider({
+      now: () => NOW,
+      transactionPageSize: 7,
+    });
+    const first = await paged.getTransactions(session, checking.ref, range);
+    const second = await paged.getTransactions(
+      session,
+      checking.ref,
+      range,
+      first.continuationKey!,
+    );
+    const whole = await fetchAllTransactions(
+      createFakeProvider({ now: () => NOW, transactionPageSize: 10_000 }),
+      session,
+      checking.ref,
+      range,
+    );
+
+    expect(first.transactions).toHaveLength(7);
+    expect(first.continuationKey).toBe("7");
+    expect(second.transactions).toEqual(whole.slice(7, 14));
+    expect(
+      await fetchAllTransactions(paged, session, checking.ref, range),
+    ).toEqual(whole);
+    expect(whole.length).toBeGreaterThan(FAKE_TRANSACTION_PAGE_SIZE / 2);
+  });
+
+  it("starts at the oldest available day when the range has no start", async () => {
+    const all = await fetchAllTransactions(fake(), session, checking.ref, {});
+
+    expect(all[0].bookingDate).toBe("2025-01-01");
+    expect(all).toEqual(
+      await fetchAllTransactions(fake(), session, checking.ref, {
+        from: "2025-01-01",
+      }),
+    );
+  });
+
+  it("rejects continuation keys the fake did not hand out", async () => {
+    for (const key of ["", "0", "-5", "abc", "07"]) {
+      await expect(
+        fake().getTransactions(session, checking.ref, range, key),
+      ).rejects.toThrow(/Invalid fake continuation key/);
+    }
+  });
+
+  it("stops a provider that keeps paging", async () => {
+    let calls = 0;
+    const looping: FinancialProvider = {
+      ...stubProvider("fake"),
+      getTransactions: async () => {
+        calls++;
+        return { transactions: [], continuationKey: "again" };
+      },
+    };
+    const endless: FinancialProvider = {
+      ...stubProvider("fake"),
+      getTransactions: async () => {
+        calls++;
+        return { transactions: [], continuationKey: String(calls) };
+      },
+    };
+
+    await expect(
+      fetchAllTransactions(looping, session, checking.ref, range),
+    ).rejects.toThrow(/kept paging/);
+    expect(calls).toBe(2);
+    calls = 0;
+    await expect(
+      fetchAllTransactions(endless, session, checking.ref, range, 5),
+    ).rejects.toThrow(/kept paging/);
+    expect(calls).toBe(5);
+  });
+
+  function fake() {
+    return createFakeProvider({ now: () => NOW });
+  }
 });

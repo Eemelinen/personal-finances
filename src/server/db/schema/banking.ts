@@ -86,6 +86,12 @@ export const accounts = pgTable(
     /** The account id at the provider; null for manual accounts. */
     providerAccountRef: text(),
     archived: boolean().notNull().default(false),
+    /**
+     * When the account's transactions were last synced successfully; the
+     * next sync starts 7 days before it (F-009). Null: not synced yet, so
+     * the next sync backfills.
+     */
+    transactionsSyncedAt: timestamptz(),
     ...timestamps,
   },
   (t) => [index().on(t.connectionId), index().on(t.institutionId)],

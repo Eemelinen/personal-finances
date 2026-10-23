@@ -8,6 +8,12 @@ export interface DedupeInput {
   amountMinor: number | bigint;
   counterparty?: string | null;
   description?: string | null;
+  /**
+   * 1-based position among otherwise identical transactions of one listing
+   * (two equal coffees on one day); 1 or omitted hashes as before, so only
+   * the second and later ones get a different hash.
+   */
+  occurrence?: number;
 }
 
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})(?:[T ].*)?$/;
@@ -71,6 +77,11 @@ export function dedupeHash(input: DedupeInput): string {
     normaliseText(input.counterparty),
     normaliseText(input.description),
   ];
+  const occurrence = input.occurrence ?? 1;
+  if (!Number.isSafeInteger(occurrence) || occurrence < 1) {
+    throw new Error(`Occurrence must be a positive integer, got ${occurrence}`);
+  }
+  if (occurrence > 1) parts.push(String(occurrence));
   // Normalised text has no control characters, so the unit separator keeps
   // the fields apart.
   return createHash("sha256").update(parts.join("\u001f")).digest("hex");

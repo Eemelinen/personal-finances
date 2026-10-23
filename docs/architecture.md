@@ -73,12 +73,14 @@ src/
     providers/         FinancialProvider contract: types.ts (interface, DTOs, ids),
                        errors.ts (typed errors, HTTP status mapping), registry.ts
                        (id → implementation, BANK_PROVIDER), fake.ts (deterministic
-                       in-memory bank for tests and e2e)
+                       in-memory bank for tests and e2e), paging.ts (follows
+                       transaction pages)
       enable-banking/  Enable Banking client and provider                (FIN-006)
       csv/             CSV import provider                               (FIN-012)
-    sync/              Sync orchestration: sync-balances.ts (accounts + balance
-                       snapshots, F-008), balance-types.ts (display balance type);
-                       transactions                                      (FIN-009)
+    sync/              Sync orchestration: runs.ts (shared `sync_runs` bookkeeping),
+                       sync-balances.ts (accounts + balance snapshots, F-008),
+                       balance-types.ts (display balance type), sync-transactions.ts
+                       + transaction-merge.ts (transactions, F-009)
     categorization/    Rule engine, transfer detection                   (FIN-014)
     queries/           Read models for the dashboard                     (FIN-016+)
   worker/
@@ -131,24 +133,24 @@ sequenceDiagram
 
 ## Data model
 
-The core tables (F-002, `src/server/db/schema/`, first migration `drizzle/0000_init.sql`). Amounts are stored as **integer minor units** (cents, `bigint`, read as a JS `number`) together with an ISO-4217 `char(3)` currency code. Floats are never used for money. Every id is a `uuid`; every point in time is `timestamptz`; calendar days (`booking_date`, `value_date`, snapshot `date`) are `date`. Every table has `created_at` / `updated_at`.
+The core tables (F-002, `src/server/db/schema/`, first migration `drizzle/0000_init.sql`; F-009 added `accounts.transactions_synced_at` and `transactions.note` in `0001_sync_transactions.sql`). Amounts are stored as **integer minor units** (cents, `bigint`, read as a JS `number`) together with an ISO-4217 `char(3)` currency code. Floats are never used for money. Every id is a `uuid`; every point in time is `timestamptz`; calendar days (`booking_date`, `value_date`, snapshot `date`) are `date`. Every table has `created_at` / `updated_at`.
 
-| Table               | Purpose                                   | Key columns                                                                                                                                                                                                        |
-| ------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `institutions`      | Banks, brokers, exchanges                 | `id`, `name`, `country`, `provider` (`enable_banking`, `csv`, …), `provider_ref`                                                                                                                                   |
-| `connections`       | One authorized link to an institution     | `id`, `institution_id`, `provider`, `session_ref` (encrypted), `status`, `consent_expires_at`, `last_synced_at`                                                                                                    |
-| `accounts`          | Any account that holds value              | `id`, `connection_id?`, `institution_id`, `type` (`checking`, `savings`, `brokerage`, `crypto`), `name`, `iban?`, `currency`, `provider_account_ref`, `archived`                                                   |
-| `balance_snapshots` | Balance history (one per account per day) | `account_id`, `date`, `amount_minor`, `currency`, `balance_type`                                                                                                                                                   |
-| `transactions`      | Booked and pending transactions           | `id`, `account_id`, `provider_txn_ref?`, `dedupe_hash`, `booking_date`, `value_date`, `amount_minor`, `currency`, `counterparty`, `description`, `status`, `category_id?`, `category_source`, `transfer_group_id?` |
-| `categories`        | Spending/income categories (hierarchical) | `id`, `name`, `parent_id?`, `kind` (`expense`, `income`, `transfer`), `color`                                                                                                                                      |
-| `category_rules`    | Auto-categorization rules                 | `id`, `category_id`, `match_field`, `match_type`, `pattern`, `priority`                                                                                                                                            |
-| `sync_runs`         | Sync log                                  | `id`, `connection_id`, `started_at`, `finished_at`, `status`, `error`, counts                                                                                                                                      |
+| Table               | Purpose                                   | Key columns                                                                                                                                                                                                                 |
+| ------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `institutions`      | Banks, brokers, exchanges                 | `id`, `name`, `country`, `provider` (`enable_banking`, `csv`, …), `provider_ref`                                                                                                                                            |
+| `connections`       | One authorized link to an institution     | `id`, `institution_id`, `provider`, `session_ref` (encrypted), `status`, `consent_expires_at`, `last_synced_at`                                                                                                             |
+| `accounts`          | Any account that holds value              | `id`, `connection_id?`, `institution_id`, `type` (`checking`, `savings`, `brokerage`, `crypto`), `name`, `iban?`, `currency`, `provider_account_ref`, `archived`, `transactions_synced_at?`                                 |
+| `balance_snapshots` | Balance history (one per account per day) | `account_id`, `date`, `amount_minor`, `currency`, `balance_type`                                                                                                                                                            |
+| `transactions`      | Booked and pending transactions           | `id`, `account_id`, `provider_txn_ref?`, `dedupe_hash`, `booking_date`, `value_date`, `amount_minor`, `currency`, `counterparty`, `description`, `status`, `category_id?`, `category_source`, `note?`, `transfer_group_id?` |
+| `categories`        | Spending/income categories (hierarchical) | `id`, `name`, `parent_id?`, `kind` (`expense`, `income`, `transfer`), `color`                                                                                                                                               |
+| `category_rules`    | Auto-categorization rules                 | `id`, `category_id`, `match_field`, `match_type`, `pattern`, `priority`                                                                                                                                                     |
+| `sync_runs`         | Sync log                                  | `id`, `connection_id`, `started_at`, `finished_at`, `status`, `error`, counts                                                                                                                                               |
 
 Enums: `account_type` (`checking`, `savings`, `brokerage`, `crypto`), `connection_status` (`active`, `expired`, `revoked`, `archived`), `transaction_status` (`booked`, `pending`), `category_source` (`none`, `rule`, `manual`), `category_kind` (`expense`, `income`, `transfer`), `rule_match_field` (`counterparty`, `description`), `rule_match_type` (`contains`, `equals`, `regex`), `sync_status` (`running`, `succeeded`, `failed`). `provider` columns are open text so a new provider needs no migration; `balance_type` holds the provider's ISO 20022 code (`CLBD`, `ITAV`, …).
 
 Idempotency constraints (syncs and imports upsert on them):
 
-- `transactions`: unique `(account_id, provider_txn_ref)` (NULL refs never collide) and unique `(account_id, dedupe_hash)`, where `dedupe_hash` is `dedupeHash()` from `src/server/dedupe-hash.ts`: SHA-256 of the normalised booking date, amount, counterparty and description. Indexes on `(account_id, booking_date)`, `category_id` and `transfer_group_id`.
+- `transactions`: unique `(account_id, provider_txn_ref)` (NULL refs never collide) and unique `(account_id, dedupe_hash)`, where `dedupe_hash` is `dedupeHash()` from `src/server/dedupe-hash.ts`: SHA-256 of the normalised booking date, amount, counterparty and description (plus an occurrence number from the second of otherwise identical transactions in one listing on). Indexes on `(account_id, booking_date)`, `category_id` and `transfer_group_id`.
 - `balance_snapshots`: unique `(account_id, date, balance_type)`.
 - `categories`: unique `(parent_id, name)` with `NULLS NOT DISTINCT`, so seeded top-level names are unique too; `institutions`: unique `(provider, provider_ref)`.
 
@@ -169,8 +171,9 @@ interface FinancialProvider {
   getTransactions(
     connection: ProviderConnection,
     account: ProviderAccountRef,
-    range: { from: IsoDate; to?: IsoDate }, // inclusive calendar days
-  ): Promise<ProviderTransaction[]>;
+    range: { from?: IsoDate; to?: IsoDate }, // inclusive days; no `from` = oldest available
+    continuationKey?: string, // from the previous page
+  ): Promise<{ transactions: ProviderTransaction[]; continuationKey: string | null }>;
   getHoldings?(…): Promise<ProviderHolding[]>; // investment providers (F-019)
 }
 ```
@@ -179,7 +182,7 @@ Providers return **normalized** DTOs whose fields mirror the table columns: amou
 
 - **Errors.** The failures the sync layer handles are typed (`errors.ts`): `ProviderAuthError` (session or consent expired → reconnect), `ProviderRateLimitError` (with `retryAfterMs` when known) and `ProviderUnavailableError` (provider or bank down → retry later), all `ProviderError`s with a `kind` and the `providerId`. HTTP clients map responses with `providerErrorFromStatus()`: 401/403 → auth, 429 → rate limit (parses `Retry-After`), 408/5xx → unavailable, anything else stays a bug.
 - **Registry.** `registry.ts` maps the id stored in `provider` columns to its implementation (`getProvider(id)`, `UnknownProviderError` otherwise); `getBankProvider()` returns the one `BANK_PROVIDER` selects for new bank connections (`enable_banking` by default, registered by F-006).
-- **Fake provider.** `BANK_PROVIDER=fake` registers `createFakeProvider()`: two synthetic EUR accounts (`fake-checking`, `fake-savings`, open since 2025-01-01) whose transactions are a pure function of the account and the day (monthly rent, salary and savings transfer plus hashed card purchases), so every range, call and process sees the same data; balances (`CLBD` yesterday, `ITAV` today including today's pending transactions) equal the opening balance plus that history. Only "today" comes from the clock (`now` option), as a UTC date, so between 00:00 and 03:00 Helsinki time the fake's today (and its pending day) is the previous local day; tests that compare against the app's local day should inject `now`. The session refs `fake:expired`, `fake:rate-limited` and `fake:unavailable` make every call fail with the matching typed error. The L3 server runs with `BANK_PROVIDER=fake`; without it the fake is not registered, so a real installation never serves fake data.
+- **Fake provider.** `BANK_PROVIDER=fake` registers `createFakeProvider()`: two synthetic EUR accounts (`fake-checking`, `fake-savings`, open since 2025-01-01) whose transactions are a pure function of the account and the day (monthly rent, salary and savings transfer plus hashed card purchases), so every range, call and process sees the same data; balances (`CLBD` yesterday, `ITAV` today including today's pending transactions) equal the opening balance plus that history. Only "today" comes from the clock (`now` option), as a UTC date, so between 00:00 and 03:00 Helsinki time the fake's today (and its pending day) is the previous local day; tests that compare against the app's local day should inject `now`. Transaction listings come in pages of 100 (`transactionPageSize` option; the continuation key is the offset). The session refs `fake:expired`, `fake:rate-limited` and `fake:unavailable` make every call fail with the matching typed error. The L3 server runs with `BANK_PROVIDER=fake`; without it the fake is not registered, so a real installation never serves fake data.
 
 ## Balance sync
 
@@ -191,6 +194,16 @@ Providers return **normalized** DTOs whose fields mirror the table columns: amou
 - Snapshots upsert on `(account_id, date, balance_type)` with the day the provider reports for the balance; a same-day re-sync overwrites the amount, an unchanged one is not rewritten.
 - A `ProviderError` is recorded on the run and returned (`status: "failed"`, `errorKind`, `retryAfterMs`), never thrown; `auth_expired` (or a connection without a session) also sets the connection to `expired`. A connection that is not `active` gets a failed run (`not_active`) without a provider call. Any other error (wrong `ENCRYPTION_KEY`, unknown provider, database failure) fails the run and is rethrown. Two syncs of one connection must not overlap; F-010's advisory lock ensures that.
 - Which balance type a view shows is `pickDisplayBalance()` in `balance-types.ts`: `ITAV`, `CLAV`, `ITBD`, `CLBD`, `XPCD`, `OPAV`, `OPBD` by default, with per-bank overrides keyed by `institutions.provider_ref` (empty until the F-001 findings).
+
+## Transaction sync
+
+`syncTransactions(connectionId)` (`src/server/sync/sync-transactions.ts`, F-009, D-010) syncs the transactions of a connection's accounts, as `syncBalances()` last stored them (non-archived, with a provider ref; ordered by ref):
+
+- One `sync_runs` row per call, like the balance sync (`accounts_count` = accounts synced, `fetched_count` = transactions listed over all pages, `inserted_count`, `updated_count`); the result also counts `removed` stale pending ones. On success it sets `connections.last_synced_at`. Not-`active` connections, provider errors (auth → `expired`) and bugs are handled by the shared `runs.ts` exactly as in the balance sync.
+- Window per account: never synced (`accounts.transactions_synced_at` null) → no `from`, the provider's oldest available day (backfill); otherwise the `APP_TIMEZONE` day of `transactions_synced_at` minus 7 days, or the account's oldest stored pending transaction if that is older. `to` is the provider's today. `fetchAllTransactions()` (`providers/paging.ts`) follows `continuationKey` page by page and stops a provider that repeats a key or passes 1000 pages.
+- Each account is fetched completely, then merged and written in its own database transaction together with its `transactions_synced_at` (= when its fetch started). A provider error stops the run: accounts already written stay, the failed account and the rest are untouched, and the run records the counts so far, so the next sync continues where this one stopped.
+- Merge (`transaction-merge.ts`, pure): `identifyTransactions()` keeps the last version of a repeated ref and numbers otherwise identical transactions (`dedupeHash({ …, occurrence })`, ref order first) so two equal coffees on one day are two rows. `mergeTransactions()` matches each fetched transaction to a stored one by `provider_txn_ref`, then `dedupe_hash`, then to a pending one with the same amount and currency at most 7 days away (same counterparty first, then the nearest day), which is how a pending transaction becomes its booked version even with a new id, date or text. Matches are updated in place (only if something changed), so the row id, `category_id`, `category_source`, `note` and `transfer_group_id` survive; a sync never writes those columns. Unmatched ones are inserted; stored pending ones that nothing matched are deleted; booked ones the listing lacks are kept. Updates that change a ref or hash first move to a placeholder key, because Postgres checks unique keys row by row.
+- After inserting, the `categorize` hook runs in the same database transaction with the new ids (`noCategorization` until F-014).
 
 ## Conventions
 

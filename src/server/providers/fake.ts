@@ -12,6 +12,7 @@ import type {
   ProviderBalance,
   ProviderConnection,
   ProviderTransaction,
+  ProviderTransactionPage,
   TransactionRange,
 } from "./types";
 
@@ -19,9 +20,11 @@ import type {
 // (`BANK_PROVIDER=fake`). Every transaction is derived from a hash of the
 // account ref and the day, so any range returns the same data on every call
 // and in every process; balances are the opening balance plus the
-// transactions so far, so they always agree with the history. The only input
-// besides the arguments is `now` (today's date, UTC), injectable for tests.
-// All names and IBANs are synthetic.
+// transactions so far, so they always agree with the history. Transaction
+// listings are paged (`FAKE_TRANSACTION_PAGE_SIZE` per page, the continuation
+// key is the offset), like a real bank's. The only input besides the
+// arguments is `now` (today's date, UTC), injectable for tests. All names and
+// IBANs are synthetic.
 
 /** Session refs that make every call fail, for error-handling tests. */
 export const FAKE_SESSION_REFS = {
@@ -33,6 +36,9 @@ export const FAKE_SESSION_REFS = {
 
 /** How long (ms) the fake asks callers to wait when rate limited. */
 export const FAKE_RETRY_AFTER_MS = 60_000;
+
+/** Transactions per page unless `transactionPageSize` says otherwise. */
+export const FAKE_TRANSACTION_PAGE_SIZE = 100;
 
 interface FakeAccountSpec extends ProviderAccount {
   /** No transactions before this day. */
@@ -147,12 +153,18 @@ function transactionsOn(
 export interface FakeProviderOptions {
   /** The clock that decides "today"; defaults to the system clock. */
   now?: () => Date;
+  /** Transactions per page; defaults to `FAKE_TRANSACTION_PAGE_SIZE`. */
+  transactionPageSize?: number;
 }
 
 export function createFakeProvider(
   options: FakeProviderOptions = {},
 ): FinancialProvider {
   const now = options.now ?? (() => new Date());
+  const pageSize = options.transactionPageSize ?? FAKE_TRANSACTION_PAGE_SIZE;
+  if (!Number.isSafeInteger(pageSize) || pageSize < 1) {
+    throw new RangeError(`Invalid transaction page size: ${pageSize}`);
+  }
   const today = () => toDate(now().getTime());
 
   function authorise(connection: ProviderConnection): void {
@@ -228,11 +240,36 @@ export function createFakeProvider(
       return balances;
     },
 
-    async getTransactions(connection, account, range: TransactionRange) {
+    async getTransactions(
+      connection,
+      account,
+      range: TransactionRange,
+      continuationKey?: string,
+    ): Promise<ProviderTransactionPage> {
       authorise(connection);
       const spec = findAccount(account);
       const current = today();
-      return history(spec, range.from, range.to ?? current, current);
+      // Only keys this fake handed out: a positive offset.
+      if (
+        continuationKey !== undefined &&
+        !/^[1-9]\d*$/.test(continuationKey)
+      ) {
+        throw new Error(
+          `Invalid fake continuation key: ${JSON.stringify(continuationKey)}`,
+        );
+      }
+      const offset = Number(continuationKey ?? 0);
+      const all = history(
+        spec,
+        range.from ?? spec.openedOn,
+        range.to ?? current,
+        current,
+      );
+      const end = offset + pageSize;
+      return {
+        transactions: all.slice(offset, end),
+        continuationKey: end < all.length ? String(end) : null,
+      };
     },
   };
 }

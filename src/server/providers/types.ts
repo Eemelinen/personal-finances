@@ -71,10 +71,23 @@ export interface ProviderTransaction {
   status: "booked" | "pending";
 }
 
-/** Inclusive calendar-day range; `to` defaults to the provider's today. */
+/**
+ * Inclusive calendar-day range. `from` omitted: the oldest day the provider
+ * can return (a first sync backfills with it); `to` defaults to the
+ * provider's today.
+ */
 export interface TransactionRange {
-  from: IsoDate;
+  from?: IsoDate;
   to?: IsoDate;
+}
+
+/**
+ * One page of a transaction listing. `continuationKey` is null on the last
+ * page; otherwise pass it back with the same range for the next one.
+ */
+export interface ProviderTransactionPage {
+  transactions: ProviderTransaction[];
+  continuationKey: string | null;
 }
 
 /**
@@ -99,11 +112,13 @@ export interface FinancialProvider {
     connection: ProviderConnection,
     account: ProviderAccountRef,
   ): Promise<ProviderBalance[]>;
+  /** One page; omit `continuationKey` for the first. */
   getTransactions(
     connection: ProviderConnection,
     account: ProviderAccountRef,
     range: TransactionRange,
-  ): Promise<ProviderTransaction[]>;
+    continuationKey?: string,
+  ): Promise<ProviderTransactionPage>;
   /** Investment providers only (F-019). */
   getHoldings?(
     connection: ProviderConnection,

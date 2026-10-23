@@ -45,6 +45,8 @@ export const transactions = pgTable(
       onDelete: "set null",
     }),
     categorySource: categorySource().notNull().default("none"),
+    /** The user's own note (F-015); syncs and imports never write it. */
+    note: text(),
     /** Shared by the two legs of a transfer between own accounts (F-014). */
     transferGroupId: uuid(),
     ...timestamps,
