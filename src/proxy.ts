@@ -1,10 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { isApiPath, isPublicPath, LOGIN_PATH } from "@/lib/auth/routes";
+import { accessDecision, isHealthPath, LOGIN_PATH } from "@/lib/auth/routes";
 import {
   SESSION_COOKIE,
-  sealSession,
+  refreshSession,
   sessionCookieOptions,
-  shouldRefreshSession,
   unsealSession,
 } from "@/server/auth/session";
 import { getAuthEnv, getEnv } from "@/server/env";
@@ -18,37 +17,39 @@ import { getAuthEnv, getEnv } from "@/server/env";
  */
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  // Answers even when the login secrets are missing, so a misconfigured app
+  // still reports its database state. Every other path fails fast on them.
+  if (isHealthPath(pathname)) return NextResponse.next();
+
   const { SESSION_SECRET } = getAuthEnv();
   const now = Date.now();
-  const session = await unsealSession(
-    request.cookies.get(SESSION_COOKIE)?.value,
-    SESSION_SECRET,
-    now,
-  );
+  const cookie = request.cookies.get(SESSION_COOKIE)?.value;
+  const session = await unsealSession(cookie, SESSION_SECRET, now);
 
-  if (!session) {
-    if (isPublicPath(pathname)) return NextResponse.next();
-    if (isApiPath(pathname)) {
-      return Response.json({ error: "unauthorized" }, { status: 401 });
-    }
-    const response = NextResponse.redirect(new URL(LOGIN_PATH, request.url));
-    // An expired or forged cookie is of no further use.
-    if (request.cookies.has(SESSION_COOKIE)) {
-      response.cookies.delete(SESSION_COOKIE);
-    }
-    return response;
+  let response: NextResponse;
+  switch (accessDecision(pathname, session !== null)) {
+    case "unauthorized":
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    case "redirect-to-login":
+      response = NextResponse.redirect(new URL(LOGIN_PATH, request.url));
+      break;
+    case "redirect-to-app":
+      response = NextResponse.redirect(new URL("/", request.url));
+      break;
+    case "allow":
+      response = NextResponse.next();
+      break;
   }
 
-  const response =
-    pathname === LOGIN_PATH
-      ? NextResponse.redirect(new URL("/", request.url))
-      : NextResponse.next();
-  if (shouldRefreshSession(session, now)) {
-    response.cookies.set(
-      SESSION_COOKIE,
-      await sealSession(SESSION_SECRET, now),
-      sessionCookieOptions(getEnv().NODE_ENV),
-    );
+  const cookieOptions = sessionCookieOptions(getEnv().NODE_ENV);
+  if (session) {
+    const seal = await refreshSession(session, SESSION_SECRET, now);
+    if (seal) {
+      response.cookies.set(SESSION_COOKIE, seal, cookieOptions);
+    }
+  } else if (cookie !== undefined) {
+    // An expired or forged cookie is of no further use.
+    response.cookies.delete(SESSION_COOKIE);
   }
   return response;
 }

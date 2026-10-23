@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { LoginThrottle } from "@/server/auth/login-throttle";
+import { createLoginChecker } from "@/server/auth/login";
 import { verifyPassword } from "@/server/auth/password";
 import { getAuthEnv } from "@/server/env";
 import { createSession, deleteSession } from "./session";
@@ -9,27 +9,14 @@ import { LOGIN_PATH } from "./routes";
 
 export type LoginState = { error?: string };
 
-const throttle = new LoginThrottle();
-// Attempts run one at a time, so parallel requests cannot all slip in before
-// the throttle has counted the earlier failures.
-let queue: Promise<unknown> = Promise.resolve();
-
-async function checkPassword(password: string): Promise<LoginState> {
-  const now = Date.now();
-  const waitMs = throttle.retryAfterMs(now);
-  if (waitMs > 0) {
-    return {
-      error: `Too many failed attempts. Try again in ${Math.ceil(waitMs / 1000)} s.`,
-    };
-  }
-  if (await verifyPassword(getAuthEnv().AUTH_PASSWORD_HASH, password)) {
-    throttle.recordSuccess();
-    return {};
-  }
-  throttle.recordFailure(Date.now());
-  console.warn(`[auth] failed login attempt (${throttle.failures} in a row)`);
-  return { error: "Wrong password." };
-}
+// One checker (and so one backoff counter) per server process.
+const checkLogin = createLoginChecker({
+  verify: (password) =>
+    verifyPassword(getAuthEnv().AUTH_PASSWORD_HASH, password),
+  onFailure: (failures) => {
+    console.warn(`[auth] failed login attempt (${failures} in a row)`);
+  },
+});
 
 export async function login(
   _previous: LoginState,
@@ -40,10 +27,8 @@ export async function login(
     return { error: "Enter the password." };
   }
 
-  const attempt = queue.then(() => checkPassword(password));
-  queue = attempt.catch(() => undefined);
-  const result = await attempt;
-  if (result.error) return result;
+  const result = await checkLogin(password);
+  if (!result.ok) return { error: result.error };
 
   await createSession();
   redirect("/");

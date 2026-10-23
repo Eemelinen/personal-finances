@@ -49,6 +49,18 @@ export function shouldRefreshSession(session: Session, now: number): boolean {
   return now - session.issuedAt >= SESSION_REFRESH_AFTER_MS;
 }
 
+/**
+ * A new seal for a session that is due for re-issue (the sliding expiry), or
+ * null when the current cookie is still fresh enough.
+ */
+export async function refreshSession(
+  session: Session,
+  secret: string,
+  now: number,
+): Promise<string | null> {
+  return shouldRefreshSession(session, now) ? sealSession(secret, now) : null;
+}
+
 /** Attributes for the session cookie; `secure` everywhere but local development. */
 export function sessionCookieOptions(nodeEnv: string) {
   return {

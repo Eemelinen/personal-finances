@@ -3,11 +3,13 @@ import {
   decodePasswordHash,
   encodePasswordHash,
 } from "@/server/auth/hash-encoding";
+import { createLoginChecker } from "@/server/auth/login";
 import { LoginThrottle } from "@/server/auth/login-throttle";
 import { hashPassword, verifyPassword } from "@/server/auth/password";
 import {
   SESSION_REFRESH_AFTER_MS,
   SESSION_TTL_SECONDS,
+  refreshSession,
   sealSession,
   sessionCookieOptions,
   shouldRefreshSession,
@@ -112,6 +114,25 @@ describe("session sealing and expiry", () => {
     });
   });
 
+  it("re-issues a day-old session with a later issue time, not a fresh one", async () => {
+    vi.useFakeTimers({ now: T0 });
+    const session = await unsealSession(
+      await sealSession(SECRET, T0),
+      SECRET,
+      T0,
+    );
+
+    expect(await refreshSession(session!, SECRET, T0 + DAY_MS - 1)).toBeNull();
+
+    const later = T0 + DAY_MS;
+    vi.setSystemTime(later);
+    const seal = await refreshSession(session!, SECRET, later);
+    expect(seal).not.toBeNull();
+    expect(await unsealSession(seal!, SECRET, later)).toEqual({
+      issuedAt: later,
+    });
+  });
+
   it("uses an httpOnly, sameSite=lax cookie that lasts 30 days", () => {
     expect(sessionCookieOptions("production")).toEqual({
       httpOnly: true,
@@ -162,5 +183,85 @@ describe("login backoff", () => {
     throttle.recordSuccess();
     expect(throttle.failures).toBe(0);
     expect(throttle.retryAfterMs(T0)).toBe(0);
+  });
+});
+
+describe("login check with backoff", () => {
+  function setup(correct = "right") {
+    let clock = T0;
+    const verify = vi.fn(async (password: string) => password === correct);
+    const failures: number[] = [];
+    const check = createLoginChecker({
+      verify,
+      now: () => clock,
+      onFailure: (n) => failures.push(n),
+    });
+    return {
+      check,
+      verify,
+      failures,
+      advance: (ms: number) => {
+        clock += ms;
+      },
+    };
+  }
+
+  it("refuses attempts after five failures without checking the password", async () => {
+    const { check, verify, failures, advance } = setup();
+    for (let i = 0; i < 5; i += 1) {
+      expect(await check("wrong")).toEqual({
+        ok: false,
+        error: "Wrong password.",
+      });
+    }
+    expect(failures).toEqual([1, 2, 3, 4, 5]);
+    expect(verify).toHaveBeenCalledTimes(5);
+
+    // Even the right password is refused while the delay runs, and the
+    // refusal neither runs the hash check nor counts as another failure.
+    expect(await check("right")).toEqual({
+      ok: false,
+      error: "Too many failed attempts. Try again in 1 s.",
+    });
+    expect(verify).toHaveBeenCalledTimes(5);
+    expect(failures).toHaveLength(5);
+
+    advance(1000);
+    expect(await check("right")).toEqual({ ok: true });
+    expect(await check("wrong")).toEqual({
+      ok: false,
+      error: "Wrong password.",
+    });
+    expect(failures.at(-1)).toBe(1);
+  });
+
+  it("serialises parallel attempts so the backoff counts each of them", async () => {
+    const { check, verify } = setup();
+
+    const results = await Promise.all(
+      Array.from({ length: 8 }, () => check("wrong")),
+    );
+
+    expect(verify).toHaveBeenCalledTimes(5);
+    expect(
+      results.filter((r) => !r.ok && r.error === "Wrong password."),
+    ).toHaveLength(5);
+    expect(
+      results.slice(5).every((r) => !r.ok && r.error.startsWith("Too many")),
+    ).toBe(true);
+  });
+
+  it("keeps working after a verifier error", async () => {
+    let calls = 0;
+    const check = createLoginChecker({
+      verify: async () => {
+        calls += 1;
+        if (calls === 1) throw new Error("boom");
+        return true;
+      },
+    });
+
+    await expect(check("x")).rejects.toThrow("boom");
+    expect(await check("x")).toEqual({ ok: true });
   });
 });
