@@ -23,6 +23,11 @@ cp .env.example .env        # then set POSTGRES_PASSWORD and DATABASE_URL
 npm install
 ```
 
+Notes:
+
+- Postgres is published on host port **5434** (not 5432) to avoid clashing with other local projects. Change `POSTGRES_PORT` and `DATABASE_URL` in `.env` if needed.
+- npm 11.19+ blocks package install scripts unless approved. The approved ones (esbuild, unrs-resolver) are listed under `allowScripts` in `package.json`. Review any new ones with `npm install-scripts ls`.
+
 **Option A: everything in Docker**
 
 ```sh

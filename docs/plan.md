@@ -30,6 +30,26 @@ It is single-user, runs locally with Docker Compose, and keeps all financial dat
 - Making payments or moving money. The app is read-only towards the banks.
 - Multiple users, or public hosting
 
+## Decisions
+
+| Decision      | Choice                                                        | Details                                       |
+| ------------- | ------------------------------------------------------------- | --------------------------------------------- |
+| Tech stack    | TypeScript full-stack: Next.js, PostgreSQL, Drizzle           | [Tech stack](tech-stack.md)                   |
+| Hosting       | Local, with Docker Compose. Data never leaves my machine.     | [Architecture](architecture.md)               |
+| Runtime       | Node.js 24 LTS (pinned in `.nvmrc`, `engines`, Docker images) | [Tech stack](tech-stack.md)                   |
+| Bank access   | Enable Banking (free restricted production), CSV as fallback  | [API access research](api-access-research.md) |
+| Investments   | Nordnet via CSV import, Kraken via its read-only REST API     | [API access research](api-access-research.md) |
+| Work tracking | Feature tickets as Markdown files in `docs/tickets/`          | [Ticket index](tickets/README.md)             |
+
+## Status
+
+_Last updated 2026-10-23._
+
+- ✅ Plan, architecture, tech stack and ticket docs written
+- ✅ API access research done for Nordea, S-Pankki, Nordnet and Kraken
+- ✅ **FIN-002 project scaffold** done. The app, worker, database, migrations, Docker Compose and test/lint/format tooling all run. No features yet.
+- ⏭️ **Next:** FIN-001 (sign up for Enable Banking and verify sandbox and restricted production access), then FIN-003 (database schema)
+
 ## Key constraint: bank API access
 
 Nordea and S-Pankki only give production API access to licensed third-party providers under PSD2, not to individuals. The app therefore connects through an **open banking aggregator** that holds the license.
@@ -63,7 +83,7 @@ Consequences built into the plan:
 
 Recommended order for a first usable version (MVP):
 
-FIN-001 → FIN-002 → FIN-003 → FIN-004 → FIN-005 → FIN-006 → FIN-007 → FIN-008 → FIN-009 → FIN-016 → FIN-013 → FIN-014 → FIN-017 → FIN-018 → FIN-010
+FIN-001 → FIN-002 ✅ → FIN-003 → FIN-004 → FIN-005 → FIN-006 → FIN-007 → FIN-008 → FIN-009 → FIN-016 → FIN-013 → FIN-014 → FIN-017 → FIN-018 → FIN-010
 
 All tickets, with status and dependencies, are listed in the [ticket index](tickets/README.md).
 
