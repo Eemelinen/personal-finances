@@ -25,7 +25,11 @@ Requirements: Node.js 24 LTS (`nvm use`), pnpm via corepack (`corepack enable`) 
 ```sh
 cp .env.example .env        # then set POSTGRES_PASSWORD and DATABASE_URL
 pnpm install
+pnpm auth:hash              # paste the printed AUTH_PASSWORD_HASH line into .env
+openssl rand -base64 32     # use as SESSION_SECRET in .env
 ```
+
+Every page asks for that password at `/login` (one user, no accounts); the session lasts 30 days from the last visit.
 
 Notes:
 
@@ -68,6 +72,7 @@ In Claude Code: `/harness:clock-in`, implement, `/harness:verify-feature F-NNN`,
 | `pnpm db:generate`                   | Generate a SQL migration from schema changes  |
 | `pnpm db:migrate`                    | Apply migrations                              |
 | `pnpm db:studio`                     | Browse the database with Drizzle Studio       |
+| `pnpm auth:hash`                     | Print `AUTH_PASSWORD_HASH` for a password     |
 | `pnpm test:unit` / `pnpm test:watch` | Unit tests (Vitest project `unit`)            |
 | `pnpm test:integration`              | L2: Vitest + Testcontainers Postgres 18       |
 | `pnpm test:e2e`                      | L3: Playwright against the production build   |
@@ -83,7 +88,9 @@ In Claude Code: `/harness:clock-in`, implement, `/harness:verify-feature F-NNN`,
 ## Project structure
 
 ```
-src/app/        Next.js pages and route handlers; (app)/ holds the pages inside the app shell
+src/app/        Next.js pages and route handlers; (app)/ holds the pages inside the app shell, login/ the login page
+src/proxy.ts    Redirects requests without a session to /login
+src/lib/        Client-safe helpers and the session data access layer (lib/auth)
 src/components/ App shell, shared components and shadcn/ui primitives (components/ui)
 src/server/     Domain code shared by the app and the worker (env, db, providers, sync)
 src/worker/     Background worker entrypoint and job registry

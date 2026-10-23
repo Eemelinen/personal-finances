@@ -101,7 +101,7 @@
       "area": "foundation",
       "title": "Single-user authentication",
       "user_visible_behavior": "Every page and route except `/login` and `/api/health` requires a session. `/login` accepts the password whose argon2 hash is in `AUTH_PASSWORD_HASH` and sets an encrypted, httpOnly session cookie (iron-session, 30-day sliding expiry); logout clears it; repeated wrong passwords are slowed down. `pnpm auth:hash` prints a hash for a password.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-003"],
       "ticket": "FIN-004",
       "spec": "docs/tickets/FIN-004-single-user-auth.md",
@@ -110,7 +110,11 @@
         "L1: pnpm test:unit tests/unit/auth/session.test.ts (password check, session sealing and expiry, login backoff)",
         "L3: pnpm test:e2e tests/e2e/auth.spec.ts (logged-out redirect to /login, login, logout, wrong password rejected)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-23 pnpm check → pass (working tree on 3c68e83)",
+        "2026-10-23 pnpm test:unit tests/unit/auth/session.test.ts → pass (working tree on 3c68e83)",
+        "2026-10-23 pnpm test:e2e tests/e2e/auth.spec.ts → pass (working tree on 3c68e83, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Replaces old FIN-004. Follow `node_modules/next/dist/docs/01-app/02-guides/authentication-with-cache-components.md`."
     },

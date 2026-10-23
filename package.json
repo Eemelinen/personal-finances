@@ -15,6 +15,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file-if-exists=.env src/server/db/migrate.ts",
     "db:studio": "drizzle-kit studio",
+    "auth:hash": "tsx src/server/auth/hash-password.ts",
     "test": "pnpm test:unit",
     "test:unit": "vitest run --project unit",
     "test:watch": "vitest --project unit",
@@ -34,9 +35,11 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@node-rs/argon2": "^2.2.2",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.5.0",
     "drizzle-orm": "^0.45.4",
+    "iron-session": "^9.0.1",
     "lucide-react": "^1.61.0",
     "next": "16.4.2",
     "node-cron": "^4.6.0",

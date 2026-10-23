@@ -2,7 +2,8 @@
  * Playwright's `webServer` for L3 (playwright.config.ts). It starts a
  * throwaway Postgres 18 with Testcontainers, applies the committed migrations,
  * builds the app and serves the standalone output, which is what the Docker
- * image runs, on 127.0.0.1:E2E_PORT. It never touches the dev database.
+ * image runs, on 127.0.0.1:E2E_PORT, logging in with the test-only password
+ * from ./credentials.ts. It never touches the dev database.
  *
  *   E2E_PORT=3100        port to serve on (playwright.config.ts sets it)
  *   E2E_SKIP_BUILD=1     reuse an existing `pnpm build` (CI builds once)
@@ -14,6 +15,9 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { cpSync, existsSync } from "node:fs";
 import path from "node:path";
+import { encodePasswordHash } from "@/server/auth/hash-encoding";
+import { hashPassword } from "@/server/auth/password";
+import { E2E_PASSWORD, E2E_SESSION_SECRET } from "./credentials";
 import {
   startTestDatabase,
   type TestDatabase,
@@ -90,6 +94,8 @@ async function main(): Promise<void> {
       PORT: port,
       HOSTNAME: "127.0.0.1",
       DATABASE_URL: database.url,
+      AUTH_PASSWORD_HASH: encodePasswordHash(await hashPassword(E2E_PASSWORD)),
+      SESSION_SECRET: E2E_SESSION_SECRET,
     },
   });
   server.on("exit", (code) => {

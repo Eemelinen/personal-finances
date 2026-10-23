@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { Wallet } from "lucide-react";
+import { LogoutButton } from "./logout-button";
 import { MobileNav } from "./mobile-nav";
 import { ActiveNavList, NavList } from "./nav-list";
 
@@ -20,6 +21,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Wallet className="size-5" aria-hidden="true" />
           Personal Finances
         </Link>
+        <div className="ml-auto">
+          <Suspense fallback={null}>
+            <LogoutButton />
+          </Suspense>
+        </div>
       </header>
       <div className="flex flex-1">
         <aside className="bg-sidebar hidden w-56 shrink-0 border-r p-3 md:block">
