@@ -41,6 +41,9 @@ fi
 step "Installing dependencies"
 pnpm install --frozen-lockfile
 
+step "Harness wiring (@eemelinen/harness package + plugin pin)"
+pnpm harness:doctor
+
 if [ "${FAST:-0}" = "1" ]; then
   step "FAST=1 — skipping baseline verification"
 else

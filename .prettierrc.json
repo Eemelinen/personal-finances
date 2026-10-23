@@ -2,13 +2,7 @@
   "plugins": ["prettier-plugin-tailwindcss"],
   "overrides": [
     {
-      "files": [
-        "scripts/**",
-        "tests/unit/harness/**",
-        ".lintstagedrc.mjs",
-        "commitlint.config.mjs",
-        "docs/harness/prompts/evaluator-schema.json"
-      ],
+      "files": [".lintstagedrc.mjs", "commitlint.config.mjs"],
       "options": {
         "singleQuote": true,
         "semi": false,

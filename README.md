@@ -56,7 +56,7 @@ pnpm worker:dev   # in another terminal: scheduled jobs
 pnpm harness:feature next  # next ready feature
 ```
 
-In Claude Code: `/clock-in`, implement, `/verify-feature F-NNN`, `/clock-out`. Unattended: `pnpm harness:loop --once` (see [docs/harness/README.md](docs/harness/README.md) for prerequisites).
+In Claude Code: `/harness:clock-in`, implement, `/harness:verify-feature F-NNN`, `/harness:clock-out` (skills from the shared harness plugin, [Eemelinen/harness](https://github.com/Eemelinen/harness)). Unattended: `pnpm harness:loop --once` (see [docs/harness/README.md](docs/harness/README.md) for prerequisites).
 
 ## Scripts
 
