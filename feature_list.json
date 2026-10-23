@@ -19,12 +19,15 @@
       "area": "harness",
       "title": "Project scaffold and agent harness bootstrap",
       "user_visible_behavior": "A fresh agent session can answer what the repo does, how to start it, how to verify it, what is unfinished and what to do next, using only AGENTS.md, PROGRESS.md and this file; `./init.sh` installs and runs the L1 baseline, and `pnpm harness:loop --dry-run` passes preflight.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": [],
       "ticket": "FIN-000",
       "spec": "docs/tickets/FIN-000-scaffold-and-harness.md",
       "verification": ["L1: pnpm check", "L1: pnpm harness:check"],
-      "evidence": [],
+      "evidence": [
+        "2026-10-23 pnpm check → pass (working tree on 6577dd4)",
+        "2026-10-23 pnpm harness:check → pass (working tree on 6577dd4)"
+      ],
       "attempts": 0,
       "notes": "Ported from the Metsävahti harness (tag harness-reference), see docs/DECISIONS.md D-001."
     },
