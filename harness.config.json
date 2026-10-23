@@ -174,7 +174,7 @@
     "Bash(docker info*)"
   ],
   "worktreeRoot": "../personal-finances-worktrees",
-  "merge": "wait",
+  "merge": "auto",
   "traceDir": ".harness/traces",
   "runsLog": ".harness/runs.jsonl"
 }

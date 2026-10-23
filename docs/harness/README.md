@@ -59,8 +59,10 @@ repository, never here.
 - On Windows, run the driver from Git Bash.
 - Run `claude` in the repository once and accept the trust dialog and the plugin marketplace.
 
-**Merging.** `harness.config.json` ships with `merge: "wait"` (a human merges each PR). Switch to
-`"auto"` only once `main` has branch protection with the required `Verify` check.
+**Merging.** `merge: "auto"`: the loop opens a PR per feature and arms
+`gh pr merge --auto --squash`, and GitHub merges it once the required `Verify` check passes
+(branch protection on `main`, no review requirement). A red check stops the loop; push a fix to
+the branch and the PR still merges.
 
 **Commands.** Start with `pnpm harness:loop --dry-run --no-docker`, then `pnpm harness:loop --once`.
 `pnpm harness:report` shows past runs.

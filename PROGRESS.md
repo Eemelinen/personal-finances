@@ -11,13 +11,13 @@ Repository-local session log. Read it at clock-in, update it at clock-out (AGENT
 - Session 002 (interactive: shared harness): the copied harness is replaced by `@eemelinen/harness` (devDependency, tag `v0.1.0`; the CLI behind every `pnpm harness:*`, new `pnpm harness:doctor`, also run by `./init.sh`) and the plugin `harness@eemelinen-harness` (skills `/harness:clock-in`, `/harness:verify-feature`, `/harness:clock-out`, agent `harness:evaluator`, hooks). Project rules live in `harness.config.json` and `docs/harness/generator-notes.md`; `pnpm check` runs `pnpm harness:check`. D-004.
 - Last verified commit: `6577dd4` + the F-000 evidence commit — `pnpm check` (27 unit tests incl. the harness tests) and `pnpm harness:check` green on 2026-10-23 (F-000 evidence in `feature_list.json`).
 - Queue: `pnpm harness:feature list`. F-000 is `passing`; ready now: F-001 (human-only: Enable Banking sandbox and fixtures), F-002 (DB schema + L2) and F-003 (app shell + L3) — both unattended.
+- Loop merging: `main` is protected with the required `Verify` check (no review requirement) and `harness.config.json` has `merge: "auto"`, so `pnpm harness:loop` opens a PR per feature and GitHub squash-merges it once CI passes.
 - Current blocker: none. The unattended loop additionally needs `gh` and `claude` on `PATH`, `gh auth login`, and the GitHub settings in docs/harness/README.md § 4.
 
 ## Next Steps
 
 1. Do F-001 interactively (`/harness:clock-in F-001`): create the Enable Banking sandbox application, record anonymised fixtures under `tests/fixtures/enable-banking/`, fill the Findings in `docs/tickets/FIN-001-enable-banking-access-spike.md`.
 2. In parallel, run the loop for the unattended foundation: `pnpm harness:loop --once` (F-002), then F-003. Read the first traces and evaluator verdicts and record a row in the rubric's tuning log.
-3. After branch protection with the required `Verify` check exists, set `"merge": "auto"` in `harness.config.json`.
 
 ## Session Log
 
