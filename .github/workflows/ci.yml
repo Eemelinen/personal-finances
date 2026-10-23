@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_OPTIONS: --no-deprecation
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  verify:
+    # The job name is the required status check in branch protection. Keep it stable:
+    # F-002 (L2 integration) and F-003 (L3 e2e) add steps to this job instead of new jobs.
+    name: Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm format:check
+      - name: Unit tests (incl. feature_list.json validation)
+        run: pnpm test:unit
+      - name: Build
+        run: pnpm build

@@ -1,0 +1,55 @@
+{
+  "$comment": "Loop driver configuration (scripts/harness-loop.ts). Caps bound one generator session; allowedTools merge with .claude/settings.json only for driver-run sessions. See docs/harness/README.md.",
+  "caps": {
+    "maxAttempts": 2,
+    "maxTurns": 200,
+    "maxBudgetUsd": 15,
+    "wallClockMin": 60,
+    "maxConsecutiveFailures": 2
+  },
+  "generator": {
+    "model": "claude-opus-5-5",
+    "permissionMode": "auto",
+    "effort": "high"
+  },
+  "evaluator": {
+    "model": "claude-opus-5-5",
+    "effort": "high",
+    "maxTurns": 60,
+    "maxBudgetUsd": 4,
+    "wallClockMin": 15
+  },
+  "allowedTools": [
+    "Bash(pnpm check*)",
+    "Bash(pnpm lint*)",
+    "Bash(pnpm typecheck)",
+    "Bash(pnpm format*)",
+    "Bash(pnpm test:unit*)",
+    "Bash(pnpm test:integration*)",
+    "Bash(pnpm test:e2e*)",
+    "Bash(pnpm harness:*)",
+    "Bash(pnpm build)",
+    "Bash(pnpm db:generate*)",
+    "Bash(pnpm add *)",
+    "Bash(pnpm exec tsc*)",
+    "Bash(pnpm exec prettier*)",
+    "Bash(pnpm exec tsx *)",
+    "Bash(pnpm exec drizzle-kit generate*)",
+    "Bash(pnpm exec playwright install*)",
+    "Bash(scripts/clean-state-check.sh*)",
+    "Bash(FAST=1 ./init.sh)",
+    "Bash(git status*)",
+    "Bash(git log*)",
+    "Bash(git diff*)",
+    "Bash(git show*)",
+    "Bash(git add *)",
+    "Bash(git commit *)",
+    "Bash(git worktree list)",
+    "Bash(docker ps*)",
+    "Bash(docker info*)"
+  ],
+  "worktreeRoot": "../personal-finances-worktrees",
+  "merge": "wait",
+  "traceDir": ".harness/traces",
+  "runsLog": ".harness/runs.jsonl"
+}
