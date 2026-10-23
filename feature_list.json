@@ -345,7 +345,11 @@
         "2026-10-23 pnpm check → pass (commit 7d1e306)",
         "2026-10-23 pnpm test:unit tests/unit/categorization/rules.test.ts → pass (commit 7d1e306)",
         "2026-10-23 pnpm test:unit tests/unit/categorization/transfers.test.ts → pass (commit 7d1e306)",
-        "2026-10-23 pnpm test:integration tests/integration/categorization.int.test.ts → pass (commit 7d1e306, Docker available)"
+        "2026-10-23 pnpm test:integration tests/integration/categorization.int.test.ts → pass (commit 7d1e306, Docker available)",
+        "2026-10-23 pnpm check → pass (commit da41ef7)",
+        "2026-10-23 pnpm test:unit tests/unit/categorization/rules.test.ts → pass (commit da41ef7)",
+        "2026-10-23 pnpm test:unit tests/unit/categorization/transfers.test.ts → pass (commit da41ef7)",
+        "2026-10-23 pnpm test:integration tests/integration/categorization.int.test.ts → pass (commit da41ef7, Docker available)"
       ],
       "attempts": 0,
       "notes": "Replaces old FIN-013 (engine part) and FIN-014. The management UI is F-015."
