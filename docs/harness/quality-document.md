@@ -20,13 +20,13 @@ known gaps, hard for an agent to follow · **D** not working or major structural
 
 ## Architectural layers
 
-| Layer                                | Grade | Boundary enforcement                                   | Agent legibility                       | Key gaps                                             | Last updated |
-| ------------------------------------ | ----- | ------------------------------------------------------ | -------------------------------------- | ---------------------------------------------------- | ------------ |
-| `src/server` (env, db, shared logic) | B     | Convention only (plain Node, `getEnv()`), no lint rule | Small, commented; docs/architecture.md | No schema yet (F-002); no import-boundary lint       | 2026-10-23   |
-| Worker (`src/worker`)                | B     | Job registry; graceful shutdown                        | Two small files                        | Only a heartbeat job; no tests                       | 2026-10-23   |
-| Frontend (`src/app`)                 | C     | Server Components by default; Cache Components on      | Placeholder page + health route        | No app shell (F-003), no auth (F-004), no UI tests   | 2026-10-23   |
-| Tests & environments                 | C     | Vitest unit project; harness tests validate the queue  | AGENTS.md → Verification layers        | Only L1 exists; L2 arrives with F-002, L3 with F-003 | 2026-10-23   |
-| Harness                              | A     | Scripts with exit codes, hooks, commit gates, CI       | AGENTS.md, docs/harness/README.md      | Loop not yet run for real; rubric not calibrated     | 2026-10-23   |
+| Layer                                | Grade | Boundary enforcement                                   | Agent legibility                       | Key gaps                                           | Last updated |
+| ------------------------------------ | ----- | ------------------------------------------------------ | -------------------------------------- | -------------------------------------------------- | ------------ |
+| `src/server` (env, db, shared logic) | B     | Convention only (plain Node, `getEnv()`), no lint rule | Small, commented; docs/architecture.md | No import-boundary lint                            | 2026-10-23   |
+| Worker (`src/worker`)                | B     | Job registry; graceful shutdown                        | Two small files                        | Only a heartbeat job; no tests                     | 2026-10-23   |
+| Frontend (`src/app`)                 | C     | Server Components by default; Cache Components on      | Placeholder page + health route        | No app shell (F-003), no auth (F-004), no UI tests | 2026-10-23   |
+| Tests & environments                 | B     | Vitest unit + integration (Testcontainers) projects    | AGENTS.md → Verification layers        | No L3 yet (F-003)                                  | 2026-10-23   |
+| Harness                              | A     | Scripts with exit codes, hooks, commit gates, CI       | AGENTS.md, docs/harness/README.md      | Loop not yet run for real; rubric not calibrated   | 2026-10-23   |
 
 ## Change history
 

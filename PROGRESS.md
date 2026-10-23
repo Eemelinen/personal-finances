@@ -6,20 +6,31 @@ Repository-local session log. Read it at clock-in, update it at clock-out (AGENT
 
 - Repository root: `personal-finances/` (this directory; contains `AGENTS.md`, `feature_list.json`, `init.sh`, `harness.config.json`).
 - Standard startup path: `./init.sh` (`FAST=1` skips the baseline; `RUN_START_COMMAND=1` also starts the dev database, applies migrations and runs `pnpm dev`). The full stack runs with `docker compose up --build -d` (Postgres on host port 5434; `/api/health`).
-- Standard verification path: L1 `pnpm check`. L2 (`pnpm test:integration`) is added by F-002 and L3 (`pnpm test:e2e`) by F-003. Per feature: `pnpm harness:verify F-NNN`.
+- Standard verification path: L1 `pnpm check`; L2 `pnpm test:integration` (Vitest project `integration`, one Testcontainers Postgres 18 per test file via `tests/integration/helpers/postgres.ts`; needs Docker); L3 (`pnpm test:e2e`) is added by F-003. `pnpm check:full` = L1 + L2 + build. Per feature: `pnpm harness:verify F-NNN`.
 - Session 001 (harness bootstrap): scaffold from before plus the agent harness ported from Metsävahti (D-001, D-002), pnpm 10.15 via corepack instead of npm (D-003), unit tests under `tests/unit/` (Vitest project `unit`), 27 tickets re-sliced into 25 features `F-000` – `F-024` with tickets `FIN-000` – `FIN-024` in `docs/tickets/`.
 - Session 002 (interactive: shared harness): the copied harness is replaced by `@eemelinen/harness` (devDependency, tag `v0.2.0`; the CLI behind every `pnpm harness:*`, new `pnpm harness:doctor`, also run by `./init.sh`) and the plugin `harness@eemelinen-harness` (skills `/harness:clock-in`, `/harness:verify-feature`, `/harness:clock-out`, agent `harness:evaluator`, hooks). Project rules live in `harness.config.json` and `docs/harness/generator-notes.md`; `pnpm check` runs `pnpm harness:check`. D-004.
-- Last verified commit: `6577dd4` + the F-000 evidence commit — `pnpm check` (27 unit tests incl. the harness tests) and `pnpm harness:check` green on 2026-10-23 (F-000 evidence in `feature_list.json`).
-- Queue: `pnpm harness:feature list`. F-000 is `passing`; ready now: F-001 (human-only: Enable Banking sandbox and fixtures), F-002 (DB schema + L2) and F-003 (app shell + L3) — both unattended.
+- Session 003 (unattended: F-002): core schema in `src/server/db/schema/` (banking, categories, transactions, sync; 8 tables), first migration `drizzle/0000_init.sql`, `dedupeHash()` in `src/server/dedupe-hash.ts`, `applyMigrations()` shared by `migrate.ts` and L2, L2 wired into `check:full`, CI `Verify`, init.sh, session-start text and AGENTS.md. D-005.
+- Last verified: F-002 on 2026-10-23 — `pnpm check` (10 unit tests), the dedupe-hash unit test and `pnpm test:integration tests/integration/schema.int.test.ts` (11 tests) via `pnpm harness:verify F-002`, plus `pnpm build`. Earlier: `6577dd4` + the F-000 evidence commit — `pnpm check` (27 unit tests incl. the harness tests) and `pnpm harness:check` green on 2026-10-23 (F-000 evidence in `feature_list.json`).
+- Queue: `pnpm harness:feature list`. F-000 and F-002 are `passing`; ready now: F-001 (human-only: Enable Banking sandbox and fixtures), F-003 (app shell + L3) and the features that only needed F-002 (e.g. F-005 provider contract).
 - Loop merging: `main` is protected with the required `Verify` check (no review requirement) and `harness.config.json` has `merge: "auto"`, so `pnpm harness:loop` opens a PR per feature and GitHub squash-merges it once CI passes.
 - Current blocker: none. The unattended loop additionally needs `gh` and `claude` on `PATH`, `gh auth login`, and the GitHub settings in docs/harness/README.md § 4.
 
 ## Next Steps
 
 1. Do F-001 interactively (`/harness:clock-in F-001`): create the Enable Banking sandbox application, record anonymised fixtures under `tests/fixtures/enable-banking/`, fill the Findings in `docs/tickets/FIN-001-enable-banking-access-spike.md`.
-2. In parallel, run the loop for the unattended foundation: `pnpm harness:loop --once` (F-002), then F-003. Read the first traces and evaluator verdicts and record a row in the rubric's tuning log.
+2. Continue the loop: F-003 (app shell + L3), then F-005. Review F-002's PR: it is the first loop-built feature and the first CI run with the L2 step (Docker on `ubuntu-latest`).
+3. F-009 / F-012: two identical same-day transactions without a provider ref share a `dedupe_hash` and the second is rejected (FIN-002 Notes); decide how the importer disambiguates them.
 
 ## Session Log
+
+### Session 003 — 2026-10-23 (unattended loop: F-002)
+
+- Goal: F-002 — core schema, first migration and the L2 integration layer.
+- Completed: tables `institutions`, `connections`, `accounts`, `balance_snapshots`, `transactions`, `categories`, `category_rules`, `sync_runs` in four domain files plus `columns.ts` (money `bigint` + `char(3)`, `timestamptz`, `created_at`/`updated_at`); unique `(account_id, provider_txn_ref)`, `(account_id, dedupe_hash)`, `(account_id, date, balance_type)` and the two indexes the ticket names; migration generated with `pnpm db:generate --name init`; `createDb(url)` exported from `client.ts`, `applyMigrations()` in `migrations.ts`; `@testcontainers/postgresql` 12.2, `vitest.integration.config.mts`, `test:integration`, `check:full`, CI step, init.sh, session-start lines, AGENTS.md, README, architecture, tech stack, harness README, quality document.
+- Choices made without a human (FIN-002 Notes, D-005): calendar days are `date`, not `timestamptz`; `bigint` read as `number`; `provider` open text, closed sets as enums; explicit snake_case unique-constraint names; extra unique keys on institutions and categories for idempotent seeding; "`docker compose up` applies it" verified by an L2 test that runs `src/server/db/migrate.ts` (the compose `migrate` command) against a fresh database, since loop sessions must not run Docker Compose.
+- Verification run: `pnpm harness:verify F-002` → L1 `pnpm check`, L1 dedupe-hash unit test (8 tests), L2 schema test (11 tests: Postgres 18, all tables, bigint/char(3), timestamptz, indexes, migrate CLI, idempotent re-apply, duplicate ref/hash/snapshot rejected with the named constraint); `pnpm build` green; `FAST=1 ./init.sh` exited 0 on two consecutive runs; the `harness:evaluator` review asked for that init.sh evidence and the `category_kind` values in the architecture doc, both added.
+- Known risk: `pnpm add` reported ignored build scripts for `ssh2`/`cpu-features`/`protobufjs` (Testcontainers' optional native deps); they fall back to JS and L2 passes without them. CI has not run the L2 step yet.
+- Next best step: Next Steps 2.
 
 ### Session 002 — 2026-10-23 (interactive: move to the shared harness)
 

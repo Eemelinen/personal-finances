@@ -16,7 +16,7 @@ env:
 jobs:
   verify:
     # The job name is the required status check in branch protection. Keep it stable:
-    # F-002 (L2 integration) and F-003 (L3 e2e) add steps to this job instead of new jobs.
+    # Layers are steps of this job, not new jobs: L2 (F-002) is here, F-003 adds L3 (e2e).
     name: Verify
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -34,5 +34,8 @@ jobs:
       - run: pnpm harness:check
       - name: Unit tests
         run: pnpm test:unit
+      # L2: Testcontainers starts a throwaway Postgres 18 on the runner's Docker.
+      - name: Integration tests (L2)
+        run: pnpm test:integration
       - name: Build
         run: pnpm build

@@ -57,7 +57,7 @@
       "area": "foundation",
       "title": "Database schema, first migration and L2 integration layer",
       "user_visible_behavior": "`pnpm db:migrate` creates the core tables (institutions, connections, accounts, balance_snapshots, transactions, categories, category_rules, sync_runs) with money as bigint minor units plus a currency code and idempotency constraints on transactions and balance snapshots. `pnpm test:integration` (L2) runs Vitest integration tests against a throwaway Postgres 18 started by Testcontainers.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-000"],
       "ticket": "FIN-002",
       "spec": "docs/tickets/FIN-002-database-schema.md",
@@ -66,7 +66,11 @@
         "L1: pnpm test:unit tests/unit/server/dedupe-hash.test.ts (dedupe hash normalises date, amount, counterparty and description)",
         "L2: pnpm test:integration tests/integration/schema.int.test.ts (migrations apply to a fresh Postgres 18; duplicate provider_txn_ref and dedupe_hash rows per account are rejected)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-23 pnpm check → pass (working tree on a20eb7c)",
+        "2026-10-23 pnpm test:unit tests/unit/server/dedupe-hash.test.ts → pass (working tree on a20eb7c)",
+        "2026-10-23 pnpm test:integration tests/integration/schema.int.test.ts → pass (working tree on a20eb7c, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Replaces old FIN-003. Investment tables are F-019. `casing: \"snake_case\"` is configured: TS fields camelCase, columns snake_case."
     },

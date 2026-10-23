@@ -1,9 +1,7 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { closeDb, getDb } from "./client";
-
-const migrationsFolder = path.resolve("drizzle");
+import { applyMigrations, migrationsFolder } from "./migrations";
 
 async function main() {
   if (!existsSync(path.join(migrationsFolder, "meta", "_journal.json"))) {
@@ -12,7 +10,7 @@ async function main() {
   }
 
   try {
-    await migrate(getDb(), { migrationsFolder });
+    await applyMigrations(getDb());
     console.info("Migrations applied.");
   } finally {
     await closeDb();

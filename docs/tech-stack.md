@@ -35,25 +35,25 @@ TypeScript end to end, running locally in Docker Compose.
 | --------------- | --------------------------------------------------- | ------- |
 | Package manager | **pnpm** (pinned in `packageManager`, via corepack) | 10.15   |
 | Tests           | **Vitest**                                          | 5.0     |
+| L2 database     | **Testcontainers** (`@testcontainers/postgresql`)   | 12.2    |
 | Linting         | **ESLint** with `eslint-config-next`                | 9.39    |
 | Formatting      | **Prettier** + `prettier-plugin-tailwindcss`        | 3.9     |
 | Containers      | **Docker Compose**                                  | v2+     |
 
 ## Planned additions (added by the ticket that needs them)
 
-| Purpose                                | Candidate                                     | Ticket            |
-| -------------------------------------- | --------------------------------------------- | ----------------- |
-| UI components                          | shadcn/ui (Radix + Tailwind)                  | FIN-003           |
-| Charts                                 | Recharts                                      | FIN-016 – FIN-018 |
-| Sessions                               | iron-session (encrypted cookie)               | FIN-004           |
-| Password hashing                       | `@node-rs/argon2`                             | FIN-004           |
-| JWT signing (RS256) for Enable Banking | jose                                          | FIN-006           |
-| CSV parsing                            | papaparse                                     | FIN-012           |
-| Stock prices                           | Twelve Data / Alpha Vantage (free tier)       | FIN-020           |
-| Crypto prices                          | CoinGecko API                                 | FIN-021           |
-| Notifications                          | ntfy (self-hostable push)                     | FIN-024           |
-| Integration tests (L2)                 | Testcontainers (`@testcontainers/postgresql`) | FIN-002           |
-| End-to-end tests (L3)                  | Playwright                                    | FIN-003           |
+| Purpose                                | Candidate                               | Ticket            |
+| -------------------------------------- | --------------------------------------- | ----------------- |
+| UI components                          | shadcn/ui (Radix + Tailwind)            | FIN-003           |
+| Charts                                 | Recharts                                | FIN-016 – FIN-018 |
+| Sessions                               | iron-session (encrypted cookie)         | FIN-004           |
+| Password hashing                       | `@node-rs/argon2`                       | FIN-004           |
+| JWT signing (RS256) for Enable Banking | jose                                    | FIN-006           |
+| CSV parsing                            | papaparse                               | FIN-012           |
+| Stock prices                           | Twelve Data / Alpha Vantage (free tier) | FIN-020           |
+| Crypto prices                          | CoinGecko API                           | FIN-021           |
+| Notifications                          | ntfy (self-hostable push)               | FIN-024           |
+| End-to-end tests (L3)                  | Playwright                              | FIN-003           |
 
 ## External services
 
