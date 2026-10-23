@@ -216,7 +216,7 @@
       "area": "banking",
       "title": "Sync transactions",
       "user_visible_behavior": "`syncTransactions(connectionId)` backfills from the oldest available date, then syncs incrementally from `last_synced_at` minus a 7-day overlap; it upserts on `provider_txn_ref` with `dedupe_hash` as fallback, replaces pending transactions with their booked version, removes stale pending ones, never overwrites manual category or note edits, follows pagination and records fetched / inserted / updated counts in `sync_runs`. Running it twice changes nothing.",
-      "status": "in_progress",
+      "status": "passing",
       "depends_on": ["F-008"],
       "ticket": "FIN-009",
       "spec": "docs/tickets/FIN-009-sync-transactions.md",
@@ -225,7 +225,11 @@
         "L1: pnpm test:unit tests/unit/sync/transaction-merge.test.ts (pending to booked matching, overlap window, missing provider ids)",
         "L2: pnpm test:integration tests/integration/sync-transactions.int.test.ts (backfill, idempotent re-run, manual edits preserved)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-23 pnpm check → pass (commit 2abb878)",
+        "2026-10-23 pnpm test:unit tests/unit/sync/transaction-merge.test.ts → pass (commit 2abb878)",
+        "2026-10-23 pnpm test:integration tests/integration/sync-transactions.int.test.ts → pass (commit 2abb878, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Replaces old FIN-009."
     },
