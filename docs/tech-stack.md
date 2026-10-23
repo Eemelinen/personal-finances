@@ -11,6 +11,7 @@ TypeScript end to end, running locally in Docker Compose.
 | Web framework | **Next.js** (App Router)    | 16.4    | UI and backend (route handlers, server actions) in one app. Standalone output for Docker.         |
 | UI library    | **React**                   | 19.3    | Comes with Next.js.                                                                               |
 | Styling       | **Tailwind CSS**            | 4.3     | Fast utility-first styling, no CSS files to maintain.                                             |
+| UI components | **shadcn/ui** (Radix, Nova) | 4.22    | Accessible Radix primitives copied into `src/components/ui`; `lucide-react` icons.                |
 
 ## Data
 
@@ -36,6 +37,7 @@ TypeScript end to end, running locally in Docker Compose.
 | Package manager | **pnpm** (pinned in `packageManager`, via corepack) | 10.15   |
 | Tests           | **Vitest**                                          | 5.0     |
 | L2 database     | **Testcontainers** (`@testcontainers/postgresql`)   | 12.2    |
+| L3 browser      | **Playwright** (`@playwright/test`, Chromium)       | 1.63    |
 | Linting         | **ESLint** with `eslint-config-next`                | 9.39    |
 | Formatting      | **Prettier** + `prettier-plugin-tailwindcss`        | 3.9     |
 | Containers      | **Docker Compose**                                  | v2+     |
@@ -44,7 +46,6 @@ TypeScript end to end, running locally in Docker Compose.
 
 | Purpose                                | Candidate                               | Ticket            |
 | -------------------------------------- | --------------------------------------- | ----------------- |
-| UI components                          | shadcn/ui (Radix + Tailwind)            | FIN-003           |
 | Charts                                 | Recharts                                | FIN-016 – FIN-018 |
 | Sessions                               | iron-session (encrypted cookie)         | FIN-004           |
 | Password hashing                       | `@node-rs/argon2`                       | FIN-004           |
@@ -53,7 +54,6 @@ TypeScript end to end, running locally in Docker Compose.
 | Stock prices                           | Twelve Data / Alpha Vantage (free tier) | FIN-020           |
 | Crypto prices                          | CoinGecko API                           | FIN-021           |
 | Notifications                          | ntfy (self-hostable push)               | FIN-024           |
-| End-to-end tests (L3)                  | Playwright                              | FIN-003           |
 
 ## External services
 

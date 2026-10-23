@@ -80,7 +80,7 @@
       "area": "foundation",
       "title": "App shell and L3 end-to-end layer",
       "user_visible_behavior": "Every page shares an app shell with navigation (Dashboard, Transactions, Reports, Connections, Settings) and a header; pages without content yet show an empty state. `pnpm test:e2e` (L3) builds and serves the app and runs Playwright tests against it.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-000"],
       "ticket": "FIN-003",
       "spec": "docs/tickets/FIN-003-app-shell-and-e2e-layer.md",
@@ -88,7 +88,10 @@
         "L1: pnpm check",
         "L3: pnpm test:e2e tests/e2e/app-shell.spec.ts (every navigation link opens its page; the shell renders at desktop and mobile widths)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-23 pnpm check → pass (working tree on b248c99)",
+        "2026-10-23 pnpm test:e2e tests/e2e/app-shell.spec.ts → pass (working tree on b248c99, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Moved from old FIN-016 (the app shell part), so every UI feature after it can be verified end to end. Cache Components are on: request-time data must sit behind `<Suspense>` (see node_modules/next/dist/docs/)."
     },

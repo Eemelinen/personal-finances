@@ -34,7 +34,10 @@ repository, never here.
   - L2 is `pnpm test:integration`: Vitest project `integration` (`tests/integration/**/*.int.test.ts`);
     each file starts its own throwaway Postgres 18 with `startTestDatabase()` from
     `tests/integration/helpers/postgres.ts`, which applies the committed migrations.
-  - L3 (`pnpm test:e2e`, Playwright) arrives with F-003.
+  - L3 is `pnpm test:e2e`: Playwright (Chromium) runs `tests/e2e/**/*.spec.ts` against the
+    production build. Its `webServer` (`tests/e2e/support/server.ts`) starts a Testcontainers
+    Postgres 18, applies the migrations, runs `pnpm build` and serves the standalone output on
+    `127.0.0.1:3100` (`E2E_PORT`); `E2E_SKIP_BUILD=1` reuses an existing build (CI).
   - L2 and L3 need Docker. `harness verify` refuses to run them without it, and `services.up`
     (`pnpm db:up`) runs once in the driver preflight.
 - **Guard rules beyond the core.**
@@ -57,7 +60,8 @@ repository, never here.
 - Docker Desktop running.
 - `gh` logged in.
 - `main` clean and in sync with `origin/main`.
-- Playwright browsers installed, once F-003 adds L3 (`pnpm exec playwright install chromium`).
+- Playwright Chromium installed for L3 (`pnpm exec playwright install chromium`; `./init.sh` warns
+  when the revision `@playwright/test` needs is missing).
 - On Windows, run the driver from Git Bash.
 - Run `claude` in the repository once and accept the trust dialog and the plugin marketplace.
 
@@ -72,5 +76,5 @@ the branch and the PR still merges.
 **Cost and limits.** The caps are 200 turns / 15 USD / 60 minutes per generator session and
 60 turns / 4 USD for the evaluator. Raise them only after measuring runs.
 
-**Sequential only.** Docker Compose uses fixed container names, and once F-003 adds L3 it uses a
-fixed test port. So one feature runs at a time.
+**Sequential only.** Docker Compose uses fixed container names, and L3 serves on a
+fixed test port (3100). So one feature runs at a time.

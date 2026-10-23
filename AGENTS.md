@@ -25,15 +25,15 @@ Claude Code: `/harness:clock-in` runs these steps; the SessionStart hook prints 
 
 ## Verification layers
 
-| Layer | Command                 | Covers                                                    | Needs                                  |
-| ----- | ----------------------- | --------------------------------------------------------- | -------------------------------------- |
-| L1    | `pnpm check`            | lint, typecheck, format:check, unit tests (incl. harness) | nothing                                |
-| L2    | `pnpm test:integration` | DB schema, migrations, sync, queries (Testcontainers)     | Docker Desktop                         |
-| L3    | `pnpm test:e2e`         | Playwright against the built app                          | Docker + browsers — **added by F-003** |
+| Layer | Command                 | Covers                                                    | Needs                        |
+| ----- | ----------------------- | --------------------------------------------------------- | ---------------------------- |
+| L1    | `pnpm check`            | lint, typecheck, format:check, unit tests (incl. harness) | nothing                      |
+| L2    | `pnpm test:integration` | DB schema, migrations, sync, queries (Testcontainers)     | Docker Desktop               |
+| L3    | `pnpm test:e2e`         | Playwright (Chromium) against the built app (own test DB) | Docker + Playwright Chromium |
 
 - Layers run in order. Do not proceed to layer N+1 while layer N fails, and do not skip a layer a feature lists.
 - L3 is required when a change crosses component boundaries (UI + server/DB/worker).
-- The repository is in a consistent state when `pnpm check` exits 0. `pnpm check:full` adds L2 and a production build.
+- The repository is in a consistent state when `pnpm check` exits 0. `pnpm check:full` adds L2 and L3 (which builds the app).
 - The feature that introduces L2 or L3 also updates this table, `check:full`, `init.sh`, the session-start hook and the CI `Verify` job.
 - `pnpm harness:check` validates `feature_list.json`; it also runs from `pnpm check` and lint-staged.
 - `pnpm harness:verify F-NNN` runs a feature's layers in order and records evidence; `manual:` steps fail closed. `pnpm harness:clean-state` is the machine-checkable clock-out gate.

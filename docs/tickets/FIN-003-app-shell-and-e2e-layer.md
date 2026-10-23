@@ -23,3 +23,6 @@ Every page shares an app shell with navigation (Dashboard, Transactions, Reports
 
 - Moved from old FIN-016 (the app shell part), so every UI feature after it can be verified end to end.
 - Cache Components are on: request-time data must sit behind `<Suspense>` (see node_modules/next/dist/docs/).
+- Choices made in the unattended F-003 session (D-006): the e2e database is Testcontainers, started by the Playwright `webServer` script `tests/e2e/support/server.ts`, which also builds the app and serves the standalone output on `127.0.0.1:3100`; `@playwright/test` is pinned to 1.63.0 to use the Chromium already on the machine; shadcn/ui uses the Radix base and the Nova preset; pages live in the `(app)` route group.
+- `harness.config.json` already allowed `pnpm test:e2e*` and `pnpm exec playwright install*`, so only its session-start texts changed.
+- Deviation: none from the acceptance criteria. "Desktop and mobile widths" are 1280×800 and 390×844 (touch) viewports in one spec rather than separate Playwright projects.

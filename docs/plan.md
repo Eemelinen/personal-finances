@@ -77,7 +77,7 @@ The project is built with the agent harness ported from Metsävahti ([docs/harne
 1. **The queue** is [feature_list.json](../feature_list.json): 25 features (F-000 – F-024), each one session in size, with `depends_on` and exact verification commands per layer (L1 `pnpm check`, L2 integration, L3 end-to-end, `manual:` for human-only steps). Each feature's spec is its ticket in [docs/tickets/](tickets/README.md) (`FIN-NNN` ↔ `F-NNN`).
 2. **A session** clocks in (reads PROGRESS.md, picks the next ready feature, runs `./init.sh`), implements exactly one feature, runs `pnpm harness:verify F-NNN` (which records evidence and sets `passing`), and clocks out (clean-state check, PROGRESS.md, commit). Status only changes through the harness scripts.
 3. **Unattended:** `pnpm harness:loop` runs that same session per ready feature in its own git worktree, re-checks the result, has a separate evaluator session review it, and opens one PR per feature. It skips human-only features; those are done interactively (`/harness:clock-in F-001`).
-4. **Layers grow with the code:** L1 exists now; F-002 adds L2 (Testcontainers Postgres) and F-003 adds L3 (Playwright).
+4. **Layers grow with the code:** L1 came with the scaffold, F-002 added L2 (Testcontainers Postgres) and F-003 added L3 (Playwright).
 
 ## Milestones
 
