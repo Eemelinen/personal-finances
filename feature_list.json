@@ -116,7 +116,10 @@
         "2026-10-23 pnpm test:e2e tests/e2e/auth.spec.ts → pass (working tree on 3c68e83, Docker available)",
         "2026-10-23 pnpm check → pass (commit f33230e)",
         "2026-10-23 pnpm test:unit tests/unit/auth/session.test.ts → pass (commit f33230e)",
-        "2026-10-23 pnpm test:e2e tests/e2e/auth.spec.ts → pass (commit f33230e, Docker available)"
+        "2026-10-23 pnpm test:e2e tests/e2e/auth.spec.ts → pass (commit f33230e, Docker available)",
+        "2026-10-23 pnpm check → pass (commit 913ef9d)",
+        "2026-10-23 pnpm test:unit tests/unit/auth/session.test.ts → pass (commit 913ef9d)",
+        "2026-10-23 pnpm test:e2e tests/e2e/auth.spec.ts → pass (commit 913ef9d, Docker available)"
       ],
       "attempts": 1,
       "notes": "Replaces old FIN-004. Follow `node_modules/next/dist/docs/01-app/02-guides/authentication-with-cache-components.md`. Attempt 1 failed 2026-10-23: evaluator: Revise"
