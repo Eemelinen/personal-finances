@@ -27,7 +27,8 @@
     "harness:verify": "tsx scripts/verify-feature.ts",
     "harness:clean-state": "bash scripts/clean-state-check.sh",
     "harness:loop": "tsx scripts/harness-loop.ts",
-    "harness:report": "tsx scripts/harness-loop.ts --report"
+    "harness:report": "tsx scripts/harness-loop.ts --report",
+    "prepare": "husky"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.4",
@@ -39,6 +40,8 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^24.19.2",
     "@types/react": "^19",
@@ -46,6 +49,8 @@
     "drizzle-kit": "^0.31.11",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
     "prettier": "^3.9.10",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "tailwindcss": "^4",
