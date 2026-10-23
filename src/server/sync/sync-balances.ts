@@ -1,29 +1,26 @@
-import { and, eq, sql } from "drizzle-orm";
-import { decryptSecret } from "@/server/crypto";
-import { getDb, type Db } from "@/server/db/client";
-import {
-  accounts,
-  balanceSnapshots,
-  connections,
-  syncRuns,
-} from "@/server/db/schema";
-import {
-  isProviderError,
-  ProviderAuthError,
-  ProviderRateLimitError,
-  type ProviderError,
-  type ProviderErrorKind,
-} from "@/server/providers/errors";
-import {
-  getProviderRegistry,
-  type ProviderRegistry,
-} from "@/server/providers/registry";
+import { eq, sql } from "drizzle-orm";
+import { getDb } from "@/server/db/client";
+import { accounts, balanceSnapshots, connections } from "@/server/db/schema";
+import { isProviderError } from "@/server/providers/errors";
 import type {
   FinancialProvider,
   ProviderAccount,
   ProviderBalance,
   ProviderConnection,
 } from "@/server/providers/types";
+import {
+  failNotActive,
+  failRunOnBug,
+  finishRun,
+  openConnection,
+  recordProviderFailure,
+  startRun,
+  type ConnectionStatus,
+  type SyncErrorKind,
+  type SyncFailure,
+  type SyncOptions,
+  type Tx,
+} from "./runs";
 
 // Syncs the accounts of one connection and their balances (F-008).
 //
@@ -37,24 +34,9 @@ import type {
 // Two syncs of one connection must not run at once (F-010 holds an advisory
 // lock around this call).
 
-type ConnectionStatus = (typeof connections.$inferSelect)["status"];
+export { ConnectionNotFoundError } from "./runs";
 
-export class ConnectionNotFoundError extends Error {
-  override readonly name = "ConnectionNotFoundError";
-
-  constructor(readonly connectionId: string) {
-    super(`No connection ${JSON.stringify(connectionId)}`);
-  }
-}
-
-export interface SyncBalancesOptions {
-  db?: Db;
-  providers?: ProviderRegistry;
-  /** Decrypts `connections.session_ref`; defaults to `decryptSecret()`. */
-  decrypt?: (sessionRef: string) => string;
-  /** The clock for `started_at`, `finished_at` and `last_synced_at`. */
-  now?: () => Date;
-}
+export type SyncBalancesOptions = SyncOptions;
 
 export interface SyncBalancesCounts {
   /** Accounts the provider listed. */
@@ -81,7 +63,7 @@ export interface SyncBalancesResult {
    * Why a failed run failed: the provider error's kind, or `not_active` when
    * the connection is not `active` and the provider was not called.
    */
-  errorKind: ProviderErrorKind | "not_active" | null;
+  errorKind: SyncErrorKind | null;
   /** When rate limited: how long the provider asked to wait, if it said. */
   retryAfterMs: number | null;
   counts: SyncBalancesCounts;
@@ -102,68 +84,34 @@ const NO_COUNTS: Readonly<SyncBalancesCounts> = {
   updated: 0,
 };
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
 export async function syncBalances(
   connectionId: string,
   options: SyncBalancesOptions = {},
 ): Promise<SyncBalancesResult> {
   const db = options.db ?? getDb();
   const now = options.now ?? (() => new Date());
+  const { connection, runId } = await startRun(db, connectionId, now);
 
-  const [connection] = await db
-    .select()
-    .from(connections)
-    .where(eq(connections.id, connectionId));
-  if (!connection) throw new ConnectionNotFoundError(connectionId);
-
-  const [run] = await db
-    .insert(syncRuns)
-    .values({ connectionId, startedAt: now() })
-    .returning({ id: syncRuns.id });
-
-  const failed = (
-    connectionStatus: ConnectionStatus,
-    error: string,
-    errorKind: SyncBalancesResult["errorKind"],
-    retryAfterMs: number | null = null,
-  ): SyncBalancesResult => ({
-    runId: run.id,
-    status: "failed",
-    connectionStatus,
-    error,
-    errorKind,
-    retryAfterMs,
+  const failed = (failure: SyncFailure): SyncBalancesResult => ({
+    runId,
+    ...failure,
     counts: { ...NO_COUNTS },
   });
 
   try {
     if (connection.status !== "active") {
-      const error = `The connection is ${connection.status}`;
-      await finishRun(db, run.id, now(), { status: "failed", error });
-      return failed(connection.status, error, "not_active");
+      return failed(await failNotActive(db, runId, connection, now));
     }
-
-    const providers = options.providers ?? getProviderRegistry();
-    const provider = providers.get(connection.provider);
-    const decrypt = options.decrypt ?? ((value) => decryptSecret(value));
 
     let fetched: FetchedAccount[];
     try {
-      if (connection.sessionRef === null) {
-        throw new ProviderAuthError(
-          provider.id,
-          "The connection has no provider session",
-        );
-      }
-      fetched = await fetchAccounts(provider, {
-        sessionRef: decrypt(connection.sessionRef),
-      });
+      const { provider, session } = openConnection(connection, options);
+      fetched = await fetchAccounts(provider, session);
     } catch (error) {
       if (!isProviderError(error)) throw error;
-      return await recordProviderFailure(db, run.id, connection.id, error, now);
+      return failed(
+        await recordProviderFailure(db, runId, connection.id, error, now),
+      );
     }
 
     return await db.transaction(async (tx) => {
@@ -174,7 +122,7 @@ export async function syncBalances(
         fetched,
       );
       const finishedAt = now();
-      await finishRun(tx, run.id, finishedAt, {
+      await finishRun(tx, runId, finishedAt, {
         status: "succeeded",
         accountsCount: counts.accounts,
         fetchedCount: counts.fetched,
@@ -186,7 +134,7 @@ export async function syncBalances(
         .set({ lastSyncedAt: finishedAt })
         .where(eq(connections.id, connection.id));
       return {
-        runId: run.id,
+        runId,
         status: "succeeded" as const,
         connectionStatus: connection.status,
         error: null,
@@ -196,11 +144,7 @@ export async function syncBalances(
       };
     });
   } catch (error) {
-    // A bug or a database failure: keep the run from staying `running`.
-    await db
-      .update(syncRuns)
-      .set({ status: "failed", finishedAt: now(), error: errorMessage(error) })
-      .where(and(eq(syncRuns.id, run.id), eq(syncRuns.status, "running")));
+    await failRunOnBug(db, runId, error, now);
     throw error;
   }
 }
@@ -217,52 +161,6 @@ async function fetchAccounts(
     fetched.push({ account, balances });
   }
   return fetched;
-}
-
-type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
-
-async function finishRun(
-  db: Db | Tx,
-  runId: string,
-  finishedAt: Date,
-  values: Partial<typeof syncRuns.$inferInsert>,
-): Promise<void> {
-  await db
-    .update(syncRuns)
-    .set({ ...values, finishedAt })
-    .where(eq(syncRuns.id, runId));
-}
-
-async function recordProviderFailure(
-  db: Db,
-  runId: string,
-  connectionId: string,
-  error: ProviderError,
-  now: () => Date,
-): Promise<SyncBalancesResult> {
-  const expired = error.kind === "auth_expired";
-  const connectionStatus = await db.transaction(async (tx) => {
-    await finishRun(tx, runId, now(), {
-      status: "failed",
-      error: errorMessage(error),
-    });
-    if (!expired) return "active" as const;
-    await tx
-      .update(connections)
-      .set({ status: "expired" })
-      .where(eq(connections.id, connectionId));
-    return "expired" as const;
-  });
-  return {
-    runId,
-    status: "failed",
-    connectionStatus,
-    error: errorMessage(error),
-    errorKind: error.kind,
-    retryAfterMs:
-      error instanceof ProviderRateLimitError ? error.retryAfterMs : null,
-    counts: { ...NO_COUNTS },
-  };
 }
 
 /**

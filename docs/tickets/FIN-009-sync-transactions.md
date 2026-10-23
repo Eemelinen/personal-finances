@@ -21,3 +21,12 @@
 ## Notes
 
 - Replaces old FIN-009.
+- Choices made unattended (D-010), deviations from the Goal in bold:
+  - **The incremental window starts from a per-account watermark, `accounts.transactions_synced_at` minus 7 days, not `connections.last_synced_at`**: `syncBalances()` sets the latter too, so transactions that keep failing would leave a gap, and an account added later would get only 7 days. The window also reaches back to the account's oldest stored pending transaction. `last_synced_at` is still set on success.
+  - **Provider contract changed** (F-005 types): `TransactionRange.from` is optional (backfill = "oldest available", the provider decides how far), and `getTransactions()` is paged with a `continuationKey`; `fetchAllTransactions()` follows the pages. The fake pages by 100.
+  - **New column `transactions.note`** (migration `0001_sync_transactions.sql`, with `transactions_synced_at`), so preserving note edits is testable; F-015 edits it.
+  - Own `sync_runs` row per call; each account is written in its own database transaction, so a rate limit keeps the accounts already done and is recorded with their counts. `removed` (stale pending) is in the result only; `sync_runs` has no column for it.
+  - Pending → booked: matched by ref, then hash, then same amount and currency within 7 days (same counterparty first). Unmatched stored pending rows are deleted; booked rows are never deleted.
+  - Identical transactions in one listing get an occurrence number in their `dedupe_hash` (resolves the FIN-002 known limit for synced data).
+  - Categorisation hook: `categorize(tx, insertedIds)` option, called after inserts in the same database transaction, default no-op.
+  - Known gaps from the review (D-010 Consequences): the next-free-occurrence hash is checked against loaded rows only; the pending reach-back can exceed a bank's history limit (F-006 clamps); the fuzzy pending match is greedy in listing order.

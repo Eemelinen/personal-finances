@@ -72,6 +72,31 @@ describe("dedupeHash", () => {
   });
 });
 
+describe("dedupeHash occurrence", () => {
+  const input = {
+    bookingDate: "2026-03-01",
+    amountMinor: -250,
+    counterparty: "Example Cafe",
+    description: "Card purchase",
+  };
+
+  it("hashes the first occurrence as before and later ones apart", () => {
+    const first = dedupeHash(input);
+
+    expect(dedupeHash({ ...input, occurrence: 1 })).toBe(first);
+    expect(dedupeHash({ ...input, occurrence: 2 })).not.toBe(first);
+    expect(dedupeHash({ ...input, occurrence: 3 })).not.toBe(
+      dedupeHash({ ...input, occurrence: 2 }),
+    );
+  });
+
+  it("rejects occurrences that are not positive integers", () => {
+    for (const occurrence of [0, -1, 1.5, Number.NaN]) {
+      expect(() => dedupeHash({ ...input, occurrence })).toThrow(/Occurrence/);
+    }
+  });
+});
+
 describe("normalisers", () => {
   it("rejects dates it cannot read", () => {
     expect(() => normaliseDate("2026-02-30")).toThrow(/Invalid/);
