@@ -228,7 +228,10 @@
       "evidence": [
         "2026-10-23 pnpm check → pass (commit 2abb878)",
         "2026-10-23 pnpm test:unit tests/unit/sync/transaction-merge.test.ts → pass (commit 2abb878)",
-        "2026-10-23 pnpm test:integration tests/integration/sync-transactions.int.test.ts → pass (commit 2abb878, Docker available)"
+        "2026-10-23 pnpm test:integration tests/integration/sync-transactions.int.test.ts → pass (commit 2abb878, Docker available)",
+        "2026-10-23 pnpm check → pass (commit 66622de)",
+        "2026-10-23 pnpm test:unit tests/unit/sync/transaction-merge.test.ts → pass (commit 66622de)",
+        "2026-10-23 pnpm test:integration tests/integration/sync-transactions.int.test.ts → pass (commit 66622de, Docker available)"
       ],
       "attempts": 0,
       "notes": "Replaces old FIN-009."
