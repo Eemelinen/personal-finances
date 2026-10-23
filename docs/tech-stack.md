@@ -31,12 +31,13 @@ TypeScript end to end, running locally in Docker Compose.
 
 ## Tooling
 
-| Purpose    | Choice                                       | Version |
-| ---------- | -------------------------------------------- | ------- |
-| Tests      | **Vitest**                                   | 5.0     |
-| Linting    | **ESLint** with `eslint-config-next`         | 9.39    |
-| Formatting | **Prettier** + `prettier-plugin-tailwindcss` | 3.9     |
-| Containers | **Docker Compose**                           | v2+     |
+| Purpose         | Choice                                              | Version |
+| --------------- | --------------------------------------------------- | ------- |
+| Package manager | **pnpm** (pinned in `packageManager`, via corepack) | 10.15   |
+| Tests           | **Vitest**                                          | 5.0     |
+| Linting         | **ESLint** with `eslint-config-next`                | 9.39    |
+| Formatting      | **Prettier** + `prettier-plugin-tailwindcss`        | 3.9     |
+| Containers      | **Docker Compose**                                  | v2+     |
 
 ## Planned additions (added by the ticket that needs them)
 

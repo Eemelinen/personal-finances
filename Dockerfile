@@ -2,11 +2,14 @@
 
 FROM node:24-alpine AS base
 WORKDIR /app
-ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_TELEMETRY_DISABLED=1 \
+    COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+# pnpm version comes from "packageManager" in package.json.
+RUN corepack enable
 
 FROM base AS deps
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
 # Full source with dev dependencies (tsx). Used by the worker and the
 # one-shot migrate service.
@@ -19,7 +22,7 @@ USER node
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npm run build
+RUN pnpm build
 
 FROM base AS app
 ENV NODE_ENV=production \

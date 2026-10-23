@@ -16,17 +16,17 @@ A self-hosted personal finance dashboard. It syncs balances and transactions fro
 
 ## Quick start
 
-Requirements: Node.js 24 LTS (`nvm use`) and Docker Desktop.
+Requirements: Node.js 24 LTS (`nvm use`), pnpm via corepack (`corepack enable`) and Docker Desktop.
 
 ```sh
 cp .env.example .env        # then set POSTGRES_PASSWORD and DATABASE_URL
-npm install
+pnpm install
 ```
 
 Notes:
 
 - Postgres is published on host port **5434** (not 5432) to avoid clashing with other local projects. Change `POSTGRES_PORT` and `DATABASE_URL` in `.env` if needed.
-- npm 11.19+ blocks package install scripts unless approved. The approved ones (esbuild, unrs-resolver) are listed under `allowScripts` in `package.json`. Review any new ones with `npm install-scripts ls`.
+- pnpm (pinned via `packageManager`, run through corepack) only runs install scripts for packages listed in `pnpm.onlyBuiltDependencies` in `package.json` (esbuild, unrs-resolver). `pnpm approve-builds` adds new ones.
 
 **Option A: everything in Docker**
 
@@ -40,24 +40,24 @@ docker compose up --build -d
 
 ```sh
 docker compose up -d db
-npm run db:migrate
-npm run dev          # Next.js on http://localhost:3000
-npm run worker:dev   # in another terminal: scheduled jobs
+pnpm db:migrate
+pnpm dev          # Next.js on http://localhost:3000
+pnpm worker:dev   # in another terminal: scheduled jobs
 ```
 
 ## Scripts
 
-| Script                                    | Description                                   |
-| ----------------------------------------- | --------------------------------------------- |
-| `npm run dev`                             | Next.js dev server                            |
-| `npm run build` / `npm start`             | Production build / start                      |
-| `npm run worker` / `npm run worker:dev`   | Run the background worker (with watch in dev) |
-| `npm run db:generate`                     | Generate a SQL migration from schema changes  |
-| `npm run db:migrate`                      | Apply migrations                              |
-| `npm run db:studio`                       | Browse the database with Drizzle Studio       |
-| `npm test` / `npm run test:watch`         | Unit tests (Vitest)                           |
-| `npm run lint` / `npm run typecheck`      | ESLint / TypeScript checks                    |
-| `npm run format` / `npm run format:check` | Prettier                                      |
+| Script                              | Description                                   |
+| ----------------------------------- | --------------------------------------------- |
+| `pnpm dev`                          | Next.js dev server                            |
+| `pnpm build` / `pnpm start`         | Production build / start                      |
+| `pnpm worker` / `pnpm worker:dev`   | Run the background worker (with watch in dev) |
+| `pnpm db:generate`                  | Generate a SQL migration from schema changes  |
+| `pnpm db:migrate`                   | Apply migrations                              |
+| `pnpm db:studio`                    | Browse the database with Drizzle Studio       |
+| `pnpm test` / `pnpm test:watch`     | Unit tests (Vitest)                           |
+| `pnpm lint` / `pnpm typecheck`      | ESLint / TypeScript checks                    |
+| `pnpm format` / `pnpm format:check` | Prettier                                      |
 
 ## Project structure
 
