@@ -55,7 +55,6 @@ TypeScript end to end, running locally in Docker Compose.
 | -------------------------------------- | --------------------------------------- | ----------------- |
 | Charts                                 | Recharts                                | FIN-016 – FIN-018 |
 | JWT signing (RS256) for Enable Banking | jose                                    | FIN-006           |
-| CSV parsing                            | papaparse                               | FIN-012           |
 | Stock prices                           | Twelve Data / Alpha Vantage (free tier) | FIN-020           |
 | Crypto prices                          | CoinGecko API                           | FIN-021           |
 | Notifications                          | ntfy (self-hostable push)               | FIN-024           |

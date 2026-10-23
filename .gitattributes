@@ -2,3 +2,5 @@
 # checkout on Windows breaks them with "$'\r': command not found".
 *.sh text eol=lf
 .husky/* text eol=lf
+
+tests/fixtures/csv/** -text

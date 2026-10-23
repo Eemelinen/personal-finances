@@ -1,0 +1,5 @@
+Date,Amount,Payee,Memo,Balance
+2026-04-01,-12.34,Example Shop,"Groceries, weekly",987.66
+2026-04-02,"1,234.56",Example Employer,Salary,"2,222.22"
+2026-04-03,-3.50,Example Cafe,Coffee,2218.72
+not a date,-1.00,Example Cafe,Coffee,2217.72

@@ -281,7 +281,7 @@
       "area": "banking",
       "title": "CSV import for Nordea and S-Pankki exports",
       "user_visible_behavior": "`/import` uploads a Nordea or S-Pankki netbank CSV export (or a generic CSV with chosen columns), previews the parsed rows for a chosen or new manual account and imports them through the same upsert and dedupe path as API sync; the summary shows rows read, inserted, skipped as duplicates and errors with row numbers.",
-      "status": "not_started",
+      "status": "in_progress",
       "depends_on": ["F-004", "F-009"],
       "ticket": "FIN-012",
       "spec": "docs/tickets/FIN-012-csv-import.md",
