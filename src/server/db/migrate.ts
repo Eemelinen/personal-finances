@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
+import { seedDefaults } from "@/server/categorization/seed";
 import { closeDb, getDb } from "./client";
 import { applyMigrations, migrationsFolder } from "./migrations";
 
@@ -12,6 +13,12 @@ async function main() {
   try {
     await applyMigrations(getDb());
     console.info("Migrations applied.");
+    const seed = await seedDefaults(getDb());
+    if (seed.seeded) {
+      console.info(
+        `Seeded ${seed.categories} default categories and ${seed.rules} rules.`,
+      );
+    }
   } finally {
     await closeDb();
   }

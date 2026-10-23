@@ -331,7 +331,7 @@
       "area": "categorization",
       "title": "Categorization engine and own-transfer detection",
       "user_visible_behavior": "Seeded two-level default categories and rules for common Finnish merchants categorise new transactions after every sync and import; rules match counterparty or description (contains, equals, regex) and optionally amount sign or range, applied by priority, first match wins; manual categories are never overwritten; re-apply rules recategorises all non-manual transactions. A debit and a credit of the same absolute amount between my own accounts within ±3 days (or to an own IBAN) are linked as a transfer pair with the Transfers category and excluded from spending and income.",
-      "status": "not_started",
+      "status": "in_progress",
       "depends_on": ["F-009"],
       "ticket": "FIN-014",
       "spec": "docs/tickets/FIN-014-categorization-engine.md",

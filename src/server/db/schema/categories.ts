@@ -8,7 +8,7 @@ import {
   unique,
   uuid,
 } from "drizzle-orm/pg-core";
-import { timestamps } from "./columns";
+import { amountMinor, timestamps } from "./columns";
 
 // Spending/income categories (two levels) and the rules that assign them.
 
@@ -28,6 +28,9 @@ export const ruleMatchType = pgEnum("rule_match_type", [
   "equals",
   "regex",
 ]);
+
+/** Which way the money moves: `debit` is out (negative), `credit` in. */
+export const ruleAmountSign = pgEnum("rule_amount_sign", ["debit", "credit"]);
 
 export const categories = pgTable(
   "categories",
@@ -60,6 +63,11 @@ export const categoryRules = pgTable(
     matchField: ruleMatchField().notNull(),
     matchType: ruleMatchType().notNull(),
     pattern: text().notNull(),
+    /** Optional: only debits or only credits. */
+    amountSign: ruleAmountSign(),
+    /** Optional inclusive bounds on the absolute amount, in minor units. */
+    amountMinMinor: amountMinor(),
+    amountMaxMinor: amountMinor(),
     /** Lower runs first; the first matching rule wins (F-014). */
     priority: integer().notNull().default(100),
     ...timestamps,

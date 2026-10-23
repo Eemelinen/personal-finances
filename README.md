@@ -71,7 +71,7 @@ In Claude Code: `/harness:clock-in`, implement, `/harness:verify-feature F-NNN`,
 | `pnpm build` / `pnpm start`          | Production build / start                      |
 | `pnpm worker` / `pnpm worker:dev`    | Run the background worker (with watch in dev) |
 | `pnpm db:generate`                   | Generate a SQL migration from schema changes  |
-| `pnpm db:migrate`                    | Apply migrations                              |
+| `pnpm db:migrate`                    | Apply migrations, seed the default categories |
 | `pnpm db:studio`                     | Browse the database with Drizzle Studio       |
 | `pnpm auth:hash`                     | Print `AUTH_PASSWORD_HASH` for a password     |
 | `pnpm test:unit` / `pnpm test:watch` | Unit tests (Vitest project `unit`)            |
