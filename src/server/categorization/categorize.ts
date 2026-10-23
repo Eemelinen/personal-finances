@@ -21,7 +21,7 @@ import {
 } from "@/server/db/schema";
 import type { Tx } from "@/server/sync/runs";
 import { TRANSFERS_CATEGORY } from "./defaults";
-import { compileRules, matchRule, type CompiledRule } from "./rules";
+import { compileRules, ruleOutcome, type CompiledRule } from "./rules";
 import {
   findTransfers,
   TRANSFER_WINDOW_DAYS,
@@ -165,13 +165,9 @@ async function applyRules(tx: Tx, scope: Scope): Promise<number> {
   // Target category ("" = none) → ids that must change to it.
   const changes = new Map<string, string[]>();
   for (const row of rows) {
-    const rule = matchRule(rules, row);
-    const categoryId = rule?.categoryId ?? null;
-    const source = rule ? "rule" : "none";
-    if (row.categoryId === categoryId && row.categorySource === source) {
-      continue;
-    }
-    const key = categoryId ?? "";
+    const outcome = ruleOutcome(rules, row);
+    if (!outcome.change) continue;
+    const key = outcome.categoryId ?? "";
     const ids = changes.get(key);
     if (ids) ids.push(row.id);
     else changes.set(key, [row.id]);

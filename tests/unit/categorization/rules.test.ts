@@ -9,6 +9,8 @@ import {
   compileRules,
   matchRule,
   normalizeText,
+  ruleOutcome,
+  type CategorizedSubject,
   type CategoryRule,
   type RuleSubject,
 } from "@/server/categorization/rules";
@@ -188,6 +190,72 @@ describe("priority", () => {
 
   it("no rules, no match", () => {
     expect(first([], subject())).toBeNull();
+  });
+});
+
+describe("manual always wins", () => {
+  const smarket = rule({ pattern: "s-market" });
+  const rules = compileRules([smarket]);
+  const stored = (
+    overrides: Partial<CategorizedSubject> = {},
+  ): CategorizedSubject => ({
+    ...subject(),
+    categoryId: null,
+    categorySource: "none",
+    transferGroupId: null,
+    ...overrides,
+  });
+
+  it("a manual category is kept even when a rule matches", () => {
+    expect(
+      ruleOutcome(
+        rules,
+        stored({ categoryId: "my-own", categorySource: "manual" }),
+      ),
+    ).toEqual({ change: false });
+    expect(
+      ruleOutcome(
+        rules,
+        stored({
+          categoryId: null,
+          categorySource: "manual",
+          counterparty: "Tuntematon",
+        }),
+      ),
+    ).toEqual({ change: false });
+  });
+
+  it("a transfer keeps its category", () => {
+    expect(
+      ruleOutcome(
+        rules,
+        stored({ categoryId: "transfers", transferGroupId: "group" }),
+      ),
+    ).toEqual({ change: false });
+  });
+
+  it("anything else takes the first match, or none, and unchanged is no change", () => {
+    expect(ruleOutcome(rules, stored())).toEqual({
+      change: true,
+      categoryId: smarket.categoryId,
+      categorySource: "rule",
+    });
+    expect(
+      ruleOutcome(
+        rules,
+        stored({ categoryId: smarket.categoryId, categorySource: "rule" }),
+      ),
+    ).toEqual({ change: false });
+    expect(
+      ruleOutcome(
+        rules,
+        stored({
+          categoryId: "old",
+          categorySource: "rule",
+          counterparty: "Tuntematon",
+        }),
+      ),
+    ).toEqual({ change: true, categoryId: null, categorySource: "none" });
   });
 });
 

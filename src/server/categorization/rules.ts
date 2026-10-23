@@ -99,3 +99,38 @@ export function matchRule(
   }
   return null;
 }
+
+export interface CategorizedSubject extends RuleSubject {
+  categoryId: string | null;
+  categorySource: "none" | "rule" | "manual";
+  transferGroupId: string | null;
+}
+
+export type RuleOutcome =
+  | { change: false }
+  | {
+      change: true;
+      categoryId: string | null;
+      categorySource: "rule" | "none";
+    };
+
+/**
+ * What the rules make of a stored transaction: a manual category always
+ * wins and a transfer keeps its Transfers category (no change); otherwise
+ * the first matching rule's category, or none. Unchanged values are no change.
+ */
+export function ruleOutcome(
+  rules: readonly CompiledRule[],
+  txn: CategorizedSubject,
+): RuleOutcome {
+  if (txn.categorySource === "manual" || txn.transferGroupId !== null) {
+    return { change: false };
+  }
+  const rule = matchRule(rules, txn);
+  const categoryId = rule?.categoryId ?? null;
+  const categorySource = rule ? "rule" : "none";
+  if (txn.categoryId === categoryId && txn.categorySource === categorySource) {
+    return { change: false };
+  }
+  return { change: true, categoryId, categorySource };
+}
