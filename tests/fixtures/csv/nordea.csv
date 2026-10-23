@@ -1,0 +1,9 @@
+Tilinumero	FI00 0000 0000 0000 01
+
+Kirjausp‰iv‰	Arvop‰iv‰	Maksup‰iv‰	M‰‰r‰	Saaja/Maksaja	Tilinumero	BIC	Tapahtuma	Viite	Maksajan viite	Viesti	Kortinnumero	Kuitti
+02.01.2026	02.01.2026	02.01.2026	-950,00	Esimerkki Asunnot Oy	FI00 0000 0000 0000 02	TESTFIHH	Tilisiirto	12345		Vuokra tammikuu		
+05.01.2026	05.01.2026	04.01.2026	-4,50	Kahvila M‰‰r‰np‰‰			Korttiosto				4000 00** **** 0001	
+05.01.2026	05.01.2026	04.01.2026	-4,50	Kahvila M‰‰r‰np‰‰			Korttiosto				4000 00** **** 0001	
+15.01.2026	15.01.2026	15.01.2026	+3500,00	Esimerkki Tyˆnantaja Oy	FI00 0000 0000 0000 03	TESTFIHH	Palkka			Palkka tammikuu		
+20.01.2026	20.01.2026	19.01.2026	-1 234,56	L‰hikauppa ÷ljym‰ki			Korttiosto				4000 00** **** 0001	
+31.01.2026	31.01.2026	31.01.2026	-12,90	ƒ‰nikirjapalvelu Esimerkki			E-lasku	5555		Kuukausimaksu 12,90 Ä ñ Ω hinnalla		

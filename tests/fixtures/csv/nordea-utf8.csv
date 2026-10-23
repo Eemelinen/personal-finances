@@ -1,0 +1,5 @@
+﻿Kirjauspäivä;Määrä;Maksaja;Maksunsaaja;Nimi;Otsikko;Viitenumero;Valuutta
+2026/03/02;-15,20;Testi Henkilö;Ravintola Esimerkki;Ravintola Esimerkki;Korttiosto;;EUR
+2026/03/05;2500,00;Esimerkki Työnantaja Oy;Testi Henkilö;Esimerkki Työnantaja Oy;Palkka maaliskuu;;EUR
+2026/03/09;-42,00;Testi Henkilö;Sähköyhtiö Esimerkki Oy;Sähköyhtiö Esimerkki Oy;E-lasku;1232;EUR
+Varaus;-7,90;Testi Henkilö;Kahvila Esimerkki;Kahvila Esimerkki;Korttiosto;;EUR

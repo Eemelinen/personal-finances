@@ -281,7 +281,7 @@
       "area": "banking",
       "title": "CSV import for Nordea and S-Pankki exports",
       "user_visible_behavior": "`/import` uploads a Nordea or S-Pankki netbank CSV export (or a generic CSV with chosen columns), previews the parsed rows for a chosen or new manual account and imports them through the same upsert and dedupe path as API sync; the summary shows rows read, inserted, skipped as duplicates and errors with row numbers.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-004", "F-009"],
       "ticket": "FIN-012",
       "spec": "docs/tickets/FIN-012-csv-import.md",
@@ -291,7 +291,16 @@
         "L2: pnpm test:integration tests/integration/csv-import.int.test.ts (overlapping imports and API data do not duplicate)",
         "L3: pnpm test:e2e tests/e2e/csv-import.spec.ts (upload, preview, import summary)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-23 pnpm check → pass (commit f21bc9d)",
+        "2026-10-23 pnpm test:unit tests/unit/csv/bank-csv.test.ts → pass (commit f21bc9d)",
+        "2026-10-23 pnpm test:integration tests/integration/csv-import.int.test.ts → pass (commit f21bc9d, Docker available)",
+        "2026-10-23 pnpm test:e2e tests/e2e/csv-import.spec.ts → pass (commit f21bc9d, Docker available)",
+        "2026-10-23 pnpm check → pass (working tree on 0229081)",
+        "2026-10-23 pnpm test:unit tests/unit/csv/bank-csv.test.ts → pass (working tree on 0229081)",
+        "2026-10-23 pnpm test:integration tests/integration/csv-import.int.test.ts → pass (working tree on 0229081, Docker available)",
+        "2026-10-23 pnpm test:e2e tests/e2e/csv-import.spec.ts → pass (working tree on 0229081, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Replaces old FIN-012. Can be pulled forward right after F-009 if API access is delayed."
     },

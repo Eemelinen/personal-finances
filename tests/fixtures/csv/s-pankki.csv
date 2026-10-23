@@ -1,0 +1,7 @@
+Kirjauspäivä;Maksupäivä;Summa;Tapahtumalaji;Maksaja;Saajan nimi;Saajan tilinumero;Saajan BIC-tunnus;Viitenumero;Viesti;Arkistointitunnus
+03.02.2026;03.02.2026;-23,40;KORTTIOSTO;Testi Henkilö;S-Market Esimerkki;;;;"";20260203TEST0001
+10.02.2026;10.02.2026;+150,00;TILISIIRTO;Matti Meikäläinen;Testi Henkilö;FI00 0000 0000 0000 04;TESTFIHH;;"Lainan lyhennys; kiitos ""pikaisesta""";20260210TEST0002
+14.02.2026;14.02.2026;-1 000,00;TILISIIRTO;Testi Henkilö;Säästötili Esimerkki;FI00 0000 0000 0000 05;TESTFIHH;;"Säästö";20260214TEST0003
+14.02.2026;14.02.2026;-8,00;KORTTIOSTO;Testi Henkilö;Pysäköinti Esimerkki;;;;"Rivi yksi
+rivi kaksi";20260214TEST0004
+28.02.2026;27.02.2026;-59,99;E-LASKU;Testi Henkilö;Sähköyhtiö Esimerkki Oy;FI00 0000 0000 0000 06;TESTFIHH;1232;"";20260228TEST0005

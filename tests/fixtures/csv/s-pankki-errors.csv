@@ -1,0 +1,6 @@
+Kirjauspäivä;Maksupäivä;Summa;Tapahtumalaji;Maksaja;Saajan nimi;Saajan tilinumero;Saajan BIC-tunnus;Viitenumero;Viesti;Arkistointitunnus
+02.03.2026;02.03.2026;-10,00;KORTTIOSTO;Testi Henkilö;Kioski Esimerkki;;;;"";20260302TEST0001
+31.02.2026;31.02.2026;-5,00;KORTTIOSTO;Testi Henkilö;Kioski Esimerkki;;;;"";20260302TEST0002
+03.03.2026;03.03.2026;kymmenen;KORTTIOSTO;Testi Henkilö;Kioski Esimerkki;;;;"";20260303TEST0003
+04.03.2026;04.03.2026;;KORTTIOSTO;Testi Henkilö;Kioski Esimerkki;;;;"";20260304TEST0004
+05.03.2026;05.03.2026;+20,00;TILISIIRTO;Maija Esimerkki;Testi Henkilö;;;;"Kiitos";20260305TEST0005
