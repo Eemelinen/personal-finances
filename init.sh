@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Standard startup and verification path (course: learn-harness-engineering).
 #   ./init.sh                 install + tooling checks + L1 baseline (`pnpm check`)
-#                             (L2 `pnpm test:integration` needs Docker; run it per feature)
+#                             (L2 `pnpm test:integration` and L3 `pnpm test:e2e` need Docker;
+#                             run them per feature)
 #   FAST=1 ./init.sh          skip the baseline (tooling checks only)
 #   RUN_START_COMMAND=1 ./init.sh   additionally start Docker services and `pnpm dev`
 set -euo pipefail
@@ -36,11 +37,17 @@ fi
 if docker info >/dev/null 2>&1; then
   echo "docker: running (dev database via pnpm db:up)"
 else
-  warn "Docker is not running — pnpm db:up and L2 (pnpm test:integration, Testcontainers) are unavailable"
+  warn "Docker is not running — pnpm db:up and L2 (pnpm test:integration) and L3 (pnpm test:e2e) are unavailable"
 fi
 
 step "Installing dependencies"
 pnpm install --frozen-lockfile
+
+# L3 needs the Chromium revision that the pinned @playwright/test expects.
+CHROMIUM_DIR="$(pnpm exec playwright install --dry-run chromium 2>/dev/null | awk '/Install location/ { print $3; exit }' || true)"
+if [ -n "$CHROMIUM_DIR" ] && [ ! -d "$CHROMIUM_DIR" ]; then
+  warn "Playwright Chromium is missing — L3 (pnpm test:e2e) needs it: pnpm exec playwright install chromium"
+fi
 
 step "Harness wiring (@eemelinen/harness package + plugin pin)"
 pnpm harness:doctor
@@ -56,6 +63,7 @@ step "Start commands"
 echo "  pnpm db:up && pnpm db:migrate && pnpm dev   # http://localhost:3000 (health: /api/health)"
 echo "  pnpm worker:dev                              # scheduled jobs, in another terminal"
 echo "  pnpm test:integration                        # L2: Testcontainers Postgres 18 (needs Docker)"
+echo "  pnpm test:e2e                                # L3: Playwright against the build (Docker + Chromium)"
 
 if [ "${RUN_START_COMMAND:-0}" = "1" ]; then
   step "Starting the app"

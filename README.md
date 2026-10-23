@@ -70,8 +70,9 @@ In Claude Code: `/harness:clock-in`, implement, `/harness:verify-feature F-NNN`,
 | `pnpm db:studio`                     | Browse the database with Drizzle Studio       |
 | `pnpm test:unit` / `pnpm test:watch` | Unit tests (Vitest project `unit`)            |
 | `pnpm test:integration`              | L2: Vitest + Testcontainers Postgres 18       |
+| `pnpm test:e2e`                      | L3: Playwright against the production build   |
 | `pnpm check`                         | L1: lint, typecheck, format check, unit tests |
-| `pnpm check:full`                    | `check` + L2 + production build               |
+| `pnpm check:full`                    | `check` + L2 + L3 (builds the app)            |
 | `pnpm db:up` / `pnpm db:down`        | Start / stop the dev database (Docker)        |
 | `pnpm harness:feature list`          | Feature queue with ready markers              |
 | `pnpm harness:verify F-NNN`          | Run a feature's layers, record evidence       |
@@ -82,12 +83,13 @@ In Claude Code: `/harness:clock-in`, implement, `/harness:verify-feature F-NNN`,
 ## Project structure
 
 ```
-src/app/        Next.js pages and route handlers
+src/app/        Next.js pages and route handlers; (app)/ holds the pages inside the app shell
+src/components/ App shell, shared components and shadcn/ui primitives (components/ui)
 src/server/     Domain code shared by the app and the worker (env, db, providers, sync)
 src/worker/     Background worker entrypoint and job registry
 drizzle/        Generated SQL migrations
 secrets/        Private keys, gitignored
-tests/          Unit (L1) and integration (L2) tests, later e2e (L3)
+tests/          Unit (L1), integration (L2) and end-to-end (L3) tests
 scripts/        Agent harness scripts
 .claude/        Claude Code settings, hooks, skills, evaluator
 docs/           Plan, architecture, tech stack, tickets, decisions, harness docs

@@ -118,10 +118,10 @@
       {
         "command": "docker info",
         "ok": "docker: running (pnpm db:up starts the dev database)",
-        "fail": "docker: not running (pnpm db:up and L2 pnpm test:integration need Docker Desktop)"
+        "fail": "docker: not running (pnpm db:up, L2 pnpm test:integration and L3 pnpm test:e2e need Docker Desktop)"
       }
     ],
-    "hint": "Clock-in: AGENTS.md → Clock-in (or /harness:clock-in). Layers: pnpm check (L1), pnpm test:integration (L2, Docker); see AGENTS.md → Verification layers."
+    "hint": "Clock-in: AGENTS.md → Clock-in (or /harness:clock-in). Layers: pnpm check (L1), pnpm test:integration (L2, Docker), pnpm test:e2e (L3, Docker + Chromium); see AGENTS.md → Verification layers."
   },
   "prompts": {
     "generatorNotes": "docs/harness/generator-notes.md"
