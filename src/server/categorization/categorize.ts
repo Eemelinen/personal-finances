@@ -296,12 +296,19 @@ const TRANSFERS_WHERE = and(
 );
 
 /** The top-level Transfers category, if it exists. */
-async function findTransfersCategory(tx: Tx): Promise<string | null> {
+export async function findTransfersCategory(tx: Tx): Promise<string | null> {
   const [row] = await tx
     .select({ id: categories.id })
     .from(categories)
     .where(TRANSFERS_WHERE);
   return row?.id ?? null;
+}
+
+/** The top-level Transfers category's id; created when it is missing. */
+export async function transfersCategoryId(tx: Tx): Promise<string> {
+  return (
+    (await findTransfersCategory(tx)) ?? (await createTransfersCategory(tx))
+  );
 }
 
 /** Creates the top-level Transfers category (unseeded databases). */

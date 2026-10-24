@@ -364,7 +364,7 @@
       "area": "categorization",
       "title": "Transactions view and category management",
       "user_visible_behavior": "`/transactions` lists all transactions (date, account, counterparty or description, category, signed amount, pending badge) with filters kept in the URL (date range, accounts, category, text, income or expense, transfers), pagination that works with 10k+ rows and totals for the filter; I can change a category inline (marked manual), add a note, mark or unlink a transfer and create a rule from a transaction, optionally applying it to similar past ones. `/settings/categories` manages categories and rules.",
-      "status": "not_started",
+      "status": "in_progress",
       "depends_on": ["F-004", "F-014"],
       "ticket": "FIN-015",
       "spec": "docs/tickets/FIN-015-transactions-view.md",

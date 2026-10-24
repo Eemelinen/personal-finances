@@ -1,9 +1,19 @@
 import type { Metadata } from "next";
-import { Settings } from "lucide-react";
-import { EmptyState } from "@/components/empty-state";
+import { ChevronRight, Tags } from "lucide-react";
+import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 
 export const metadata: Metadata = { title: "Settings" };
+
+const SECTIONS = [
+  {
+    href: "/settings/categories",
+    title: "Categories and rules",
+    description:
+      "Spending and income categories, and the rules that categorise transactions.",
+    icon: Tags,
+  },
+] as const;
 
 export default function SettingsPage() {
   return (
@@ -12,11 +22,31 @@ export default function SettingsPage() {
         title="Settings"
         description="Categories, rules and app preferences."
       />
-      <EmptyState
-        icon={Settings}
-        title="No settings yet"
-        description="Categories, categorisation rules and preferences will be managed here."
-      />
+      <ul className="flex flex-col gap-3">
+        {SECTIONS.map(({ href, title, description, icon: Icon }) => (
+          <li key={href}>
+            <Link
+              href={href}
+              className="hover:bg-muted focus-visible:ring-ring/50 flex items-center gap-4 rounded-xl border p-4 outline-none focus-visible:ring-3"
+            >
+              <Icon
+                className="text-muted-foreground size-5"
+                aria-hidden="true"
+              />
+              <span className="flex flex-1 flex-col gap-1">
+                <span className="font-medium">{title}</span>
+                <span className="text-muted-foreground text-sm">
+                  {description}
+                </span>
+              </span>
+              <ChevronRight
+                className="text-muted-foreground size-4"
+                aria-hidden="true"
+              />
+            </Link>
+          </li>
+        ))}
+      </ul>
     </>
   );
 }

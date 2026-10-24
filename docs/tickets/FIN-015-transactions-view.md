@@ -20,3 +20,10 @@
 ## Notes
 
 - Replaces old FIN-015 plus the `/settings/categories` UI from old FIN-013.
+- Implemented in session 011 (unattended, D-013). Choices made without a human:
+  - Filters only in the URL (`from`, `to`, `account` repeated, `category` id or `none`, `q`, `type`, `transfers`, `page`); invalid values are ignored; a top-level category includes its subcategories; the text also searches the note.
+  - Pagination is LIMIT/OFFSET with 50 rows a page (no keyset, no new index); totals are count, income, expenses and net per currency for the whole filter.
+  - Every edit is `manual` (D-012): inline category, "Mark as transfer" (one-sided only; pairing two chosen transactions by hand is not built), "Unlink transfer" (all legs, each gets its rule category or none, `manual`). "Automatic (rules)" hands a transaction back to the engine.
+  - New rules run first; "apply to similar past ones" re-applies every rule (`reapplyRules()`). Reorder = move before/after a neighbour and renumber all rules by 10; it can be done within one category's rules. Rules are created and deleted, not edited.
+  - Categories: two levels, subcategory kind = parent's; delete cascades to subcategories and rules and resets their transactions to no category (`none`); Transfers cannot be renamed or deleted.
+  - Not in the listed layers but added: L1 `tests/unit/queries/transaction-filter.test.ts` and `tests/unit/categorization/rule-input.test.ts`, L2 `tests/integration/transactions-view.int.test.ts`. The L3 server seeds the default categories and rules.
