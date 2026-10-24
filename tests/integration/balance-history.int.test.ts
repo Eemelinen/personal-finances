@@ -155,7 +155,13 @@ describe("getBalanceHistory", () => {
     // Savings: synced since 60 days ago, no reconstruction in range.
     await snapshots(savings.id, [[60, 500_000]]);
 
-    const { days, accounts: series, netWorth, empty } = await history("3m");
+    const {
+      days,
+      accounts: series,
+      netWorth,
+      netWorthChange,
+      empty,
+    } = await history("3m");
     expect(empty).toBe(false);
     expect(days[0]).toBe("2026-07-25");
     expect(days.at(-1)).toBe(TODAY);
@@ -211,16 +217,26 @@ describe("getBalanceHistory", () => {
     expect(at(days, netWorth, 0)).toEqual({
       amountMinor: 580_000,
       estimated: false,
+      partial: false,
     });
     expect(at(days, netWorth, 31)).toEqual({
       amountMinor: 615_000,
       estimated: true,
+      partial: false,
     });
+    // Checking has no balance yet on day -50: the sum is savings alone.
     expect(at(days, netWorth, 50)).toEqual({
       amountMinor: 500_000,
       estimated: false,
+      partial: true,
     });
-    expect(netWorth[0]).toEqual({ amountMinor: null, estimated: false });
+    expect(netWorth[0]).toEqual({
+      amountMinor: null,
+      estimated: false,
+      partial: false,
+    });
+    // Nothing was known on the range's first day: no change to show.
+    expect(netWorthChange).toBeNull();
   });
 
   it("selects the range: 3 months, 6 months, 1 year or all", async () => {
@@ -236,26 +252,27 @@ describe("getBalanceHistory", () => {
       const { days, netWorth } = await history(range);
       return [days[0], days.length, netWorth[0]];
     };
+    const complete = { estimated: false, partial: false };
     expect(await start("3m")).toEqual([
       "2026-07-25",
       92,
-      { amountMinor: 150_000, estimated: false },
+      { amountMinor: 150_000, ...complete },
     ]);
     expect(await start("6m")).toEqual([
       "2026-04-25",
       183,
-      { amountMinor: 170_000, estimated: true },
+      { amountMinor: 170_000, estimated: true, partial: false },
     ]);
     expect(await start("1y")).toEqual([
       "2025-10-25",
       365,
-      { amountMinor: 170_000, estimated: true },
+      { amountMinor: 170_000, estimated: true, partial: false },
     ]);
     // All: from the first transaction, 500 days ago.
     expect(await start("all")).toEqual([
       addDays(TODAY, -500),
       501,
-      { amountMinor: 170_000, estimated: true },
+      { amountMinor: 170_000, estimated: true, partial: false },
     ]);
   });
 
@@ -277,7 +294,33 @@ describe("getBalanceHistory", () => {
     expect(result.netWorth.at(-1)).toEqual({
       amountMinor: 10_000,
       estimated: false,
+      partial: false,
     });
     expect(result.omitted).toEqual({ withoutBalance: 1, otherCurrency: 1 });
+  });
+
+  it("compares net worth like for like when an account starts within the range", async () => {
+    const bank = await institution("Nordea");
+    const old = await account(bank.id, { name: "Käyttötili" });
+    const added = await account(bank.id, { name: "Uusi tili" });
+    await snapshots(old.id, [
+      [200, 100_000],
+      [10, 130_000],
+    ]);
+    await snapshots(added.id, [[30, 900_000]]);
+
+    const { days, netWorth, netWorthChange } = await history("3m");
+    expect(netWorth[0]).toEqual({
+      amountMinor: 100_000,
+      estimated: false,
+      partial: true,
+    });
+    expect(at(days, netWorth, 30)).toEqual({
+      amountMinor: 1_000_000,
+      estimated: false,
+      partial: false,
+    });
+    // +300,00 on the old account; the new account's 9 000,00 is not a gain.
+    expect(netWorthChange).toBe(30_000);
   });
 });

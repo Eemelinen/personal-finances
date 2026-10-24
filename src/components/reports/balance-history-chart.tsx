@@ -13,7 +13,10 @@ import {
 } from "recharts";
 import { formatDay, formatMoney, formatMoneyRounded } from "@/lib/format";
 import type { BalanceHistoryAccount } from "@/server/queries/balance-history";
-import type { BalancePoint } from "@/server/reports/balance-series";
+import type {
+  BalancePoint,
+  NetWorthPoint,
+} from "@/server/reports/balance-series";
 
 /** Accounts with their own colour; more fold into Other. */
 export const MAX_ACCOUNT_SERIES = 8;
@@ -22,7 +25,7 @@ const OTHER_COLOR = "#94a3b8";
 interface BalanceHistoryChartProps {
   days: string[];
   accounts: BalanceHistoryAccount[];
-  netWorth: BalancePoint[];
+  netWorth: NetWorthPoint[];
   currency: string;
 }
 
@@ -39,7 +42,7 @@ type Row = { index: number; date: string } & Record<
 >;
 
 /** The fixed categorical order; past the last slot the rest is one Other. */
-function accountSeries(accounts: BalanceHistoryAccount[]): Series[] {
+function chartSeries(accounts: BalanceHistoryAccount[]): Series[] {
   const own =
     accounts.length > MAX_ACCOUNT_SERIES
       ? accounts.slice(0, MAX_ACCOUNT_SERIES - 1)
@@ -73,9 +76,49 @@ function accountSeries(accounts: BalanceHistoryAccount[]): Series[] {
 }
 
 /**
- * The net worth as a line (solid where synced, dashed where estimated) and
- * the accounts as stacked areas, sharing a per-account tooltip. Estimated
- * days are shaded in both.
+ * The net-worth line's styles: dashed where estimated, muted where some
+ * account has no balance yet (the sum is partial).
+ */
+const LINE_SEGMENTS = [
+  { key: "complete", name: "Net worth", muted: false, dashed: false },
+  {
+    key: "estimated",
+    name: "Net worth (estimated)",
+    muted: false,
+    dashed: true,
+  },
+  { key: "partial", name: "Net worth (partial)", muted: true, dashed: false },
+  {
+    key: "estimatedPartial",
+    name: "Net worth (estimated, partial)",
+    muted: true,
+    dashed: true,
+  },
+] as const;
+
+function segmentOf(
+  point: NetWorthPoint,
+): (typeof LINE_SEGMENTS)[number]["key"] {
+  if (point.estimated) return point.partial ? "estimatedPartial" : "estimated";
+  return point.partial ? "partial" : "complete";
+}
+
+/** Runs of consecutive estimated days, as `[first, last]` indexes. */
+function estimatedRuns(points: readonly BalancePoint[]): [number, number][] {
+  const runs: [number, number][] = [];
+  points.forEach((point, index) => {
+    if (!point.estimated) return;
+    const last = runs.at(-1);
+    if (last && last[1] === index - 1) last[1] = index;
+    else runs.push([index, index]);
+  });
+  return runs;
+}
+
+/**
+ * The net worth as a line (solid where synced, dashed where estimated,
+ * muted where partial) and the accounts as stacked areas, sharing a
+ * per-account tooltip. Estimated days are shaded in both.
  */
 export function BalanceHistoryChart({
   days,
@@ -83,41 +126,44 @@ export function BalanceHistoryChart({
   netWorth,
   currency,
 }: BalanceHistoryChartProps) {
-  const series = accountSeries(accounts);
+  const series = chartSeries(accounts);
   const rows: Row[] = days.map((date, index) => {
     const point = netWorth[index];
+    const row: Row = { index, date };
+    for (const segment of LINE_SEGMENTS) row[segment.key] = null;
+    row[segmentOf(point)] = point.amountMinor;
+    // Where the style changes, the previous style also reaches this day,
+    // so the line has no gap.
     const previous = netWorth[index - 1];
-    const row: Row = {
-      index,
-      date,
-      // The dashed part reaches the first synced day, so the line is whole.
-      actual: point.estimated ? null : point.amountMinor,
-      estimated:
-        point.estimated || previous?.estimated ? point.amountMinor : null,
-    };
+    if (previous && previous.amountMinor !== null) {
+      row[segmentOf(previous)] = point.amountMinor;
+    }
     for (const item of series) {
-      row[item.key] = item.points[index].amountMinor ?? 0;
+      // Unknown stays a gap, not a zero.
+      row[item.key] = item.points[index].amountMinor;
     }
     return row;
   });
-  const firstEstimated = netWorth.findIndex((point) => point.estimated);
-  const lastEstimated = netWorth.findLastIndex((point) => point.estimated);
-  const shading =
-    firstEstimated === -1 ? null : (
-      <ReferenceArea
-        x1={days[firstEstimated]}
-        x2={days[lastEstimated]}
-        fill="var(--muted)"
-        fillOpacity={0.8}
-        ifOverflow="hidden"
-        label={{
-          value: "Estimated",
-          position: "insideTopLeft",
-          fontSize: 11,
-          fill: "var(--muted-foreground)",
-        }}
-      />
-    );
+  const shading = estimatedRuns(netWorth).map(([first, last], index) => (
+    <ReferenceArea
+      key={first}
+      x1={days[first]}
+      x2={days[last]}
+      fill="var(--muted)"
+      fillOpacity={0.8}
+      ifOverflow="hidden"
+      label={
+        index === 0
+          ? {
+              value: "Estimated",
+              position: "insideTopLeft",
+              fontSize: 11,
+              fill: "var(--muted-foreground)",
+            }
+          : undefined
+      }
+    />
+  ));
   const xAxis = (
     <XAxis
       dataKey="date"
@@ -162,8 +208,9 @@ export function BalanceHistoryChart({
       >
         <h2 className="mb-1 font-medium">Net worth</h2>
         <p className="text-muted-foreground mb-3 text-xs">
-          Solid where the balance comes from a sync; dashed where it is
-          estimated from transactions before the first sync.
+          Solid where every balance comes from a sync; dashed where it is
+          estimated from transactions before the first sync; grey where some
+          account has no balance yet, so the sum covers only the others.
         </p>
         <div
           data-testid="net-worth-chart"
@@ -183,29 +230,25 @@ export function BalanceHistoryChart({
             {xAxis}
             {yAxis}
             {tooltip}
-            <Line
-              dataKey="actual"
-              name="Net worth"
-              type="linear"
-              stroke="var(--foreground)"
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 4 }}
-              connectNulls={false}
-              isAnimationActive={false}
-            />
-            <Line
-              dataKey="estimated"
-              name="Net worth (estimated)"
-              type="linear"
-              stroke="var(--foreground)"
-              strokeWidth={2}
-              strokeDasharray="5 4"
-              dot={false}
-              activeDot={{ r: 4 }}
-              connectNulls={false}
-              isAnimationActive={false}
-            />
+            {LINE_SEGMENTS.map((segment) => (
+              <Line
+                key={segment.key}
+                dataKey={segment.key}
+                name={segment.name}
+                type="linear"
+                stroke={
+                  segment.muted
+                    ? "var(--muted-foreground)"
+                    : "var(--foreground)"
+                }
+                strokeWidth={2}
+                strokeDasharray={segment.dashed ? "5 4" : undefined}
+                dot={false}
+                activeDot={{ r: 4 }}
+                connectNulls={false}
+                isAnimationActive={false}
+              />
+            ))}
           </LineChart>
         </div>
       </section>
@@ -277,7 +320,7 @@ function Breakdown({
 }: {
   row: Row | undefined;
   series: Series[];
-  netWorth: BalancePoint[];
+  netWorth: NetWorthPoint[];
   currency: string;
 }) {
   if (!row) return null;
@@ -307,20 +350,26 @@ function Breakdown({
   );
 }
 
-/** A balance, "–" when unknown, with "(est.)" when reconstructed. */
+/**
+ * A balance, "–" when unknown, with "(est.)" when reconstructed and
+ * "(partial)" when some account is missing from a sum.
+ */
 export function Amount({
   point,
   currency,
 }: {
-  point: BalancePoint;
+  point: BalancePoint & { partial?: boolean };
   currency: string;
 }) {
   if (point.amountMinor === null) return <span>–</span>;
+  const notes = [point.estimated && "est.", point.partial && "partial"].filter(
+    Boolean,
+  );
   return (
     <span className="tabular-nums">
       {formatMoney(point.amountMinor, currency)}
-      {point.estimated && (
-        <span className="text-muted-foreground"> (est.)</span>
+      {notes.length > 0 && (
+        <span className="text-muted-foreground"> ({notes.join(", ")})</span>
       )}
     </span>
   );

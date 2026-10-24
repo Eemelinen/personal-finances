@@ -3,6 +3,7 @@ import {
   accountSeries,
   addMonthsToDay,
   daysBetween,
+  likeForLikeChange,
   parseBalanceRange,
   rangeStart,
   sumSeries,
@@ -219,7 +220,7 @@ describe("accountSeries backward reconstruction", () => {
 });
 
 describe("sumSeries", () => {
-  it("sums known balances and marks a day estimated when any part is", () => {
+  it("sums known balances, estimated when any part is, partial when one is missing", () => {
     const total = sumSeries(
       [
         [
@@ -229,16 +230,50 @@ describe("sumSeries", () => {
         ],
         [
           { amountMinor: null, estimated: false },
-          { amountMinor: 50, estimated: false },
+          { amountMinor: null, estimated: false },
           { amountMinor: -20, estimated: false },
         ],
       ],
       3,
     );
     expect(total).toEqual([
-      { amountMinor: null, estimated: false },
-      { amountMinor: 150, estimated: true },
-      { amountMinor: 100, estimated: false },
+      { amountMinor: null, estimated: false, partial: false },
+      { amountMinor: 100, estimated: true, partial: true },
+      { amountMinor: 100, estimated: false, partial: false },
     ]);
+  });
+});
+
+describe("likeForLikeChange", () => {
+  const known = (amountMinor: number) => ({ amountMinor, estimated: false });
+  const unknown = { amountMinor: null, estimated: false };
+
+  it("counts only accounts known on both days", () => {
+    // The second account appears later: its balance is not a gain.
+    expect(
+      likeForLikeChange(
+        [
+          [known(1_000), known(1_000), known(1_500)],
+          [unknown, known(9_000), known(9_100)],
+        ],
+        0,
+        2,
+      ),
+    ).toBe(500);
+    expect(
+      likeForLikeChange(
+        [
+          [known(1_000), known(1_000), known(1_500)],
+          [unknown, known(9_000), known(9_100)],
+        ],
+        1,
+        2,
+      ),
+    ).toBe(600);
+  });
+
+  it("is null when no account is known on both days", () => {
+    expect(likeForLikeChange([[unknown, known(5)]], 0, 1)).toBeNull();
+    expect(likeForLikeChange([], 0, 0)).toBeNull();
   });
 });

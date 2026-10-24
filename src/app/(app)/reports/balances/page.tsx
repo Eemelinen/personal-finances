@@ -118,6 +118,7 @@ async function Balances({
                 name="Net worth"
                 start={netWorth[0]}
                 end={netWorth[last]}
+                change={history.netWorthChange}
                 currency={currency}
                 total
               />
@@ -185,20 +186,25 @@ function BalanceRow({
   detail,
   start,
   end,
+  change,
   currency,
   total = false,
 }: {
   name: string;
   detail?: string;
-  start: BalancePoint;
-  end: BalancePoint;
+  start: BalancePoint & { partial?: boolean };
+  end: BalancePoint & { partial?: boolean };
+  /** Defaults to end minus start when both are known. */
+  change?: number | null;
   currency: string;
   total?: boolean;
 }) {
-  const change =
-    start.amountMinor !== null && end.amountMinor !== null
-      ? end.amountMinor - start.amountMinor
-      : null;
+  const shown =
+    change !== undefined
+      ? change
+      : start.amountMinor !== null && end.amountMinor !== null
+        ? end.amountMinor - start.amountMinor
+        : null;
   return (
     <tr
       data-testid={total ? "balance-total" : "balance-row"}
@@ -226,7 +232,7 @@ function BalanceRow({
         data-testid="balance-change"
         className="py-2 pl-3 text-right whitespace-nowrap tabular-nums"
       >
-        {change === null ? "–" : formatMoneyChange(change, currency)}
+        {shown === null ? "–" : formatMoneyChange(shown, currency)}
       </td>
     </tr>
   );

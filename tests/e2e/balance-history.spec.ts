@@ -103,9 +103,13 @@ test("the range selector changes the series", async ({ page }) => {
 
   const ranges = page.getByRole("region", { name: "Range" });
   const chart = page.getByTestId("net-worth-chart").filter({ visible: true });
+  const areas = page
+    .getByTestId("account-balance-chart")
+    .filter({ visible: true });
   const row = page
     .getByTestId("balance-row")
     .filter({ visible: true, hasText: ACCOUNT });
+  const total = page.getByTestId("balance-total").filter({ visible: true });
 
   // Default: 3 months, synced balances carried over.
   await expect(ranges.getByRole("link", { name: "3 months" })).toHaveAttribute(
@@ -129,6 +133,12 @@ test("the range selector changes the series", async ({ page }) => {
   );
   await expect(row.getByTestId("balance-change")).toHaveText(/^−100,00\s€$/);
   await expect(chart).toContainText("Estimated");
+  // The dashboard spec's accounts start within 120 days, so the sum on the
+  // first day is partial and the change counts this account alone.
+  await expect(total.getByTestId("balance-start")).toHaveText(
+    /\(est\., partial\)$/,
+  );
+  await expect(total.getByTestId("balance-change")).toHaveText(/^−100,00\s€$/);
 
   // The tooltip breaks the day down per account.
   await chart.hover();
@@ -136,6 +146,12 @@ test("the range selector changes the series", async ({ page }) => {
     .getByTestId("balance-tooltip")
     .filter({ visible: true })
     .first();
+  await expect(tooltip).toBeVisible();
+  await expect(tooltip).toContainText(ACCOUNT);
+
+  // The stacked areas draw and share the per-account tooltip.
+  await expect(areas.locator(".recharts-area-area").first()).toBeVisible();
+  await areas.hover();
   await expect(tooltip).toBeVisible();
   await expect(tooltip).toContainText(ACCOUNT);
 

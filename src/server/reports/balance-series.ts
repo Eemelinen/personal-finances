@@ -134,23 +134,57 @@ export function accountSeries(
   return points;
 }
 
+export interface NetWorthPoint extends BalancePoint {
+  /**
+   * Some account has no balance yet that day, so the sum covers only the
+   * accounts that do (an account added later is not a gain).
+   */
+  partial: boolean;
+}
+
 /**
  * The sum of the accounts' known balances per day; null on a day none is
- * known, estimated when any part of it is.
+ * known, estimated when any part of it is, partial when an account is
+ * missing from it.
  */
 export function sumSeries(
   series: readonly (readonly BalancePoint[])[],
   dayCount: number,
-): BalancePoint[] {
+): NetWorthPoint[] {
   return Array.from({ length: dayCount }, (_, index) => {
     let amountMinor: number | null = null;
     let estimated = false;
+    let missing = false;
     for (const points of series) {
       const point = points[index];
-      if (point?.amountMinor == null) continue;
+      if (point?.amountMinor == null) {
+        missing = true;
+        continue;
+      }
       amountMinor = (amountMinor ?? 0) + point.amountMinor;
       estimated ||= point.estimated;
     }
-    return { amountMinor, estimated };
+    return { amountMinor, estimated, partial: amountMinor !== null && missing };
   });
+}
+
+/**
+ * The change of the sum from day `from` to day `to` (indexes) over the
+ * accounts known on both, as the dashboard's change (D-013): an account
+ * whose history starts in between does not count as a gain. Null when no
+ * account is known on both days.
+ */
+export function likeForLikeChange(
+  series: readonly (readonly BalancePoint[])[],
+  from: number,
+  to: number,
+): number | null {
+  let change: number | null = null;
+  for (const points of series) {
+    const start = points[from]?.amountMinor;
+    const end = points[to]?.amountMinor;
+    if (start == null || end == null) continue;
+    change = (change ?? 0) + end - start;
+  }
+  return change;
 }

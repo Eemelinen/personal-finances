@@ -12,11 +12,13 @@ import type { IsoDate } from "@/server/providers/types";
 import {
   accountSeries,
   daysBetween,
+  likeForLikeChange,
   rangeStart,
   sumSeries,
   type BalancePoint,
   type BalanceRangeId,
   type DayFlow,
+  type NetWorthPoint,
 } from "@/server/reports/balance-series";
 import { balanceTypePreference } from "@/server/sync/balance-types";
 import { loadSnapshots, TOTALS_CURRENCY } from "./dashboard";
@@ -27,7 +29,8 @@ import { loadSnapshots, TOTALS_CURRENCY } from "./dashboard";
 // from its first balance snapshot; before it the balance is reconstructed
 // from its transactions (booked and pending, transfers included: they all
 // moved money) and marked estimated. An account without any snapshot (only
-// CSV imports) has no balance to start from and is left out.
+// CSV imports) has no balance to start from and is left out. A day on which
+// some account has no balance yet sums the others and is marked partial.
 
 type AccountType = (typeof accounts.$inferSelect)["type"];
 
@@ -47,7 +50,12 @@ export interface BalanceHistory {
   days: IsoDate[];
   accounts: BalanceHistoryAccount[];
   /** The sum of the accounts' balances per day. */
-  netWorth: BalancePoint[];
+  netWorth: NetWorthPoint[];
+  /**
+   * Net worth today minus on the range's first day, over the accounts that
+   * had a balance on both; null when none had.
+   */
+  netWorthChange: number | null;
   /** Non-archived accounts not drawn: no snapshot yet, or not in EUR. */
   omitted: { withoutBalance: number; otherCurrency: number };
   /** No account has a balance yet. */
@@ -179,15 +187,14 @@ export async function getBalanceHistory(
     ),
   }));
 
+  const points = series.map((account) => account.points);
   return {
     range: options.range,
     currency: TOTALS_CURRENCY,
     days,
     accounts: series,
-    netWorth: sumSeries(
-      series.map((account) => account.points),
-      days.length,
-    ),
+    netWorth: sumSeries(points, days.length),
+    netWorthChange: likeForLikeChange(points, 0, days.length - 1),
     omitted: {
       withoutBalance: eur.length - included.length,
       otherCurrency: accountRows.length - eur.length,
