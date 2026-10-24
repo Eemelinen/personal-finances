@@ -90,14 +90,28 @@ export interface ProviderTransactionPage {
   continuationKey: string | null;
 }
 
+/** Same values as the `asset_class` enum. */
+export type ProviderAssetClass = "stock" | "etf" | "fund" | "crypto" | "other";
+
 /**
- * Provisional: F-019 finalises the holdings DTO for brokers and exchanges.
- * Quantities are decimal strings, never floats.
+ * One asset position of an investment account (F-019, D-016). The sync
+ * matches the asset by ISIN, else CoinGecko id, else symbol and currency,
+ * and stores the quantity as a `holdings` snapshot for `date`.
  */
 export interface ProviderHolding {
-  /** Ticker, ISIN or coin symbol, as the provider reports it. */
+  /** Ticker or coin symbol, as the provider reports it. */
   symbol: string;
+  name: string | null;
+  isin: string | null;
+  /** When the provider knows it (crypto); otherwise a price job maps it. */
+  coingeckoId: string | null;
+  assetClass: ProviderAssetClass;
+  /** The currency the asset is quoted in. */
+  currency: CurrencyCode;
+  /** Units held, a decimal string with at most 18 decimals, never a float. */
   quantity: string;
+  /** The day the quantity refers to. */
+  date: IsoDate;
 }
 
 /**
@@ -119,7 +133,10 @@ export interface FinancialProvider {
     range: TransactionRange,
     continuationKey?: string,
   ): Promise<ProviderTransactionPage>;
-  /** Investment providers only (F-019). */
+  /**
+   * Investment providers only (brokers, exchanges; F-019): the account's
+   * current positions. Bank providers leave it out.
+   */
   getHoldings?(
     connection: ProviderConnection,
     account: ProviderAccountRef,

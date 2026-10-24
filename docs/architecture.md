@@ -78,7 +78,7 @@ src/
     db/
       client.ts        Drizzle client (postgres.js pool), lazily created
       schema/          Table definitions, one file per domain area (banking, categories,
-                       transactions, sync; shared column builders in columns.ts)
+                       transactions, sync, investments; shared column builders in columns.ts)
       migrations.ts    applyMigrations(): shared by migrate.ts and the L2 tests
       migrate.ts       Migration runner (used by the `migrate` service and pnpm db:migrate)
     dates.ts           Calendar-day helpers: addDays(), dayNumber(), localDate()
@@ -104,7 +104,11 @@ src/
                        daily series), dashboard.ts (overview: totals, accounts by bank,
                        connection health; F-016), reports.ts (spending, cash flow and
                        the month tiles; F-017), balance-history.ts (daily balances and
-                       net worth over a range; F-018)
+                       net worth over a range; F-018), investments.ts (an account's
+                       EUR holdings value on a day; F-019)
+    investments/       Investment valuation (F-019): decimal.ts (exact BigInt fixed-point
+                       decimals, currency minor-unit digits), valuation.ts (Σ quantity ×
+                       price × FX with last-known fallbacks)
     reports/           Pure report helpers (F-017): period.ts (presets, custom ranges,
                        previous period, average window), merchant-name.ts (normalised
                        merchant names), balance-series.ts (balance ranges, carried and
@@ -163,7 +167,7 @@ sequenceDiagram
 
 ## Data model
 
-The core tables (F-002, `src/server/db/schema/`, first migration `drizzle/0000_init.sql`; F-009 added `accounts.transactions_synced_at` and `transactions.note` in `0001_sync_transactions.sql`; F-014 the rule amount conditions in `0002_categorization_rules.sql`). Amounts are stored as **integer minor units** (cents, `bigint`, read as a JS `number`) together with an ISO-4217 `char(3)` currency code. Floats are never used for money. Every id is a `uuid`; every point in time is `timestamptz`; calendar days (`booking_date`, `value_date`, snapshot `date`) are `date`. Every table has `created_at` / `updated_at`.
+The core tables (F-002, `src/server/db/schema/`, first migration `drizzle/0000_init.sql`; F-009 added `accounts.transactions_synced_at` and `transactions.note` in `0001_sync_transactions.sql`; F-014 the rule amount conditions in `0002_categorization_rules.sql`; F-019 the investment tables in `0003_investments.sql`). Amounts are stored as **integer minor units** (cents, `bigint`, read as a JS `number`) together with an ISO-4217 `char(3)` currency code. Floats are never used for money. Every id is a `uuid`; every point in time is `timestamptz`; calendar days (`booking_date`, `value_date`, snapshot `date`) are `date`. Every table has `created_at` / `updated_at`.
 
 | Table               | Purpose                                   | Key columns                                                                                                                                                                                                                 |
 | ------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -184,7 +188,22 @@ Idempotency constraints (syncs and imports upsert on them):
 - `balance_snapshots`: unique `(account_id, date, balance_type)`.
 - `categories`: unique `(parent_id, name)` with `NULLS NOT DISTINCT`, so seeded top-level names are unique too; `institutions`: unique `(provider, provider_ref)`.
 
-Planned investment tables (FIN-019): `assets` (ticker or coin, asset class), `holdings` (account + asset + quantity), `investment_transactions` (buy, sell, dividend) and `prices` (asset, date, price). Brokerage and crypto accounts reuse `accounts`, so net worth is a single query across every account type.
+### Investments
+
+The investment tables (F-019, `schema/investments.ts`, D-016). Brokerage and crypto accounts are ordinary `accounts` rows (type `brokerage` / `crypto`), so net worth is a single query across every account type; their cash stays in `balance_snapshots`.
+
+| Table                     | Purpose                                             | Key columns                                                                                                                           |
+| ------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `assets`                  | Securities and coins                                | `id`, `symbol`, `name?`, `isin?` (unique), `coingecko_id?` (unique), `asset_class`, `currency` (quote currency)                       |
+| `holdings`                | Quantity snapshots (one per account, asset and day) | `account_id`, `asset_id`, `date`, `quantity` (≥ 0; 0 = sold out)                                                                      |
+| `investment_transactions` | Buys, sells, dividends, fees, transfers             | `account_id`, `asset_id?`, `type`, `provider_txn_ref?`, `dedupe_hash`, `trade_date`, `quantity?` (signed), `amount_minor`, `currency` |
+| `prices`                  | Daily closing prices (one per asset and day)        | `asset_id`, `date`, `price_minor`, `currency`, `source`                                                                               |
+| `fx_rates`                | ECB reference rates (one per currency and day)      | `date`, `currency`, `rate` (units per 1 EUR, > 0)                                                                                     |
+
+- **Decimals.** Quantities, unit prices and rates are `numeric(38, 18)` (18 decimals as crypto needs, 20 integer digits), read and written as strings and computed with BigInt fixed-point in `src/server/investments/decimal.ts`; they never pass through a JS number. Cash amounts (`investment_transactions.amount_minor`) are integer minor units like everywhere else. A unit price is a rate, not an amount, so `price_minor` is a decimal number of minor units (a fund share or a small coin costs less than a cent).
+- **Enums.** `asset_class` (`stock`, `etf`, `fund`, `crypto`, `other`), `investment_transaction_type` (`buy`, `sell`, `dividend`, `fee`, `transfer`). A transaction's `quantity` is the signed change in units held, `amount_minor` the signed cash effect (− paid, + received); a cash-only row (deposit, account fee) has no asset.
+- **Idempotency.** `holdings` unique `(account_id, asset_id, date)`; `investment_transactions` unique `(account_id, provider_txn_ref)` and `(account_id, dedupe_hash)` as `transactions`; `prices` unique `(asset_id, date)`; `fx_rates` unique `(date, currency)`. Deleting an account deletes its holdings and investment transactions; an asset in use cannot be deleted.
+- **Valuation.** `getAccountValuation(accountId, date)` (`src/server/queries/investments.ts`) loads each asset's latest holding snapshot, price and exchange rate on or before the day and `valueHoldings()` (`src/server/investments/valuation.ts`) returns the EUR value as Σ quantity × price × FX: `q × p × 10^2 / (10^e(currency) × rate)`, exact until one half-away-from-zero rounding per position; the total is the sum of the rounded positions. A missing price or rate (weekend, holiday, failed fetch) falls back to the last known one; an asset with none at all is listed with `missing: "price"` / `"fx_rate"`, left out of the total and makes the valuation `complete: false`.
 
 ## Provider abstraction
 
@@ -203,12 +222,18 @@ interface FinancialProvider {
     account: ProviderAccountRef,
     range: { from?: IsoDate; to?: IsoDate }, // inclusive days; no `from` = oldest available
     continuationKey?: string, // from the previous page
-  ): Promise<{ transactions: ProviderTransaction[]; continuationKey: string | null }>;
-  getHoldings?(…): Promise<ProviderHolding[]>; // investment providers (F-019)
+  ): Promise<{
+    transactions: ProviderTransaction[];
+    continuationKey: string | null;
+  }>;
+  getHoldings?(
+    connection: ProviderConnection,
+    account: ProviderAccountRef,
+  ): Promise<ProviderHolding[]>; // investment providers only (F-019)
 }
 ```
 
-Providers return **normalized** DTOs whose fields mirror the table columns: amounts in signed integer minor units plus an ISO-4217 currency, calendar days as `YYYY-MM-DD` strings, the provider's own ids as `ref` (`provider_account_ref`, `provider_txn_ref`, nullable for transactions), balances with their ISO 20022 `balanceType`. Mapping from provider-specific JSON happens inside the provider, and the sync layer only ever sees normalized data. `ProviderConnection` carries the **decrypted** session id; the caller decrypts `connections.session_ref` with `decryptSecret()`.
+Providers return **normalized** DTOs whose fields mirror the table columns: amounts in signed integer minor units plus an ISO-4217 currency, calendar days as `YYYY-MM-DD` strings, the provider's own ids as `ref` (`provider_account_ref`, `provider_txn_ref`, nullable for transactions), balances with their ISO 20022 `balanceType`, holdings (`getHoldings()`, brokers and exchanges only) as the asset's `symbol`, `name`, `isin`, `coingeckoId`, `assetClass` and quote `currency` plus a decimal-string `quantity` and its `date`. Mapping from provider-specific JSON happens inside the provider, and the sync layer only ever sees normalized data. `ProviderConnection` carries the **decrypted** session id; the caller decrypts `connections.session_ref` with `decryptSecret()`.
 
 - **Errors.** The failures the sync layer handles are typed (`errors.ts`): `ProviderAuthError` (session or consent expired → reconnect), `ProviderRateLimitError` (with `retryAfterMs` when known) and `ProviderUnavailableError` (provider or bank down → retry later), all `ProviderError`s with a `kind` and the `providerId`. HTTP clients map responses with `providerErrorFromStatus()`: 401/403 → auth, 429 → rate limit (parses `Retry-After`), 408/5xx → unavailable, anything else stays a bug.
 - **Registry.** `registry.ts` maps the id stored in `provider` columns to its implementation (`getProvider(id)`, `UnknownProviderError` otherwise); `getBankProvider()` returns the one `BANK_PROVIDER` selects for new bank connections (`enable_banking` by default, registered by F-006).

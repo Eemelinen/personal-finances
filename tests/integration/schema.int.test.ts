@@ -17,11 +17,16 @@ import { startTestDatabase, type TestDatabase } from "./helpers/postgres";
 
 const CORE_TABLES = [
   "accounts",
+  "assets",
   "balance_snapshots",
   "categories",
   "category_rules",
   "connections",
+  "fx_rates",
+  "holdings",
   "institutions",
+  "investment_transactions",
+  "prices",
   "sync_runs",
   "transactions",
 ];
@@ -170,8 +175,13 @@ describe("migrations", () => {
     );
     expect(byKey).toEqual({
       "accounts.currency": "character(3)",
+      "assets.currency": "character(3)",
       "balance_snapshots.amount_minor": "bigint",
       "balance_snapshots.currency": "character(3)",
+      "fx_rates.currency": "character(3)",
+      "investment_transactions.amount_minor": "bigint",
+      "investment_transactions.currency": "character(3)",
+      "prices.currency": "character(3)",
       "transactions.amount_minor": "bigint",
       "transactions.currency": "character(3)",
     });

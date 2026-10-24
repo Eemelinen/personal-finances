@@ -470,7 +470,7 @@
       "area": "investments",
       "title": "Investment data model and valuation",
       "user_visible_behavior": "The schema adds assets (symbol, ISIN or CoinGecko id, asset class, currency), holdings with quantity snapshots, investment transactions (buy, sell, dividend, fee, transfer), daily prices and ECB FX rates; brokerage and crypto accounts reuse `accounts`. A valuation function returns an account's EUR value on a date as Σ quantity × price × FX, and `FinancialProvider` gains an optional `getHoldings()`.",
-      "status": "not_started",
+      "status": "in_progress",
       "depends_on": ["F-002"],
       "ticket": "FIN-019",
       "spec": "docs/tickets/FIN-019-investment-data-model.md",
