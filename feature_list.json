@@ -539,7 +539,11 @@
         "2026-10-24 pnpm check → pass (commit 6cc271b)",
         "2026-10-24 pnpm test:unit tests/unit/investments/kraken.test.ts → pass (commit 6cc271b)",
         "2026-10-24 pnpm test:integration tests/integration/crypto-holdings.int.test.ts → pass (commit 6cc271b, Docker available)",
-        "2026-10-24 pnpm test:e2e tests/e2e/investments.spec.ts → pass (commit 6cc271b, Docker available)"
+        "2026-10-24 pnpm test:e2e tests/e2e/investments.spec.ts → pass (commit 6cc271b, Docker available)",
+        "2026-10-24 pnpm check → pass (commit 3985f9c)",
+        "2026-10-24 pnpm test:unit tests/unit/investments/kraken.test.ts → pass (commit 3985f9c)",
+        "2026-10-24 pnpm test:integration tests/integration/crypto-holdings.int.test.ts → pass (commit 3985f9c, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/investments.spec.ts → pass (commit 3985f9c, Docker available)"
       ],
       "attempts": 0,
       "notes": "Replaces old FIN-024. See [research: Kraken](../api-access-research.md#3-kraken-crypto)."
