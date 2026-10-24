@@ -10,6 +10,10 @@ import {
   DEFAULT_RULES,
 } from "@/server/categorization/defaults";
 import { categoryIdByPath, seedDefaults } from "@/server/categorization/seed";
+import {
+  excludeTransaction,
+  includeTransaction,
+} from "@/server/categorization/transaction-edits";
 import { decryptSecret, encryptSecret } from "@/server/crypto";
 import { readBankCsv } from "@/server/csv/bank-csv";
 import { createManualAccount, importCsvRows } from "@/server/csv/import-csv";
@@ -171,6 +175,7 @@ describe("seeds", () => {
     );
     expect(topLevel.find((c) => c.name === "Transfers")?.kind).toBe("transfer");
     expect(topLevel.find((c) => c.name === "Income")?.kind).toBe("income");
+    expect(topLevel.find((c) => c.name === "Excluded")?.kind).toBe("excluded");
 
     const supermarkets = await categoryId("Groceries/Supermarkets");
     const smarket = await testDb.db
@@ -194,6 +199,22 @@ describe("seeds", () => {
         .from(categoryRules)
     ).map((r) => r.priority);
     expect(new Set(priorities).size).toBe(priorities.length);
+
+    // An installation seeded before F-027 gets Excluded on the next run.
+    await testDb.db
+      .delete(categories)
+      .where(and(isNull(categories.parentId), eq(categories.name, "Excluded")));
+    expect(await seedDefaults(testDb.db)).toEqual({
+      seeded: false,
+      categories: 1,
+      rules: 0,
+    });
+    expect(await categoryIdByPath(testDb.db, "Excluded")).not.toBeNull();
+    expect(await seedDefaults(testDb.db)).toEqual({
+      seeded: false,
+      categories: 0,
+      rules: 0,
+    });
   });
 });
 
@@ -523,6 +544,136 @@ describe("re-apply rules", () => {
     expect(await reapplyRules({ db: testDb.db })).toEqual({
       recategorized: 0,
       transfers: 0,
+    });
+  });
+});
+
+describe("excluded transactions (F-027)", () => {
+  /** A rule for a unique text, so other tests' rows never match it. */
+  async function excludeRule(): Promise<string> {
+    const token = `poissulje-${randomUUID().slice(0, 8)}`;
+    await testDb.db.insert(categoryRules).values({
+      categoryId: await categoryId("Excluded"),
+      matchField: "description",
+      matchType: "contains",
+      pattern: token,
+      priority: 1,
+    });
+    return token;
+  }
+
+  it("a rule can target Excluded, and an excluded leg never pairs, not even by IBAN", async () => {
+    const token = await excludeRule();
+    const savingsId = await newManualAccount("Excluded savings");
+    const iban = `FI${String(randomBytes(4).readUInt32BE()).padStart(16, "0")}`;
+    await testDb.db
+      .update(accounts)
+      .set({ iban })
+      .where(eq(accounts.id, savingsId));
+    const checkingId = await newManualAccount("Excluded checking");
+
+    await importRows(checkingId, [
+      // Names the savings account's IBAN, but a rule excludes it.
+      ["10.04.2026", "-2345,00", "Testi Henkilö", `${token} ${iban}`],
+      // Would pair with the credit below by amount alone.
+      ["14.04.2026", "-678,00", "Testi Henkilö", `Siirto ${token}`],
+    ]);
+    await importRows(savingsId, [
+      ["11.04.2026", "2345,00", "Testi Henkilö", "Tilisiirto"],
+      ["15.04.2026", "678,00", "Testi Henkilö", "Tilisiirto"],
+    ]);
+    await reapplyRules({ db: testDb.db });
+
+    const excluded = await categoryId("Excluded");
+    for (const row of await transactionsOf(checkingId)) {
+      expect(row).toMatchObject({
+        categoryId: excluded,
+        categorySource: "rule",
+        transferGroupId: null,
+      });
+    }
+    for (const row of await transactionsOf(savingsId)) {
+      expect(row).toMatchObject({ categoryId: null, transferGroupId: null });
+    }
+  });
+
+  it("excluding by hand is manual; Include again re-runs the rules and transfer detection", async () => {
+    const token = await excludeRule();
+    const accountId = await newManualAccount("Exclude by hand");
+    const otherId = await newManualAccount("Exclude other");
+    await importRows(accountId, [
+      ["06.04.2026", "-31,00", "Prisma Kannelmäki", "Korttiosto"],
+      ["07.04.2026", "-910,00", "Testi Henkilö", "Oma siirto"],
+      ["08.04.2026", "-55,00", "Tuntematon", `Lasku ${token}`],
+    ]);
+    const [prisma, transferOut, ruled] = await transactionsOf(accountId);
+    expect(prisma.categoryId).toBe(await categoryId("Groceries/Supermarkets"));
+    expect(ruled.categoryId).toBe(await categoryId("Excluded"));
+
+    // Excluded before the other leg arrives: the credit stays unpaired.
+    await excludeTransaction(transferOut.id, { db: testDb.db });
+    await excludeTransaction(prisma.id, { db: testDb.db });
+    await excludeTransaction(ruled.id, { db: testDb.db });
+    await importRows(otherId, [
+      ["08.04.2026", "910,00", "Testi Henkilö", "Oma siirto"],
+    ]);
+    await reapplyRules({ db: testDb.db });
+    const excluded = await categoryId("Excluded");
+    for (const row of await transactionsOf(accountId)) {
+      expect(row).toMatchObject({
+        categoryId: excluded,
+        categorySource: "manual",
+        transferGroupId: null,
+      });
+    }
+    const [credit] = await transactionsOf(otherId);
+    expect(credit.transferGroupId).toBeNull();
+
+    // Include again: back to the rules, then transfer detection.
+    for (const row of [prisma, transferOut, ruled]) {
+      await includeTransaction(row.id, { db: testDb.db });
+    }
+    const after = new Map(
+      (await transactionsOf(accountId)).map((row) => [row.id, row]),
+    );
+    expect(after.get(prisma.id)).toMatchObject({
+      categoryId: await categoryId("Groceries/Supermarkets"),
+      categorySource: "rule",
+    });
+    // The rule that targets Excluded excludes it again.
+    expect(after.get(ruled.id)).toMatchObject({
+      categoryId: excluded,
+      categorySource: "rule",
+    });
+    const out = after.get(transferOut.id)!;
+    expect(out).toMatchObject({
+      categoryId: await categoryId("Transfers"),
+      categorySource: "rule",
+    });
+    expect(out.transferGroupId).not.toBeNull();
+    const [partner] = await transactionsOf(otherId);
+    expect(partner.transferGroupId).toBe(out.transferGroupId);
+  });
+
+  it("creates Excluded on demand when it is missing", async () => {
+    const accountId = await newManualAccount("Exclude unseeded");
+    await importRows(accountId, [
+      ["09.04.2026", "-12,00", "Tuntematon", "Korttiosto"],
+    ]);
+    const [row] = await transactionsOf(accountId);
+    await testDb.db
+      .delete(categories)
+      .where(and(isNull(categories.parentId), eq(categories.name, "Excluded")));
+    await excludeTransaction(row.id, { db: testDb.db });
+    const [created] = await testDb.db
+      .select()
+      .from(categories)
+      .where(and(isNull(categories.parentId), eq(categories.name, "Excluded")));
+    expect(created.kind).toBe("excluded");
+    const [after] = await transactionsOf(accountId);
+    expect(after).toMatchObject({
+      categoryId: created.id,
+      categorySource: "manual",
     });
   });
 });

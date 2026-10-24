@@ -128,6 +128,18 @@ export function TransactionFilters({
             <option value="only">Only transfers</option>
           </NativeSelect>
         </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor={`${ids}-excluded`}>Excluded</Label>
+          <NativeSelect
+            id={`${ids}-excluded`}
+            name="excluded"
+            defaultValue={filter.excluded ?? ""}
+          >
+            <option value="">Excluded and not excluded</option>
+            <option value="exclude">Not excluded</option>
+            <option value="only">Excluded only</option>
+          </NativeSelect>
+        </div>
       </div>
       {accounts.length > 0 && (
         <fieldset className="flex flex-col gap-2">

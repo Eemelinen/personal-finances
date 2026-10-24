@@ -8,7 +8,8 @@ import type { RuleAmountSign, RuleMatchField, RuleMatchType } from "./rules";
 // the merchant of a card purchase. Short or common names are word-bounded
 // regular expressions, so `VR` does not match every `…vr…`.
 
-export type CategoryKind = "expense" | "income" | "transfer";
+/** `excluded`: left out of every report (F-027), the money still moved. */
+export type CategoryKind = "expense" | "income" | "transfer" | "excluded";
 
 export interface DefaultCategory {
   name: string;
@@ -19,6 +20,12 @@ export interface DefaultCategory {
 
 /** The category own transfers get; created on demand when it is missing. */
 export const TRANSFERS_CATEGORY = "Transfers";
+
+/**
+ * The category that takes a transaction out of every report (F-027);
+ * created on demand when it is missing.
+ */
+export const EXCLUDED_CATEGORY = "Excluded";
 
 /** The category for what no rule matched, for reports and manual picks. */
 export const UNCATEGORIZED_CATEGORY = "Uncategorized";
@@ -100,6 +107,12 @@ export const DEFAULT_CATEGORIES: readonly DefaultCategory[] = [
     name: TRANSFERS_CATEGORY,
     kind: "transfer",
     color: "#64748b",
+    children: [],
+  },
+  {
+    name: EXCLUDED_CATEGORY,
+    kind: "excluded",
+    color: "#a8a29e",
     children: [],
   },
   {

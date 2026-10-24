@@ -30,7 +30,11 @@ const KIND_LABELS = {
   expense: "Expense",
   income: "Income",
   transfer: "Transfer",
+  excluded: "Excluded",
 } as const;
+
+/** Kinds a new category can have: Excluded is the one seeded category. */
+const NEW_KINDS = ["expense", "income", "transfer"] as const;
 
 interface CategoriesManagerProps {
   categories: CategoryUsage[];
@@ -285,7 +289,10 @@ function NewCategoryForm({ categories }: { categories: CategoryUsage[] }) {
   const [parentId, setParentId] = useState("");
   const [kind, setKind] = useState("expense");
   const { run, pending, feedback } = useAction();
-  const parents = categories.filter((category) => category.parentId === null);
+  // Excluded has no subcategories (F-027).
+  const parents = categories.filter(
+    (category) => category.parentId === null && category.kind !== "excluded",
+  );
 
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -334,9 +341,9 @@ function NewCategoryForm({ categories }: { categories: CategoryUsage[] }) {
             onChange={(event) => setKind(event.target.value)}
           >
             {parentId && <option value="">As the parent</option>}
-            {Object.entries(KIND_LABELS).map(([value, label]) => (
+            {NEW_KINDS.map((value) => (
               <option key={value} value={value}>
-                {label}
+                {KIND_LABELS[value]}
               </option>
             ))}
           </NativeSelect>
@@ -498,7 +505,9 @@ function CategoryRow({
       <td className="py-2">
         {category.protected ? (
           <p className="text-muted-foreground text-right text-sm">
-            Used by transfer detection
+            {category.kind === "excluded"
+              ? "Leaves transactions out of reports"
+              : "Used by transfer detection"}
           </p>
         ) : (
           <div className="flex justify-end gap-1">

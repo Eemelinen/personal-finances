@@ -16,6 +16,7 @@ export const categoryKind = pgEnum("category_kind", [
   "expense",
   "income",
   "transfer",
+  "excluded",
 ]);
 
 export const ruleMatchField = pgEnum("rule_match_field", [

@@ -4,6 +4,8 @@ import { refresh } from "next/cache";
 import { verifySession } from "@/lib/auth/session";
 import { CategoryManageError } from "@/server/categorization/manage";
 import {
+  excludeTransaction,
+  includeTransaction,
   markTransfer,
   setTransactionCategory,
   setTransactionNote,
@@ -74,6 +76,28 @@ export async function unlinkTransferAction(id: string): Promise<ActionResult> {
   await verifySession();
   try {
     await unlinkTransfer(transactionId(id));
+    refresh();
+    return { ok: true };
+  } catch (error) {
+    return userError(error);
+  }
+}
+
+export async function excludeAction(id: string): Promise<ActionResult> {
+  await verifySession();
+  try {
+    await excludeTransaction(transactionId(id));
+    refresh();
+    return { ok: true };
+  } catch (error) {
+    return userError(error);
+  }
+}
+
+export async function includeAction(id: string): Promise<ActionResult> {
+  await verifySession();
+  try {
+    await includeTransaction(transactionId(id));
     refresh();
     return { ok: true };
   } catch (error) {

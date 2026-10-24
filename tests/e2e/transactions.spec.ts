@@ -14,8 +14,9 @@ import {
 } from "./support/transactions";
 
 // /transactions end to end (F-015): filters live in the URL, the category
-// changes inline (manual), notes, one-sided transfers, rules created from a
-// transaction, and paging through more than 10 000 rows. The server seeds
+// changes inline (manual), notes, one-sided transfers, excluding from
+// reports (F-027), rules created from a transaction, and paging through more
+// than 10 000 rows. The server seeds
 // the default categories and rules, so "Salary" and "rent" texts are
 // categorised on import.
 
@@ -297,6 +298,82 @@ test("adds a note and marks and unlinks a one-sided transfer", async ({
     unlinked.getByLabel("Category").locator("option:checked"),
   ).toHaveText("No category");
   await expect(unlinked.getByTestId("category-source")).toHaveText("Manual");
+});
+
+test("excludes a transaction from its details, with a badge and a filter, and includes it again", async ({
+  page,
+}) => {
+  const { url } = await setUp(page);
+  await transactionRow(page, "Salary March")
+    .getByRole("button", { name: "Details" })
+    .click();
+  const sheet = page.getByRole("dialog");
+  await sheet.getByRole("button", { name: "Exclude from reports" }).click();
+  await expect(sheet.getByText("Excluded from reports.")).toBeVisible();
+  await expect(
+    sheet.getByRole("button", { name: "Include again" }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  // Still listed, with a badge, in the manual Excluded category.
+  await expectRowCount(page, 6);
+  const salary = transactionRow(page, "Salary March");
+  await expect(
+    salary.locator("span").getByText("Excluded", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    salary.getByLabel("Category").locator("option:checked"),
+  ).toHaveText("Excluded");
+  await expect(salary.getByTestId("category-source")).toHaveText("Manual");
+  await expect(
+    transactionRow(page, "Novel")
+      .locator("span")
+      .getByText("Excluded", { exact: true }),
+  ).toHaveCount(0);
+
+  // The filter: only excluded ones, or everything else.
+  await page.goto(withParams(url, { excluded: "only" }));
+  await expectRowCount(page, 1);
+  await expect(bodyRows(page)).toContainText("Salary March");
+  const filters = page.getByRole("form", { name: "Filters" });
+  await expect(filters.getByLabel("Excluded", { exact: true })).toHaveValue(
+    "only",
+  );
+  await filters
+    .getByLabel("Excluded", { exact: true })
+    .selectOption({ label: "Not excluded" });
+  await filters.getByRole("button", { name: "Apply filters" }).click();
+  await expect(page).toHaveURL(/excluded=exclude/);
+  await expectRowCount(page, 5);
+  await expect(bodyRows(page)).not.toContainText(["Salary March"]);
+
+  // Include again: back to the rules, which make it salary again. (In the
+  // "excluded only" view the row, and the sheet, would go away.)
+  await page.goto(`${url.pathname}${url.search}`);
+  await transactionRow(page, "Salary March")
+    .getByRole("button", { name: "Details" })
+    .click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Include again" })
+    .click();
+  await expect(
+    page.getByRole("dialog").getByText("Included in reports again."),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.reload();
+  const included = transactionRow(page, "Salary March");
+  await expect(
+    included.locator("span").getByText("Excluded", { exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    included.getByLabel("Category").locator("option:checked"),
+  ).toHaveText("Income › Salary");
+  await expect(included.getByTestId("category-source")).toHaveText("Rule");
+  await page.goto(withParams(url, { excluded: "only" }));
+  await expect(
+    page.getByText("No transactions match the filters."),
+  ).toBeVisible();
 });
 
 test("pages through more than 10 000 transactions with totals for the filter", async ({

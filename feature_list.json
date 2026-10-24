@@ -720,7 +720,7 @@
       "area": "categorization",
       "title": "Excluded transactions",
       "user_visible_behavior": "A transaction can be excluded from every calculation without deleting it: the top-level Excluded category (kind `excluded`), set by hand (\"Exclude from reports\" / \"Include again\" in the transaction details) or by a rule. Excluded rows stay in the transaction list with a badge and filter, and are left out of spending, cash flow, dashboard tiles, merchants, averages and own-transfer detection; balances are unchanged.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-015", "F-017"],
       "ticket": "FIN-027",
       "spec": "docs/tickets/FIN-027-excluded-transactions.md",
@@ -731,7 +731,13 @@
         "L2: pnpm test:integration tests/integration/report-queries.int.test.ts (excluded credits and debits are in no total or merchant list)",
         "L3: pnpm test:e2e tests/e2e/transactions.spec.ts (exclude from details, badge and filter, include again)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (working tree on d84a901)",
+        "2026-10-24 pnpm test:unit tests/unit/categorization/rules.test.ts → pass (working tree on d84a901)",
+        "2026-10-24 pnpm test:integration tests/integration/categorization.int.test.ts → pass (working tree on d84a901, Docker available)",
+        "2026-10-24 pnpm test:integration tests/integration/report-queries.int.test.ts → pass (working tree on d84a901, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/transactions.spec.ts → pass (working tree on d84a901, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Found with real data 2026-10-24: a loan drawdown and the property purchase it paid dominated the year's income and spending."
     },

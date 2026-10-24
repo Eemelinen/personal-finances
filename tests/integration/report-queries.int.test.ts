@@ -24,7 +24,8 @@ import { startTestDatabase, type TestDatabase } from "./helpers/postgres";
 // flow. Own transfers stay out, refunds net against their category, months
 // follow the Helsinki calendar. With the `uncategorizedCreditsAsIncome`
 // setting off (F-026), credits without an income category are other money
-// in. Each test starts from empty tables.
+// in. Excluded transactions (F-027) count nowhere. Each test starts from
+// empty tables.
 
 const TIME_ZONE = "Europe/Helsinki";
 const NOW = new Date("2026-10-24T09:00:00Z");
@@ -59,7 +60,7 @@ let cat: Categories;
 
 async function category(
   name: string,
-  kind: "expense" | "income" | "transfer",
+  kind: "expense" | "income" | "transfer" | "excluded",
   color: string | null,
   parentId?: string,
 ) {
@@ -747,5 +748,118 @@ describe("the uncategorizedCreditsAsIncome setting (F-026)", () => {
     expect(drill.transactions?.rows.map((row) => row.amountMinor)).toEqual([
       -300,
     ]);
+  });
+});
+
+describe("excluded transactions (F-027)", () => {
+  let excluded: string;
+
+  /** A loan drawdown and the purchase it paid, plus older excluded rows. */
+  async function seedExcluded() {
+    excluded = await category("Excluded", "excluded", "#a8a29e");
+    await txn("2026-10-08", 18_000_000, {
+      categoryId: excluded,
+      categorySource: "manual",
+      counterparty: "Oma Pankki",
+      description: "Asuntolainan nosto",
+    });
+    await txn("2026-10-08", -15_000_000, {
+      categoryId: excluded,
+      categorySource: "manual",
+      counterparty: "Asunto Myyjä",
+    });
+    // A rule excluded these: the previous period and the average window.
+    await txn("2026-09-20", -2_500_000, {
+      categoryId: excluded,
+      categorySource: "rule",
+      counterparty: "Asunto Myyjä",
+    });
+    await txn("2026-06-15", 40_000, {
+      categoryId: excluded,
+      categorySource: "rule",
+      counterparty: "Pankin korjaus",
+    });
+  }
+
+  it("leaves excluded debits out of spending, merchants, averages and drill-downs", async () => {
+    await seedYear();
+    await seedExcluded();
+    const report = await getSpendingReport({ db: testDb.db, period: OCTOBER });
+    // The same numbers as without the excluded rows.
+    expect(report.totalMinor).toBe(11_900);
+    expect(report.previousTotalMinor).toBe(10_000);
+    expect(report.averageTotalMinor).toBe(Math.round(40_000 / 6));
+    expect(report.categories.map((c) => c.param)).not.toContain(excluded);
+    expect(report.merchants.map((m) => m.name)).not.toContain("Asunto Myyjä");
+    expect(
+      report.trend.months.find((m) => m.month === "2026-09")?.values,
+    ).toMatchObject({ [cat.groceries]: 6_000, [cat.restaurants]: 4_000 });
+    expect(Object.keys(report.trend.months[0].values)).not.toContain(excluded);
+
+    // Excluded is not spending: no drill-down into it.
+    const drill = await getSpendingReport({
+      db: testDb.db,
+      period: OCTOBER,
+      category: excluded,
+    });
+    expect(drill.scope).toEqual({ level: "all" });
+    const uncategorized = await getSpendingReport({
+      db: testDb.db,
+      period: OCTOBER,
+      category: UNCATEGORIZED_PARAM,
+    });
+    expect(
+      uncategorized.transactions?.rows.map((row) => row.amountMinor),
+    ).toEqual([-1_000]);
+  });
+
+  it("counts excluded credits as neither income nor other money in", async () => {
+    await seedYear();
+    await seedExcluded();
+    // Marking a credit as salary is the category picker: a manual
+    // Income › Salary pick counts as income.
+    await txn("2026-10-21", 50_000, {
+      categoryId: cat.salary,
+      categorySource: "manual",
+      counterparty: "Puoliso",
+    });
+
+    for (const asIncome of [true, false]) {
+      const report = await getCashFlowReport({
+        db: testDb.db,
+        now: NOW,
+        timeZone: TIME_ZONE,
+        uncategorizedCreditsAsIncome: asIncome,
+      });
+      // seedYear's October: salary 300 000, the uncategorised +500.
+      expect(report.months.at(-1)).toMatchObject({
+        month: "2026-10",
+        incomeMinor: 350_000 + (asIncome ? 500 : 0),
+        expensesMinor: 11_900,
+        otherInMinor: asIncome ? 0 : 500,
+      });
+      expect(report.months.at(-2)).toMatchObject({
+        month: "2026-09",
+        expensesMinor: 10_000,
+      });
+      expect(report.months.find((m) => m.month === "2026-06")).toMatchObject({
+        incomeMinor: 280_000,
+        otherInMinor: 0,
+      });
+      const income = 350_000 + 300_000 + 5 * 280_000 + (asIncome ? 500 : 0);
+      expect(report.yearToDate).toMatchObject({
+        incomeMinor: income,
+        expensesMinor: 11_900 + 10_000 + 5 * 6_000 + 12_000,
+        otherInMinor: asIncome ? 0 : 500,
+      });
+    }
+    expect(
+      await getMonthCashFlow({
+        db: testDb.db,
+        now: NOW,
+        timeZone: TIME_ZONE,
+        uncategorizedCreditsAsIncome: true,
+      }),
+    ).toMatchObject({ incomeMinor: 350_500, expensesMinor: 11_900 });
   });
 });

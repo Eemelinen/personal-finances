@@ -11,7 +11,8 @@ import { TransactionDetails, transactionTitle } from "./transaction-details";
 
 // One page of transactions. The category of each row can be changed in
 // place (it becomes `manual`; "Automatic" hands it back to the rules);
-// "Details" opens the note, transfer and rule actions in a side sheet.
+// "Details" opens the note, exclude, transfer and rule actions in a side
+// sheet.
 
 interface TransactionTableProps {
   rows: TransactionRow[];
@@ -75,6 +76,7 @@ export function TransactionTable({ rows, categories }: TransactionTableProps) {
                     <span>{transactionTitle(row)}</span>
                     {row.status === "pending" && <Badge>Pending</Badge>}
                     {row.transferGroupId && <Badge>Transfer</Badge>}
+                    {row.excluded && <Badge>Excluded</Badge>}
                   </div>
                   {row.counterparty && row.description && (
                     <div className="text-muted-foreground text-xs">

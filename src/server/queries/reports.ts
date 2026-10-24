@@ -11,7 +11,10 @@ import {
 } from "drizzle-orm";
 import { getDb, type Db } from "@/server/db/client";
 import { accounts, categories, transactions } from "@/server/db/schema";
-import { UNCATEGORIZED_CATEGORY } from "@/server/categorization/defaults";
+import {
+  UNCATEGORIZED_CATEGORY,
+  type CategoryKind,
+} from "@/server/categorization/defaults";
 import { getEnv } from "@/server/env";
 import { getAppSettings } from "@/server/settings";
 import type { IsoDate } from "@/server/providers/types";
@@ -33,7 +36,9 @@ import {
 // month tiles (F-017, D-014, D-029).
 //
 // What counts: EUR transactions, booked or pending, that are not own
-// transfers (no `transfer_group_id`, category kind not `transfer`). A
+// transfers (no `transfer_group_id`, category kind not `transfer`) and not
+// excluded (category kind not `excluded`, F-027; balances still count
+// them, the money moved). A
 // category's kind says whether it is spending or income, so a refund (a
 // credit in an expense category) nets against that category. A
 // transaction in the top-level Uncategorized category counts exactly like
@@ -66,7 +71,7 @@ interface CategoryRow {
   id: string;
   name: string;
   parentId: string | null;
-  kind: "expense" | "income" | "transfer";
+  kind: CategoryKind;
   color: string | null;
 }
 
@@ -211,7 +216,7 @@ function flowParts(
   const counted = and(
     eq(transactions.currency, REPORT_CURRENCY),
     isNull(transactions.transferGroupId),
-    sql`(${transactions.categoryId} is null or ${categories.kind} <> 'transfer')`,
+    sql`(${transactions.categoryId} is null or ${categories.kind} not in ('transfer', 'excluded'))`,
   )!;
   return { join, kind, counted };
 }

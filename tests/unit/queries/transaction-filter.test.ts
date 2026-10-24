@@ -23,6 +23,7 @@ describe("parseTransactionQuery", () => {
         q: "  kiosk  ",
         type: "expense",
         transfers: "exclude",
+        excluded: "only",
         page: "3",
       }),
     ).toEqual({
@@ -34,6 +35,7 @@ describe("parseTransactionQuery", () => {
         text: "kiosk",
         direction: "expense",
         transfers: "exclude",
+        excluded: "only",
       },
       page: 3,
     });
@@ -55,6 +57,7 @@ describe("parseTransactionQuery", () => {
         category: "groceries",
         type: "both",
         transfers: "yes",
+        excluded: "no",
         page: "-2",
       }),
     ).toEqual({
@@ -113,6 +116,7 @@ describe("transactionSearchParams", () => {
       text: "100% kahvi",
       direction: "expense" as const,
       transfers: "only" as const,
+      excluded: "exclude" as const,
     };
     const params = Object.fromEntries(transactionSearchParams(filter, 4));
     expect(parseTransactionQuery(params)).toEqual({ filter, page: 4 });
@@ -121,6 +125,7 @@ describe("transactionSearchParams", () => {
   it("tells a filtered view from the unfiltered one", () => {
     expect(isFiltered(EMPTY_FILTER)).toBe(false);
     expect(isFiltered({ ...EMPTY_FILTER, transfers: "exclude" })).toBe(true);
+    expect(isFiltered({ ...EMPTY_FILTER, excluded: "only" })).toBe(true);
   });
 });
 

@@ -1,0 +1,1 @@
+ALTER TYPE "public"."category_kind" ADD VALUE 'excluded';

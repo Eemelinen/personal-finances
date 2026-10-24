@@ -8,6 +8,8 @@ import type { IsoDate } from "@/server/providers/types";
 //   q              text in the counterparty, description or note
 //   type           `income` (credits) or `expense` (debits)
 //   transfers      `exclude` or `only` (own transfers); absent: both
+//   excluded       `exclude` or `only` (excluded from reports, F-027);
+//                  absent: both
 //   page           1-based page number
 //
 // Values that do not parse are ignored, so a hand-edited URL never fails.
@@ -29,6 +31,8 @@ export interface TransactionFilter {
   text: string;
   direction: Direction | null;
   transfers: TransferFilter | null;
+  /** Transactions in the Excluded category (kind `excluded`). */
+  excluded: TransferFilter | null;
 }
 
 export interface TransactionQuery {
@@ -47,6 +51,7 @@ export const EMPTY_FILTER: TransactionFilter = {
   text: "",
   direction: null,
   transfers: null,
+  excluded: null,
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -81,6 +86,7 @@ export function parseTransactionQuery(params: SearchParams): TransactionQuery {
   const category = first(params, "category");
   const type = first(params, "type");
   const transfers = first(params, "transfers");
+  const excluded = first(params, "excluded");
   const page = Number(first(params, "page"));
   const accounts = [
     ...new Set(
@@ -102,6 +108,7 @@ export function parseTransactionQuery(params: SearchParams): TransactionQuery {
       direction: type === "income" || type === "expense" ? type : null,
       transfers:
         transfers === "exclude" || transfers === "only" ? transfers : null,
+      excluded: excluded === "exclude" || excluded === "only" ? excluded : null,
     },
     page: Number.isSafeInteger(page) && page >= 1 ? page : 1,
   };
@@ -120,6 +127,7 @@ export function transactionSearchParams(
   if (filter.text) params.set("q", filter.text);
   if (filter.direction) params.set("type", filter.direction);
   if (filter.transfers) params.set("transfers", filter.transfers);
+  if (filter.excluded) params.set("excluded", filter.excluded);
   if (page > 1) params.set("page", String(page));
   return params;
 }
