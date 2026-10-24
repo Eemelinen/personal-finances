@@ -266,7 +266,10 @@
       "evidence": [
         "2026-10-24 pnpm check → pass (commit ac8d2e1)",
         "2026-10-24 pnpm test:integration tests/integration/bank-sync-job.int.test.ts → pass (commit ac8d2e1, Docker available)",
-        "2026-10-24 pnpm test:e2e tests/e2e/sync-now.spec.ts → pass (commit ac8d2e1, Docker available)"
+        "2026-10-24 pnpm test:e2e tests/e2e/sync-now.spec.ts → pass (commit ac8d2e1, Docker available)",
+        "2026-10-24 pnpm check → pass (commit d8d05ee)",
+        "2026-10-24 pnpm test:integration tests/integration/bank-sync-job.int.test.ts → pass (commit d8d05ee, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/sync-now.spec.ts → pass (commit d8d05ee, Docker available)"
       ],
       "attempts": 1,
       "notes": "Replaces old FIN-010. Attempt 1 failed 2026-10-24: evaluator: Revise"
