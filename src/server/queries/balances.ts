@@ -15,17 +15,30 @@ export interface SnapshotLike {
 }
 
 /**
- * The account's balance on `day`: the display balance (`pickDisplayBalance()`,
- * D-009) among the snapshots dated on or before it, so the last known
- * balance carries over days without a sync. Undefined before the first one.
+ * The account's balance on `day`: of the snapshots of the latest day on or
+ * before it, the display balance type (`pickDisplayBalance()`, D-009). The
+ * last known balance carries over days without a sync, and an older
+ * snapshot of a preferred type never beats a newer one of another type
+ * (a bank that stops reporting `ITAV` does not freeze the balance).
+ * Undefined before the first snapshot.
  */
 export function balanceOn<T extends SnapshotLike>(
   snapshots: readonly T[],
   day: IsoDate,
   preference?: readonly string[],
 ): T | undefined {
+  let latest: IsoDate | undefined;
+  for (const snapshot of snapshots) {
+    if (
+      snapshot.date <= day &&
+      (latest === undefined || snapshot.date > latest)
+    ) {
+      latest = snapshot.date;
+    }
+  }
+  if (latest === undefined) return undefined;
   return pickDisplayBalance(
-    snapshots.filter((snapshot) => snapshot.date <= day),
+    snapshots.filter((snapshot) => snapshot.date === latest),
     preference,
   );
 }

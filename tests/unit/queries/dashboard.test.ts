@@ -26,13 +26,18 @@ describe("balanceOn", () => {
     expect(balanceOn(snapshots, "2026-10-03")?.amountMinor).toBe(100);
   });
 
-  it("prefers the display balance type, as pickDisplayBalance() does", () => {
-    // ITAV ranks above CLBD, even when a later CLBD exists.
+  it("prefers the display balance type among the latest day's snapshots", () => {
+    // ITAV ranks above CLBD (pickDisplayBalance(), D-009).
     expect(balanceOn(snapshots, "2026-10-05")?.amountMinor).toBe(250);
-    expect(balanceOn(snapshots, "2026-10-12")?.amountMinor).toBe(250);
     expect(
-      balanceOn(snapshots, "2026-10-12", ["CLBD", "ITAV"])?.amountMinor,
-    ).toBe(400);
+      balanceOn(snapshots, "2026-10-05", ["CLBD", "ITAV"])?.amountMinor,
+    ).toBe(300);
+  });
+
+  it("never lets an older snapshot of a preferred type beat a newer one", () => {
+    // The bank stopped reporting ITAV after 10-05: the 10-10 CLBD counts.
+    expect(balanceOn(snapshots, "2026-10-09")?.amountMinor).toBe(250);
+    expect(balanceOn(snapshots, "2026-10-12")?.amountMinor).toBe(400);
   });
 
   it("ignores snapshots after the day", () => {
