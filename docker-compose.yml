@@ -86,11 +86,23 @@ services:
       ENABLE_BANKING_PRIVATE_KEY_PATH: ${ENABLE_BANKING_PRIVATE_KEY_PATH:-./secrets/enable-banking.pem}
       ENABLE_BANKING_REDIRECT_URL: ${ENABLE_BANKING_REDIRECT_URL:-}
       ENABLE_BANKING_ENV: ${ENABLE_BANKING_ENV:-sandbox}
+      # The nightly encrypted backup (FIN-024, docs/operations.md): set the
+      # age public key(s) to turn it on; BACKUP_DIR follows, as the
+      # `backups` volume.
+      BACKUP_AGE_RECIPIENTS: ${BACKUP_AGE_RECIPIENTS:-}
+      BACKUP_DIR: ${BACKUP_AGE_RECIPIENTS:+/backups}
+      # Notifications through ntfy (FIN-024); unset, nothing is sent.
+      NTFY_URL: ${NTFY_URL:-}
+      NTFY_TOKEN: ${NTFY_TOKEN:-}
+      NOTIFY_FAILED_SYNCS: ${NOTIFY_FAILED_SYNCS:-3}
     volumes:
       - ./secrets:/app/secrets:ro
+      - backups:/backups
     depends_on:
       migrate:
         condition: service_completed_successfully
 
 volumes:
   pgdata:
+  # The worker's encrypted backups; copy them off the machine too.
+  backups:

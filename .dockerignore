@@ -3,6 +3,9 @@
 node_modules
 coverage
 secrets
+backups
+*.dump
+*.dump.age
 .env*
 !.env.example
 npm-debug.log*

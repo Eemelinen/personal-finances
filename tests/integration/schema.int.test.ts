@@ -27,6 +27,7 @@ const CORE_TABLES = [
   "holdings",
   "institutions",
   "investment_transactions",
+  "notifications",
   "prices",
   "sync_runs",
   "transactions",

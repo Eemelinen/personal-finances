@@ -50,8 +50,41 @@ const envSchema = z
     ENABLE_BANKING_PRIVATE_KEY_PATH: optionalSecret,
     ENABLE_BANKING_REDIRECT_URL: optionalSecret.pipe(z.url().optional()),
     ENABLE_BANKING_ENV: z.enum(["sandbox", "production"]).default("sandbox"),
+    // The nightly backup (F-024): where the worker writes the encrypted
+    // dumps, and the age public keys (`age1…`, comma- or space-separated)
+    // they are encrypted to. Both or neither; without them no backup runs.
+    // Backups are never written unencrypted.
+    BACKUP_DIR: optionalSecret,
+    BACKUP_AGE_RECIPIENTS: optionalSecret.pipe(
+      z
+        .string()
+        .transform((value) => value.split(/[\s,]+/).filter(Boolean))
+        .pipe(
+          z.array(
+            z
+              .string()
+              .regex(/^age1[0-9a-z]+$/, "must be age public keys (age1…)"),
+          ),
+        )
+        .optional(),
+    ),
+    // Notifications (F-024): an ntfy topic URL (e.g.
+    // `https://ntfy.sh/<topic>`) and, for a protected topic, an access
+    // token. Unset, nothing is sent.
+    NTFY_URL: optionalSecret.pipe(z.url().optional()),
+    NTFY_TOKEN: optionalSecret,
+    // How many syncs of a connection must fail in a row before it notifies.
+    NOTIFY_FAILED_SYNCS: z.coerce.number().int().min(1).default(3),
   })
   .superRefine((env, ctx) => {
+    if (Boolean(env.BACKUP_DIR) !== Boolean(env.BACKUP_AGE_RECIPIENTS)) {
+      ctx.addIssue({
+        code: "custom",
+        path: [env.BACKUP_DIR ? "BACKUP_AGE_RECIPIENTS" : "BACKUP_DIR"],
+        message:
+          "BACKUP_DIR and BACKUP_AGE_RECIPIENTS go together (backups are always encrypted)",
+      });
+    }
     if (Boolean(env.KRAKEN_API_KEY) !== Boolean(env.KRAKEN_API_SECRET)) {
       ctx.addIssue({
         code: "custom",

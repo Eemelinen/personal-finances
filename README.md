@@ -16,6 +16,7 @@ A self-hosted personal finance dashboard. It syncs balances and transactions fro
 | [Decisions](docs/DECISIONS.md)                     | Decision log                                                        |
 | [API access research](docs/api-access-research.md) | Free API options for Nordea, S-Pankki, Nordnet and Kraken           |
 | [Architecture](docs/architecture.md)               | Services, directory layout, sync data flow, data model, conventions |
+| [Operations](docs/operations.md)                   | Backups, restoring one, notifications                               |
 | [Tech stack](docs/tech-stack.md)                   | Technologies and versions, and why they were chosen                 |
 
 ## Quick start
@@ -82,6 +83,8 @@ In Claude Code: `/harness:clock-in`, implement, `/harness:verify-feature F-NNN`,
 | `pnpm db:migrate`                    | Apply migrations, seed the default categories |
 | `pnpm db:studio`                     | Browse the database with Drizzle Studio       |
 | `pnpm auth:hash`                     | Print `AUTH_PASSWORD_HASH` for a password     |
+| `pnpm backup`                        | Take an encrypted backup now (needs pg_dump)  |
+| `pnpm backup:decrypt <file> <key>`   | Decrypt a backup to stdout, for pg_restore    |
 | `pnpm test:unit` / `pnpm test:watch` | Unit tests (Vitest project `unit`)            |
 | `pnpm test:integration`              | L2: Vitest + Testcontainers Postgres 18       |
 | `pnpm test:e2e`                      | L3: Playwright against the production build   |

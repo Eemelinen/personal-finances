@@ -50,6 +50,13 @@
       "when": 1792831337840,
       "tag": "0006_consent_renewal",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792833712606,
+      "tag": "0007_notifications",
+      "breakpoints": true
     }
   ]
 }

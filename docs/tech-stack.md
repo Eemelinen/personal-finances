@@ -32,10 +32,12 @@ TypeScript end to end, running locally in Docker Compose.
 
 ## Background jobs
 
-| Layer        | Choice        | Version | Why                                                                                 |
-| ------------ | ------------- | ------- | ----------------------------------------------------------------------------------- |
-| Scheduler    | **node-cron** | 4.6     | Simple in-process cron with time zones and overlap protection. Enough for one user. |
-| TS execution | **tsx**       | 4.23    | Runs the worker and scripts directly from TypeScript, with `@/` path aliases.       |
+| Layer             | Choice                          | Version | Why                                                                                                                                                  |
+| ----------------- | ------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Scheduler         | **node-cron**                   | 4.6     | Simple in-process cron with time zones and overlap protection. Enough for one user.                                                                  |
+| TS execution      | **tsx**                         | 4.23    | Runs the worker and scripts directly from TypeScript, with `@/` path aliases.                                                                        |
+| Backup encryption | **age-encryption**              | 0.3     | age (by its author) in TypeScript: the nightly `pg_dump` is encrypted while it streams, no age binary needed; files open with the age CLI (FIN-024). |
+| Notifications     | **ntfy** (HTTP publish, no SDK) | —       | Self-hostable push to a phone; one `fetch` per message (FIN-024).                                                                                    |
 
 ## Tooling
 
@@ -57,7 +59,6 @@ TypeScript end to end, running locally in Docker Compose.
 | JWT signing (RS256) for Enable Banking | jose                                    | FIN-006           |
 | Stock prices                           | Twelve Data / Alpha Vantage (free tier) | FIN-020           |
 | Crypto prices                          | CoinGecko API                           | FIN-021           |
-| Notifications                          | ntfy (self-hostable push)               | FIN-024           |
 
 ## External services
 

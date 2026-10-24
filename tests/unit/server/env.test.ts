@@ -52,6 +52,66 @@ describe("parseEnv", () => {
     expect(parseEnv({ DATABASE_URL: url }).KRAKEN_API_KEY).toBeUndefined();
   });
 
+  it("reads the backup directory with its age recipients, both or neither", () => {
+    const url = "postgres://user:pass@localhost:5432/finances";
+    const a = "age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p";
+    const b = "age1lggyhqrw2nlhcxprm67z43rta597azn8gknawjehu9d9dl0jq3yqqvfafg";
+    const env = parseEnv({
+      DATABASE_URL: url,
+      BACKUP_DIR: "/backups",
+      BACKUP_AGE_RECIPIENTS: ` ${a}, ${b} `,
+    });
+    expect(env.BACKUP_DIR).toBe("/backups");
+    expect(env.BACKUP_AGE_RECIPIENTS).toEqual([a, b]);
+
+    const unset = parseEnv({
+      DATABASE_URL: url,
+      BACKUP_DIR: "",
+      BACKUP_AGE_RECIPIENTS: "",
+    });
+    expect(unset.BACKUP_DIR).toBeUndefined();
+    expect(unset.BACKUP_AGE_RECIPIENTS).toBeUndefined();
+
+    // Backups are never written unencrypted.
+    expect(() =>
+      parseEnv({ DATABASE_URL: url, BACKUP_DIR: "/backups" }),
+    ).toThrow(/BACKUP_AGE_RECIPIENTS/);
+    expect(() =>
+      parseEnv({ DATABASE_URL: url, BACKUP_AGE_RECIPIENTS: a }),
+    ).toThrow(/BACKUP_DIR/);
+    expect(() =>
+      parseEnv({
+        DATABASE_URL: url,
+        BACKUP_DIR: "/backups",
+        BACKUP_AGE_RECIPIENTS: "ssh-ed25519 AAAA",
+      }),
+    ).toThrow(/age public keys/);
+  });
+
+  it("reads the optional ntfy topic and the failed-sync threshold", () => {
+    const url = "postgres://user:pass@localhost:5432/finances";
+    const defaults = parseEnv({ DATABASE_URL: url, NTFY_URL: "" });
+    expect(defaults.NTFY_URL).toBeUndefined();
+    expect(defaults.NTFY_TOKEN).toBeUndefined();
+    expect(defaults.NOTIFY_FAILED_SYNCS).toBe(3);
+
+    const env = parseEnv({
+      DATABASE_URL: url,
+      NTFY_URL: "https://ntfy.sh/finances-x1",
+      NTFY_TOKEN: "tk_abc",
+      NOTIFY_FAILED_SYNCS: "5",
+    });
+    expect(env.NTFY_URL).toBe("https://ntfy.sh/finances-x1");
+    expect(env.NTFY_TOKEN).toBe("tk_abc");
+    expect(env.NOTIFY_FAILED_SYNCS).toBe(5);
+    expect(() => parseEnv({ DATABASE_URL: url, NTFY_URL: "ntfy" })).toThrow(
+      /NTFY_URL/,
+    );
+    expect(() =>
+      parseEnv({ DATABASE_URL: url, NOTIFY_FAILED_SYNCS: "0" }),
+    ).toThrow(/NOTIFY_FAILED_SYNCS/);
+  });
+
   it("rejects a Kraken key without its secret", () => {
     const url = "postgres://user:pass@localhost:5432/finances";
     expect(() =>
