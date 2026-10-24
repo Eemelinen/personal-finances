@@ -161,7 +161,7 @@
       "area": "banking",
       "title": "Enable Banking client and provider",
       "user_visible_behavior": "`EnableBankingProvider` implements `FinancialProvider` over a typed Enable Banking client: RS256 application JWT, authorisation start, session creation, account details, balances and paginated transactions, zod-validated responses, retries on 429 and 5xx, and mapping to normalised DTOs (amount sign, booking and value date, counterparty, remittance info, pending vs booked). Tests run only against the fixtures recorded in F-001; no network.",
-      "status": "not_started",
+      "status": "in_progress",
       "depends_on": ["F-001", "F-005"],
       "ticket": "FIN-006",
       "spec": "docs/tickets/FIN-006-enable-banking-client.md",
