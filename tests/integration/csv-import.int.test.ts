@@ -1,10 +1,11 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, lt } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { readBankCsv } from "@/server/csv/bank-csv";
 import {
+  countCsvMatches,
   createManualAccount,
   ImportAccountError,
   importCsvIntoNewAccount,
@@ -12,6 +13,8 @@ import {
   listImportAccounts,
 } from "@/server/csv/import-csv";
 import { decryptSecret, encryptSecret } from "@/server/crypto";
+import { addDays } from "@/server/dates";
+import { applyMigrations } from "@/server/db/migrations";
 import {
   accounts,
   connections,
@@ -576,6 +579,161 @@ describe("CSV import and the bank sync", () => {
       duplicates: imported.length,
     });
     expect(await transactionsOf(accountId)).toHaveLength(all.length);
+  });
+
+  /**
+   * The bank's export of booked listing rows, worded as the real exports
+   * differ from the API (F-032): other case and company suffix, the kind of
+   * transaction as the description.
+   */
+  const exportOf = (rows: readonly ProviderTransaction[]) =>
+    nordeaCsv(
+      rows
+        .filter((txn) => txn.status === "booked")
+        .map((txn) => ({
+          ...txn,
+          counterparty: `${txn.counterparty?.toUpperCase()} OY`,
+          description: "Korttiosto",
+        })),
+    );
+
+  async function syncedWithHistory() {
+    const synced = await syncedAccount();
+    expect(
+      (await syncTransactions(synced.connectionId, syncOptions())).status,
+    ).toBe("succeeded");
+    return synced;
+  }
+
+  it("inserts nothing from an export of rows the API already gave", async () => {
+    const { accountId } = await syncedWithHistory();
+    const before = await transactionsOf(accountId);
+    expect(before.every((row) => row.source === "bank")).toBe(true);
+
+    const bytes = exportOf(await listing("2026-01-01", "2026-02-28"));
+    const parsed = readBankCsv(bytes);
+    expect(parsed.rows.length).toBeGreaterThan(20);
+    const counts = await countCsvMatches(accountId, parsed, { db: testDb.db });
+    expect(counts).toEqual({
+      present: parsed.rows.length,
+      new: 0,
+      errors: 0,
+    });
+
+    const summary = await importFile(accountId, bytes);
+    expect(summary).toMatchObject({
+      inserted: 0,
+      duplicates: parsed.rows.length,
+    });
+    expect(await transactionsOf(accountId)).toEqual(before);
+  });
+
+  it("inserts only the rows older than the API's history", async () => {
+    const { accountId } = await syncedWithHistory();
+    // The bank's API reached back only to September.
+    await testDb.db
+      .delete(transactions)
+      .where(
+        and(
+          eq(transactions.accountId, accountId),
+          lt(transactions.bookingDate, "2025-09-01"),
+        ),
+      );
+    const before = await transactionsOf(accountId);
+    const older = (await listing("2025-06-01", "2025-08-31")).filter(
+      (txn) => txn.status === "booked",
+    );
+    const bytes = exportOf(await listing("2025-06-01", "2026-02-28"));
+    const parsed = readBankCsv(bytes);
+
+    expect(await countCsvMatches(accountId, parsed, { db: testDb.db })).toEqual(
+      {
+        present: parsed.rows.length - older.length,
+        new: older.length,
+        errors: 0,
+      },
+    );
+    expect(await importFile(accountId, bytes)).toMatchObject({
+      inserted: older.length,
+      duplicates: parsed.rows.length - older.length,
+    });
+    const after = await transactionsOf(accountId);
+    expect(after).toHaveLength(before.length + older.length);
+    const added = after.filter((row) => row.source === "csv");
+    expect(added).toHaveLength(older.length);
+    expect(added.every((row) => row.bookingDate < "2025-09-01")).toBe(true);
+    // The bank's rows are as they were.
+    expect(after.filter((row) => row.source === "bank")).toEqual(before);
+  });
+
+  it("matches a row the API booked a day after the export's date", async () => {
+    const { accountId } = await syncedWithHistory();
+    const [rent] = (await listing("2026-02-01", "2026-02-01")).filter(
+      (txn) => txn.amountMinor === -95_000,
+    );
+    // Nordea: the API's booking date is a day later, its value date the
+    // export's date.
+    await testDb.db
+      .update(transactions)
+      .set({ bookingDate: addDays(rent.bookingDate, 1) })
+      .where(
+        and(
+          eq(transactions.accountId, accountId),
+          eq(transactions.providerTxnRef, rent.ref!),
+        ),
+      );
+    const before = await transactionsOf(accountId);
+    expect(await importFile(accountId, exportOf([rent]))).toMatchObject({
+      inserted: 0,
+      duplicates: 1,
+    });
+    expect(await transactionsOf(accountId)).toEqual(before);
+  });
+
+  it("counts every row of a re-imported file as a duplicate", async () => {
+    const { accountId } = await syncedWithHistory();
+    const extra = {
+      bookingDate: "2026-02-20",
+      amountMinor: -1_999,
+      counterparty: "Paid In Cash Elsewhere",
+      description: "Only in the export",
+    };
+    const february = (await listing("2026-02-01", "2026-02-28")).filter(
+      (txn) => txn.status === "booked",
+    );
+    const bytes = nordeaCsv([...february, extra, extra]);
+    expect(await importFile(accountId, bytes)).toMatchObject({
+      inserted: 2,
+      duplicates: february.length,
+    });
+    const after = await transactionsOf(accountId);
+
+    const parsed = readBankCsv(bytes);
+    expect(await countCsvMatches(accountId, parsed, { db: testDb.db })).toEqual(
+      { present: february.length + 2, new: 0, errors: 0 },
+    );
+    expect(await importFile(accountId, bytes)).toMatchObject({
+      inserted: 0,
+      duplicates: february.length + 2,
+    });
+    expect(await transactionsOf(accountId)).toEqual(after);
+  });
+
+  it("marks rows of accounts without a bank as csv after the migrations", async () => {
+    const { accountId: syncedId } = await syncedWithHistory();
+    const manualId = await newManualAccount();
+    await importFile(manualId, nordeaCsv([COFFEE]));
+    // As the rows stood after migration 0012: everything `bank`.
+    await testDb.db
+      .update(transactions)
+      .set({ source: "bank" })
+      .where(eq(transactions.accountId, manualId));
+
+    await applyMigrations(testDb.db);
+    const manual = await transactionsOf(manualId);
+    expect(manual.map((row) => row.source)).toEqual(["csv"]);
+    const synced = await transactionsOf(syncedId);
+    expect(synced.every((row) => row.source === "bank")).toBe(true);
   });
 
   it("offers synced and manual accounts, but not archived ones", async () => {

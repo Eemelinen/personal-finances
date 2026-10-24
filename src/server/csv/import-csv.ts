@@ -1,5 +1,8 @@
-import { and, asc, eq } from "drizzle-orm";
-import { categorizeTransactions } from "@/server/categorization/categorize";
+import { and, asc, eq, gte, inArray, lte, or } from "drizzle-orm";
+import {
+  categorizeTransactions,
+  lockCategorization,
+} from "@/server/categorization/categorize";
 import { getDb, type Db } from "@/server/db/client";
 import { accounts, institutions, transactions } from "@/server/db/schema";
 import type { ProviderTransaction } from "@/server/providers/types";
@@ -9,17 +12,25 @@ import {
   identifyTransactions,
   type TransactionValues,
 } from "@/server/sync/transaction-merge";
+import { addDays } from "@/server/dates";
 import type { CsvFormat, CsvRowError, ParsedCsv } from "./bank-csv";
+import {
+  CSV_MATCH_DAYS,
+  matchCsvRows,
+  type MatchableTransaction,
+} from "./match";
 
-// Writes parsed CSV rows into an account (F-012, D-011). The rows take the
-// bank sync's identity path: `identifyTransactions()` numbers otherwise
-// identical rows the way a sync numbers them, so a row hashes like the same
-// transaction from an earlier import or from the bank API, and the unique
-// `(account_id, dedupe_hash)` key skips it, as the `(account_id,
-// provider_txn_ref)` key skips a row whose bank id (S-Pankki's archive id,
-// F-031) is already stored. An import only inserts: it never
+// Writes parsed CSV rows into an account (F-012, D-011). The rows are
+// identified as a sync identifies a listing (`identifyTransactions()`
+// numbers otherwise identical rows), then matched to the account's stored
+// rows (`matchCsvRows()`, F-032): by ref (S-Pankki's archive id is the
+// bank's id, F-031), by hash (an earlier import of the same file) or by
+// amount within a few days, since the export's texts and dates differ from
+// the bank API's and a synced row seldom hashes like its CSV row. A matched
+// row is a duplicate; only the rest are inserted, as `csv`. An import never
 // changes, books or removes a stored transaction (a later bank sync merges
-// its own data over imported rows, F-009).
+// its own data over imported rows, F-009). The preview runs the same
+// matching read-only (`countCsvMatches()`).
 
 export class ImportAccountError extends Error {
   override readonly name = "ImportAccountError";
@@ -29,7 +40,10 @@ export interface ImportSummary {
   /** Data rows in the file. */
   rowsRead: number;
   inserted: number;
-  /** Rows already stored for the account (earlier imports or bank sync). */
+  /**
+   * Rows already stored for the account (earlier imports or bank sync),
+   * matched by `matchCsvRows()`.
+   */
   duplicates: number;
   /** Lines the file itself repeats verbatim, imported once (Nordea). */
   repeated: number;
@@ -63,10 +77,118 @@ export async function importCsvRows(
     throw new ImportAccountError("The account does not exist or is archived.");
   }
   const { values, errors } = prepareRows(parsed, account.currency);
-  const inserted = await db.transaction((tx) =>
-    insertRows(tx, accountId, values, options),
-  );
+  const inserted = await db.transaction(async (tx) => {
+    // A sync writes an account's rows under this lock: the matching sees
+    // either all of them or none.
+    await lockCategorization(tx);
+    const stored = await loadMatchable(tx, accountId, values);
+    return insertRows(
+      tx,
+      accountId,
+      matchCsvRows(stored, values).insert,
+      options,
+    );
+  });
   return summarise(parsed, values.length, inserted, errors);
+}
+
+/** What an import into the account would do; writes nothing. */
+export interface ImportCounts {
+  /** Rows the account already has (`ImportSummary.duplicates`). */
+  present: number;
+  /** Rows an import would insert. */
+  new: number;
+  /** Rows not importable, the account's other currency included. */
+  errors: number;
+}
+
+/**
+ * The preview's counts for an existing account (F-032): `importCsvRows()`'s
+ * matching, read-only. A new manual account has no stored rows.
+ */
+export async function countCsvMatches(
+  accountId: string,
+  parsed: Pick<ParsedCsv, "rows" | "errors">,
+  options: { db?: Db } = {},
+): Promise<ImportCounts> {
+  const db = options.db ?? getDb();
+  const [account] = await db
+    .select({ currency: accounts.currency, archived: accounts.archived })
+    .from(accounts)
+    .where(eq(accounts.id, accountId));
+  if (!account || account.archived) {
+    throw new ImportAccountError("The account does not exist or is archived.");
+  }
+  const { values, errors } = prepareRows(parsed, account.currency);
+  const stored = await loadMatchable(db, accountId, values);
+  const { insert } = matchCsvRows(stored, values);
+  return {
+    present: values.length - insert.length,
+    new: insert.length,
+    errors: errors.length,
+  };
+}
+
+/** `countCsvMatches()` for a new manual account: every readable row is new. */
+export function countNewAccountRows(
+  parsed: Pick<ParsedCsv, "rows" | "errors">,
+): ImportCounts {
+  const { values, errors } = prepareRows(parsed, MANUAL_CURRENCY);
+  return { present: 0, new: values.length, errors: errors.length };
+}
+
+/** Values per `IN (…)` list, well below Postgres' parameter limit. */
+const LOOKUP_BATCH = 1_000;
+
+/**
+ * What `matchCsvRows()` needs, oldest first: the account's rows dated (by
+ * booking or value date) within `CSV_MATCH_DAYS` of the file's dates and
+ * every row sharing a ref with it.
+ */
+async function loadMatchable(
+  db: Pick<Tx, "select">,
+  accountId: string,
+  values: readonly TransactionValues[],
+): Promise<MatchableTransaction[]> {
+  if (values.length === 0) return [];
+  const days = values.map((value) => value.bookingDate).sort();
+  const from = addDays(days[0], -CSV_MATCH_DAYS);
+  const to = addDays(days[days.length - 1], CSV_MATCH_DAYS);
+  const refs = values.flatMap((value) =>
+    value.providerTxnRef === null ? [] : [value.providerTxnRef],
+  );
+  const filters = [
+    and(gte(transactions.bookingDate, from), lte(transactions.bookingDate, to)),
+    and(gte(transactions.valueDate, from), lte(transactions.valueDate, to)),
+  ];
+  for (let start = 0; start < refs.length; start += LOOKUP_BATCH) {
+    filters.push(
+      inArray(
+        transactions.providerTxnRef,
+        refs.slice(start, start + LOOKUP_BATCH),
+      ),
+    );
+  }
+  return db
+    .select({
+      id: transactions.id,
+      providerTxnRef: transactions.providerTxnRef,
+      dedupeHash: transactions.dedupeHash,
+      bookingDate: transactions.bookingDate,
+      valueDate: transactions.valueDate,
+      amountMinor: transactions.amountMinor,
+      currency: transactions.currency,
+      counterparty: transactions.counterparty,
+      counterpartyIban: transactions.counterpartyIban,
+      description: transactions.description,
+    })
+    .from(transactions)
+    .where(and(eq(transactions.accountId, accountId), or(...filters)))
+    .orderBy(
+      asc(transactions.bookingDate),
+      asc(transactions.createdAt),
+      asc(transactions.id),
+    );
 }
 
 /**
@@ -127,7 +249,7 @@ function prepareRows(
   return { values: identifyTransactions(listing), errors };
 }
 
-/** Inserts what is not stored yet; returns how many rows were inserted. */
+/** Inserts unmatched rows; returns how many rows were inserted. */
 async function insertRows(
   tx: Tx,
   accountId: string,
@@ -142,9 +264,9 @@ async function insertRows(
       .values(
         values
           .slice(start, start + INSERT_BATCH)
-          .map((value) => ({ ...value, accountId })),
+          .map((value) => ({ ...value, accountId, source: "csv" as const })),
       )
-      // Either unique key: the same hash or the same bank ref.
+      // Either unique key, for a row a concurrent sync wrote meanwhile.
       .onConflictDoNothing()
       .returning({ id: transactions.id });
     ids.push(...rows.map((row) => row.id));
