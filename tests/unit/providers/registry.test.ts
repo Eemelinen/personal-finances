@@ -82,6 +82,7 @@ describe("provider registry", () => {
 
     expect(env.BANK_PROVIDER).toBe("enable_banking");
     expect(registry.has("fake")).toBe(false);
+    expect(registry.has("kraken")).toBe(true);
     // Enable Banking is registered by F-006.
     expect(() => getBankProvider(env, registry)).toThrow(UnknownProviderError);
   });

@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { getDb } from "@/server/db/client";
+import { syncKraken } from "@/server/investments/sync-kraken";
 import { updatePrices } from "@/server/investments/update-prices";
 
 export type Job = {
@@ -29,6 +30,38 @@ export const jobs: Job[] = [
       );
       for (const problem of result.problems) {
         console.warn(`[price-update] ${problem}`);
+      }
+    },
+  },
+  {
+    // Kraken balances and ledger (F-021) of every active Kraken connection;
+    // the env key creates the connection. Removing the key from the env
+    // does not stop the sync: revoke it on Kraken (D-018).
+    name: "kraken-sync",
+    schedule: "15 */6 * * *",
+    run: async () => {
+      const results = await syncKraken();
+      if (results.length === 0) {
+        console.info("[kraken-sync] no active Kraken connection");
+      }
+      for (const { balances, holdings } of results) {
+        const failure =
+          balances.status === "failed"
+            ? balances
+            : holdings?.status === "failed"
+              ? holdings
+              : null;
+        if (failure) {
+          console.warn(
+            `[kraken-sync] failed (${failure.errorKind}): ${failure.error}`,
+          );
+          continue;
+        }
+        for (const account of holdings?.accounts ?? []) {
+          console.info(
+            `[kraken-sync] ${account.holdings} holdings, ${account.zeroed} sold out, ${account.inserted} new of ${account.fetched} ledger transactions, ${account.skipped.length} entries not recorded`,
+          );
+        }
       }
     },
   },

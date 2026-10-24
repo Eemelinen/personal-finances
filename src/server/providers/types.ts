@@ -4,7 +4,13 @@
 // worker imports this outside Next.js.
 
 /** Every provider id the app knows; stored as open text in `provider` columns. */
-export const PROVIDER_IDS = ["enable_banking", "csv", "fake"] as const;
+export const PROVIDER_IDS = [
+  "enable_banking",
+  "csv",
+  "fake",
+  "kraken",
+  "manual",
+] as const;
 export type ProviderId = (typeof PROVIDER_IDS)[number];
 
 /** The providers `BANK_PROVIDER` can select for bank connections. */
@@ -94,11 +100,10 @@ export interface ProviderTransactionPage {
 export type ProviderAssetClass = "stock" | "etf" | "fund" | "crypto" | "other";
 
 /**
- * One asset position of an investment account (F-019, D-016). The sync
- * matches the asset by ISIN, else CoinGecko id, else symbol and currency,
- * and stores the quantity as a `holdings` snapshot for `date`.
+ * An asset as a provider describes it. The sync matches it by ISIN, else
+ * CoinGecko id, else symbol and currency (D-016).
  */
-export interface ProviderHolding {
+export interface ProviderAsset {
   /** Ticker or coin symbol, as the provider reports it. */
   symbol: string;
   name: string | null;
@@ -108,10 +113,48 @@ export interface ProviderHolding {
   assetClass: ProviderAssetClass;
   /** The currency the asset is quoted in. */
   currency: CurrencyCode;
+}
+
+/**
+ * One asset position of an investment account (F-019, D-016), stored as a
+ * `holdings` snapshot for `date`.
+ */
+export interface ProviderHolding extends ProviderAsset {
   /** Units held, a decimal string with at most 18 decimals, never a float. */
   quantity: string;
   /** The day the quantity refers to. */
   date: IsoDate;
+}
+
+/** Same values as the `investment_transaction_type` enum. */
+export type ProviderInvestmentTransactionType =
+  "buy" | "sell" | "dividend" | "fee" | "transfer";
+
+/** One investment transaction (F-021), stored in `investment_transactions`. */
+export interface ProviderInvestmentTransaction {
+  /** The provider's stable id (a Kraken ledger id). */
+  ref: string;
+  type: ProviderInvestmentTransactionType;
+  tradeDate: IsoDate;
+  /** Null for cash-only rows (a fiat deposit). */
+  asset: ProviderAsset | null;
+  /** Signed change in units held, a decimal string; null for cash rows. */
+  quantity: string | null;
+  /** Signed cash effect in integer minor units: − paid, + received. */
+  amountMinor: number;
+  currency: CurrencyCode;
+  description: string | null;
+}
+
+/** An entry of the provider's history that is not stored, and why. */
+export interface ProviderSkippedEntry {
+  ref: string;
+  reason: string;
+}
+
+export interface ProviderInvestmentHistory {
+  transactions: ProviderInvestmentTransaction[];
+  skipped: ProviderSkippedEntry[];
 }
 
 /**
@@ -141,4 +184,14 @@ export interface FinancialProvider {
     connection: ProviderConnection,
     account: ProviderAccountRef,
   ): Promise<ProviderHolding[]>;
+  /**
+   * Investment providers only (F-021): the account's investment
+   * transactions in `range`, all of them in one call (entries that belong
+   * together, like the two legs of a trade, may sit on different pages).
+   */
+  getInvestmentTransactions?(
+    connection: ProviderConnection,
+    account: ProviderAccountRef,
+    range: TransactionRange,
+  ): Promise<ProviderInvestmentHistory>;
 }

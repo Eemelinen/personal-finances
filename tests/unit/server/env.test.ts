@@ -26,6 +26,28 @@ describe("parseEnv", () => {
     ).toBe("abc");
   });
 
+  it("reads the optional Kraken key pair and CoinGecko key", () => {
+    const url = "postgres://user:pass@localhost:5432/finances";
+    const env = parseEnv({
+      DATABASE_URL: url,
+      KRAKEN_API_KEY: "key",
+      KRAKEN_API_SECRET: "c2VjcmV0",
+      COINGECKO_API_KEY: "",
+    });
+
+    expect(env.KRAKEN_API_KEY).toBe("key");
+    expect(env.KRAKEN_API_SECRET).toBe("c2VjcmV0");
+    expect(env.COINGECKO_API_KEY).toBeUndefined();
+    expect(parseEnv({ DATABASE_URL: url }).KRAKEN_API_KEY).toBeUndefined();
+  });
+
+  it("rejects a Kraken key without its secret", () => {
+    const url = "postgres://user:pass@localhost:5432/finances";
+    expect(() =>
+      parseEnv({ DATABASE_URL: url, KRAKEN_API_KEY: "key" }),
+    ).toThrow(/KRAKEN_API_SECRET/);
+  });
+
   it("rejects a missing DATABASE_URL", () => {
     expect(() => parseEnv({})).toThrow(/DATABASE_URL/);
   });

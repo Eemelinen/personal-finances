@@ -2,10 +2,16 @@
 
 import { refresh } from "next/cache";
 import { verifySession } from "@/lib/auth/session";
+import { localDate } from "@/server/dates";
+import { getEnv } from "@/server/env";
 import {
   importNordnetCsv,
   type NordnetImportSummary,
 } from "@/server/investments/import-nordnet";
+import {
+  ManualHoldingError,
+  setManualHolding,
+} from "@/server/investments/manual-holdings";
 import {
   NordnetFormatError,
   readNordnetCsv,
@@ -41,6 +47,56 @@ export async function importNordnet(
     return { ok: true, summary };
   } catch (error) {
     if (error instanceof NordnetFormatError) {
+      return { ok: false, error: error.message };
+    }
+    throw error;
+  }
+}
+
+// Manual crypto holdings (F-021): the wallet's quantity of a coin today.
+
+export type ManualHoldingResult =
+  | {
+      ok: true;
+      wallet: string;
+      symbol: string;
+      quantity: string;
+      priced: boolean;
+    }
+  | { ok: false; error: string };
+
+function field(formData: FormData, name: string): string {
+  const value = formData.get(name);
+  return typeof value === "string" ? value : "";
+}
+
+export async function saveManualHolding(
+  formData: FormData,
+): Promise<ManualHoldingResult> {
+  await verifySession();
+  const input = {
+    wallet: field(formData, "wallet"),
+    symbol: field(formData, "symbol"),
+    coingeckoId: field(formData, "coingeckoId") || null,
+    quantity: field(formData, "quantity"),
+    date: localDate(new Date(), getEnv().APP_TIMEZONE),
+  };
+  try {
+    const saved = await setManualHolding(input);
+    console.info(
+      `[manual-holding] ${saved.created ? "new wallet, " : ""}${saved.quantity} units saved`,
+    );
+    // The holdings table above the form changed.
+    refresh();
+    return {
+      ok: true,
+      wallet: input.wallet.trim(),
+      symbol: input.symbol.trim().toUpperCase(),
+      quantity: saved.quantity,
+      priced: saved.coingeckoId !== null,
+    };
+  } catch (error) {
+    if (error instanceof ManualHoldingError) {
       return { ok: false, error: error.message };
     }
     throw error;

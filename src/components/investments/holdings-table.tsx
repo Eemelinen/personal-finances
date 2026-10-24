@@ -14,7 +14,7 @@ import type {
   InvestmentsOverview,
 } from "@/server/queries/investments";
 
-// The /investments holdings table (F-020): one row per account and asset
+// The /investments holdings table (F-020; crypto from F-021): one row per account and asset
 // with quantity, price, EUR value, gain or loss and portfolio weight.
 
 const CURRENCY = "EUR";
@@ -22,6 +22,7 @@ const CURRENCY = "EUR";
 const SOURCE_LABELS: Record<string, string> = {
   twelve_data: "closing price",
   nordnet_trade: "last trade",
+  coingecko: "market price",
 };
 
 function gainClass(gainMinor: number | null): string {
@@ -74,7 +75,7 @@ export function HoldingsTable({ overview }: { overview: InvestmentsOverview }) {
       <EmptyState
         icon={ChartCandlestick}
         title="No holdings yet"
-        description="Import a Nordnet transaction export below to see your holdings here."
+        description="Import a Nordnet transaction export or add a crypto holding below to see your holdings here. A Kraken key in the worker's settings syncs Kraken."
       />
     );
   }

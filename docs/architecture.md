@@ -46,7 +46,8 @@ src/
                        AppShell); Dashboard (page.tsx: overview, F-016), transactions/,
                        reports/ (spending/, cash-flow/; F-017; balances/, F-018), connections/, settings/,
                        import/ (CSV upload: page, preview/import Server Actions, form),
-                       investments/ (holdings table, Nordnet import action and form; F-020)
+                       investments/ (holdings table, Nordnet import action and form; F-020;
+                       manual crypto holding action and form, F-021)
     login/             Login page (outside the shell, public)
     api/health/        Health check (DB connectivity, public)
   proxy.ts             Optimistic auth check: no session → /login (401 under /api)
@@ -61,7 +62,7 @@ src/
                        Recharts stacked bar and cash-flow charts are client components;
                        the balance history's net-worth line and stacked account areas
                        (balance-history-chart.tsx, F-018)
-    investments/       The /investments holdings table (F-020)
+    investments/       The /investments holdings table (F-020; crypto, F-021)
     empty-state.tsx    Placeholder for pages without data yet
   lib/                 App helpers: cn() (utils.ts), the navigation items, fi-FI
                        money, change, percent, day, month and time formatting for
@@ -116,7 +117,10 @@ src/
                        deduped transactions, trade prices), holdings.ts (derived
                        holdings, average cost), price-client.ts (Twelve Data with the
                        free-tier limiter), ecb.ts (ECB reference rates),
-                       update-prices.ts (the daily price-update job)
+                       update-prices.ts (the daily price-update job); F-021: coins.ts
+                       (known coins' CoinGecko ids), coingecko.ts (crypto prices),
+                       assets.ts (asset matching), sync-kraken.ts (the Kraken
+                       connection and sync), manual-holdings.ts (wallets without an API)
     reports/           Pure report helpers (F-017): period.ts (presets, custom ranges,
                        previous period, average window), merchant-name.ts (normalised
                        merchant names), balance-series.ts (balance ranges, carried and
@@ -124,7 +128,7 @@ src/
   worker/
     index.ts           Worker entrypoint: registers jobs, graceful shutdown
     jobs.ts            Job registry (name, cron schedule, run function): heartbeat,
-                       price-update (daily 07:30, F-020)
+                       price-update (daily 07:30, F-020), kraken-sync (every 6 h, F-021)
 tests/
   unit/                Vitest unit project (L1)
   integration/         Vitest + Testcontainers Postgres 18 (L2); helpers/postgres.ts
@@ -137,7 +141,8 @@ tests/
                        (support/server-errors.ts), even when every test passed
   fixtures/            Synthetic or anonymised fixtures only, never real data
                        (csv/: synthetic Nordea, S-Pankki and generic exports;
-                       nordnet/: a synthetic UTF-16 Nordnet transaction export)
+                       nordnet/: a synthetic UTF-16 Nordnet transaction export;
+                       kraken/: synthetic BalanceEx and Ledgers responses)
 drizzle/               Generated SQL migrations (committed)
 secrets/               Private keys (gitignored), mounted into containers
 .claude/               Claude Code permissions and the harness plugin pin (hooks, skills and the
@@ -225,13 +230,23 @@ The investment tables (F-019, `schema/investments.ts`, D-016). Brokerage and cry
 - **Holdings table** (`getInvestmentsOverview()`): per account and asset the quantity, the price used (with its source and day), the EUR value (`getAccountValuation()`, D-016), the gain or loss over the average cost (`costBasis()`: buys add the cash paid including fees, sells remove the average cost of the units sold; shown when the basis is in EUR and covers the units held) and the weight in the valued total, largest first, with a total row.
 - **Net worth**: the dashboard adds each brokerage and crypto account's holdings value, today and 30 days ago, to its cash balance (D-013's totals), and the account row shows it; the daily history is F-022's.
 
+## Kraken, crypto prices and manual holdings
+
+F-021 (D-018) adds crypto: a Kraken account synced over Kraken's private REST API, manual holdings for wallets without an API, and CoinGecko prices. Crypto shows on `/investments` and in net worth through the same tables and valuation as securities.
+
+- **Kraken provider** (`src/server/providers/kraken.ts`, id `kraken`, always registered): every private call is a form-encoded POST signed with `API-Sign` = base64 HMAC-SHA512(URI path + SHA-256(nonce + POST data)) keyed with the base64-decoded secret, with a strictly increasing millisecond nonce. Only `BalanceEx` (Query Funds) and `Ledgers` (Query Ledger Entries) can be called (`PRIVATE_METHODS`), so even a key with more permissions never trades, deposits or withdraws. One connection is one Kraken account (`ref` `spot`, type `crypto`, EUR). `getBalances()` returns the EUR cash (`ZEUR`, `EUR.HOLD`, `EUR.M` summed) as an `ITBD` balance; `getHoldings()` maps `BalanceEx` to holdings, folding staked and earn balances (`ETH2.S`, `DOT.S`, `SOL.F`, `USDC.M`) into the coin and legacy codes (`XXBT` → BTC, `XETH` → ETH) into symbols, with CoinGecko ids for the coins in `investments/coins.ts`; `getTransactions()` is empty (ledger entries are investment transactions). `getInvestmentTransactions()` reads the whole ledger in the range (50 entries a page by `ofs`, a fixed `end`, 6 calls a minute) and maps it (`mapLedger()`): a coin traded against one fiat currency (`trade`, or `spend` + `receive`) is one buy or sell with the fiat amount including fees as its cash effect; a coin-to-coin trade is a sell and a buy without cash; deposits, withdrawals and transfers from outside are `transfer`s; `staking` and `earn/reward` are `dividend`s; moves between Kraken wallets, fiat conversions and other types are skipped with a reason. Quantities are amount − fee. Kraken errors come in the body (`EAPI:Invalid key` → auth, `EAPI:Rate limit exceeded` / lockout → rate limit, `EService:*` / invalid nonce → unavailable, anything else is a bug).
+- **Connection and sync** (`src/server/investments/sync-kraken.ts`, worker job `kraken-sync`, every 6 hours at :15): `ensureKrakenConnection()` turns `KRAKEN_API_KEY` / `KRAKEN_API_SECRET` into one `kraken` connection under the institution `kraken`, its `session_ref` the key pair encrypted with `encryptSecret()`; a changed key replaces it and reactivates an expired connection. `syncKrakenConnection()` runs `syncBalances()` (the account and its cash) and then a second run that fetches `BalanceEx` and the ledger from a week before the newest stored entry (all of it the first time) and writes in one transaction: holding snapshots for today (upsert on `(account_id, asset_id, date)`), an explicit 0 for each asset held before that `BalanceEx` no longer lists, and the ledger rows (`provider_txn_ref` = the ledger id, `dedupe_hash` `kraken:<id>`, `ON CONFLICT DO NOTHING`). Assets match by ISIN, else CoinGecko id, else symbol, currency and class (`findOrCreateAsset()`). Provider errors are results; an auth failure marks the connection `expired`.
+- **Manual holdings** (`setManualHolding()`, the `saveManualHolding` Server Action and the form on `/investments`): each wallet name is a `crypto` account under the `manual` institution; saving writes that day's quantity snapshot of the coin (a symbol in `coins.ts` gets its CoinGecko id, others can name one, which later saves fill in), and 0 records that the coins are gone.
+- **Crypto prices**: `updatePrices()` asks CoinGecko's `/simple/price` for every held coin with a CoinGecko id in one request per quote currency (up to 50 ids each, at most 5 requests a minute; `COINGECKO_API_KEY`, a free demo key, is optional and sent as `x-cg-demo-api-key`), dated by CoinGecko's `last_updated_at` in `APP_TIMEZONE`, and upserts them on `(asset_id, date)` with `source` `coingecko`. JSON numbers in exponent notation (`1.2e-7`) are expanded to decimal strings (`numberToDecimal()`). Coins without an id or price are reported as unknown; a CoinGecko failure is a problem of the run and the stock prices still run.
+- **Cost basis**: units that came in without a known cost (a `transfer` in, or a buy without a cash amount such as a coin-to-coin trade) make the asset's basis unknown; staking rewards count at zero cost.
+
 ## Provider abstraction
 
 Every data source implements one interface (`src/server/providers/types.ts`, F-005, D-008):
 
 ```ts
 interface FinancialProvider {
-  readonly id: ProviderId; // "enable_banking" | "csv" | "fake"; later "kraken", ...
+  readonly id: ProviderId; // "enable_banking" | "csv" | "fake" | "kraken" | "manual"
   listAccounts(connection: ProviderConnection): Promise<ProviderAccount[]>;
   getBalances(
     connection: ProviderConnection,
@@ -250,13 +265,21 @@ interface FinancialProvider {
     connection: ProviderConnection,
     account: ProviderAccountRef,
   ): Promise<ProviderHolding[]>; // investment providers only (F-019)
+  getInvestmentTransactions?(
+    connection: ProviderConnection,
+    account: ProviderAccountRef,
+    range: { from?: IsoDate; to?: IsoDate },
+  ): Promise<{
+    transactions: ProviderInvestmentTransaction[];
+    skipped: { ref: string; reason: string }[];
+  }>; // investment providers only, the whole range at once (F-021)
 }
 ```
 
 Providers return **normalized** DTOs whose fields mirror the table columns: amounts in signed integer minor units plus an ISO-4217 currency, calendar days as `YYYY-MM-DD` strings, the provider's own ids as `ref` (`provider_account_ref`, `provider_txn_ref`, nullable for transactions), balances with their ISO 20022 `balanceType`, holdings (`getHoldings()`, brokers and exchanges only) as the asset's `symbol`, `name`, `isin`, `coingeckoId`, `assetClass` and quote `currency` plus a decimal-string `quantity` and its `date`. Mapping from provider-specific JSON happens inside the provider, and the sync layer only ever sees normalized data. `ProviderConnection` carries the **decrypted** session id; the caller decrypts `connections.session_ref` with `decryptSecret()`.
 
 - **Errors.** The failures the sync layer handles are typed (`errors.ts`): `ProviderAuthError` (session or consent expired → reconnect), `ProviderRateLimitError` (with `retryAfterMs` when known) and `ProviderUnavailableError` (provider or bank down → retry later), all `ProviderError`s with a `kind` and the `providerId`. HTTP clients map responses with `providerErrorFromStatus()`: 401/403 → auth, 429 → rate limit (parses `Retry-After`), 408/5xx → unavailable, anything else stays a bug.
-- **Registry.** `registry.ts` maps the id stored in `provider` columns to its implementation (`getProvider(id)`, `UnknownProviderError` otherwise); `getBankProvider()` returns the one `BANK_PROVIDER` selects for new bank connections (`enable_banking` by default, registered by F-006).
+- **Registry.** `registry.ts` maps the id stored in `provider` columns to its implementation (`getProvider(id)`, `UnknownProviderError` otherwise); `getBankProvider()` returns the one `BANK_PROVIDER` selects for new bank connections (`enable_banking` by default, registered by F-006). Kraken is always registered (F-021); `manual` names the institution of manual holdings and has no implementation.
 - **Fake provider.** `BANK_PROVIDER=fake` registers `createFakeProvider()`: two synthetic EUR accounts (`fake-checking`, `fake-savings`, open since 2025-01-01) whose transactions are a pure function of the account and the day (monthly rent, salary and savings transfer plus hashed card purchases), so every range, call and process sees the same data; balances (`CLBD` yesterday, `ITAV` today including today's pending transactions) equal the opening balance plus that history. Only "today" comes from the clock (`now` option), as a UTC date, so between 00:00 and 03:00 Helsinki time the fake's today (and its pending day) is the previous local day; tests that compare against the app's local day should inject `now`. Transaction listings come in pages of 100 (`transactionPageSize` option; the continuation key is the offset). The session refs `fake:expired`, `fake:rate-limited` and `fake:unavailable` make every call fail with the matching typed error. The L3 server runs with `BANK_PROVIDER=fake`; without it the fake is not registered, so a real installation never serves fake data.
 
 ## Balance sync

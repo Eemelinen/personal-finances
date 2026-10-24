@@ -8,10 +8,14 @@ import { E2E_TIME_ZONE, openTestDatabase } from "./support/database";
 // (tests/fixtures/nordnet/), read the summary and the holdings table valued
 // at the trades' prices; then seed a closing price and a USD rate, as the
 // price-update job would, and see the table and net worth use them; a second
-// import adds nothing. The test database is shared, so the dashboard check
-// looks at the Nordnet account only.
+// import adds nothing. Then a manual crypto holding (F-021) saved through
+// the form, valued once a CoinGecko price is seeded. The test database is
+// shared, so the dashboard checks look at their own accounts only.
 
 const FIXTURE = "tests/fixtures/nordnet/transactions-utf16.csv";
+
+// The tests count the holdings table's rows, which the crypto test adds to.
+test.describe.configure({ mode: "serial" });
 
 async function openInvestments(page: Page) {
   await page.goto("/investments");
@@ -167,5 +171,67 @@ test("rejects a file that is not a Nordnet export", async ({ page }) => {
     page.getByRole("alert").filter({ hasText: "not a Nordnet" }),
   ).toHaveText(
     "This is not a Nordnet transaction export: no header row with Tapahtumatyyppi, Summa and a date was found.",
+  );
+});
+
+test("adds a manual crypto holding and values it", async ({ page }) => {
+  await openInvestments(page);
+  const form = page.getByRole("region", { name: "Add a crypto holding" });
+  const save = form.getByRole("button", { name: "Save holding" });
+  await expect(save).toBeEnabled();
+
+  // A refused quantity keeps what was typed.
+  await form.getByLabel("Wallet").fill("Ledger");
+  await form.getByLabel("Coin symbol").fill("btc");
+  await form.getByLabel("Quantity").fill("-1");
+  await save.click();
+  await expect(form.getByRole("alert")).toHaveText(
+    "The quantity cannot be negative.",
+  );
+  await expect(form.getByLabel("Wallet")).toHaveValue("Ledger");
+
+  await form.getByLabel("Quantity").fill("0,5");
+  await save.click();
+  await expect(form.getByRole("status")).toHaveText("Saved 0.5 BTC in Ledger.");
+  await expect(form.getByLabel("Wallet")).toHaveValue("");
+  const btc = holding(page, "BTC");
+  await expect(btc).toContainText("Bitcoin");
+  await expect(btc.getByTestId("holding-quantity")).toHaveText("0,5");
+  await expect(btc.getByTestId("holding-price")).toHaveText("No price");
+
+  // What the daily price update stores from CoinGecko.
+  const today = localDate(new Date(), E2E_TIME_ZONE);
+  const db = openTestDatabase();
+  try {
+    const [btcAsset] = await db
+      .select()
+      .from(assets)
+      .where(eq(assets.coingeckoId, "bitcoin"));
+    await db.insert(prices).values({
+      assetId: btcAsset.id,
+      date: today,
+      priceMinor: "6000050",
+      currency: "EUR",
+      source: "coingecko",
+    });
+  } finally {
+    await db.$client.end();
+  }
+
+  await openInvestments(page);
+  const [year, month, day] = today.split("-").map(Number);
+  await expect(btc.getByTestId("holding-price")).toHaveText(
+    new RegExp(`^60\\s000,50\\s€market price, ${day}\\.${month}\\.${year}$`),
+  );
+  await expect(btc.getByTestId("holding-value")).toHaveText(/^30\s000,25\s€$/);
+
+  // The wallet counts in net worth.
+  await page.goto("/");
+  const wallet = page
+    .getByRole("region", { name: "Manual" })
+    .getByTestId("account")
+    .filter({ hasText: "Ledger" });
+  await expect(wallet.getByTestId("account-balance")).toHaveText(
+    /^30\s000,25\s€$/,
   );
 });
