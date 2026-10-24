@@ -554,7 +554,7 @@
       "area": "investments",
       "title": "Net worth and allocation including investments",
       "user_visible_behavior": "Net-worth history and the dashboard tiles include brokerage and crypto accounts valued with historical prices; an allocation chart breaks wealth down by asset class (cash, stocks and ETFs, funds, crypto) and by account; portfolio performance over time separates contributions from market gains.",
-      "status": "in_progress",
+      "status": "passing",
       "depends_on": ["F-018", "F-020", "F-021"],
       "ticket": "FIN-022",
       "spec": "docs/tickets/FIN-022-net-worth-with-investments.md",
@@ -564,7 +564,12 @@
         "L2: pnpm test:integration tests/integration/net-worth-investments.int.test.ts (historical valuation in the net-worth series)",
         "L3: pnpm test:e2e tests/e2e/allocation.spec.ts (allocation and performance charts render seeded data)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (commit 8dfb33a)",
+        "2026-10-24 pnpm test:unit tests/unit/investments/performance.test.ts → pass (commit 8dfb33a)",
+        "2026-10-24 pnpm test:integration tests/integration/net-worth-investments.int.test.ts → pass (commit 8dfb33a, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/allocation.spec.ts → pass (commit 8dfb33a, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Replaces old FIN-025."
     },
