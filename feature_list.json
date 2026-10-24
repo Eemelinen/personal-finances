@@ -182,7 +182,7 @@
       "area": "banking",
       "title": "Connect-bank flow",
       "user_visible_behavior": "`/connections` lists connections (bank, status, consent expiry, last sync) and connects Nordea or S-Pankki: the app redirects to the bank with a server-stored state, `/connections/callback` validates the state, creates the session and stores the encrypted session id, institution and accounts, and I can name accounts and mark them checking or savings. A cancelled or invalid callback shows an error; a connection can be removed (revoked at the provider) or archived with its history.",
-      "status": "in_progress",
+      "status": "passing",
       "depends_on": ["F-004", "F-006"],
       "ticket": "FIN-007",
       "spec": "docs/tickets/FIN-007-connect-bank-flow.md",
@@ -191,7 +191,11 @@
         "L2: pnpm test:integration tests/integration/connections.int.test.ts (callback stores connection and accounts, rejects a bad state, revoke and archive)",
         "L3: pnpm test:e2e tests/e2e/connect-bank.spec.ts (connect through the fake provider, rename an account, cancelled flow shows an error)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (commit 7252bd5)",
+        "2026-10-24 pnpm test:integration tests/integration/connections.int.test.ts → pass (commit 7252bd5, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/connect-bank.spec.ts → pass (commit 7252bd5, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Replaces old FIN-007. Real banks are checked in F-013; here the e2e environment uses the fake provider. The first sync after connecting is triggered by F-010."
     },
