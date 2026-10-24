@@ -215,7 +215,7 @@ function spentIn(range: DayRange) {
   return sql<string>`coalesce(sum(-${transactions.amountMinor}) filter (where ${inRange(range)}), 0)`;
 }
 
-/** The first day with a counted transaction, or null without any. */
+/** The first EUR transaction's day (transfers too), or null without any. */
 async function firstTransactionDay(db: Db): Promise<IsoDate | null> {
   const [row] = await db
     .select({ first: sql<string | null>`min(${transactions.bookingDate})` })
