@@ -695,7 +695,7 @@
       "area": "reports",
       "title": "App settings and income only from income categories",
       "user_visible_behavior": "Settings → Reports has \"Count credits without a category as income\" (on by default, today's behaviour). Off, only credits in an income-kind category are income; other non-transfer credits that are not refunds show as \"Other money in (not income)\" on the cash-flow report and the dashboard. A transaction in the Uncategorized category counts exactly like one without a category. A small `app_settings` store backs the setting.",
-      "status": "not_started",
+      "status": "in_progress",
       "depends_on": ["F-017"],
       "ticket": "FIN-026",
       "spec": "docs/tickets/FIN-026-income-from-income-categories.md",

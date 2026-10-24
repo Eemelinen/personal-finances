@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { formatMoney, formatMonth } from "@/lib/format";
-import { CASH_FLOW_PATH } from "@/lib/reports";
+import { CASH_FLOW_PATH, OTHER_IN_LABEL } from "@/lib/reports";
 import type { CashFlowMonth } from "@/server/queries/reports";
 
-/** This month's income, expenses and net, linking to the cash-flow report. */
+/**
+ * This month's income, expenses and net, and other money in when there is
+ * any (F-026), linking to the cash-flow report.
+ */
 export function MonthCashFlow({
   month,
   currency,
@@ -15,6 +18,9 @@ export function MonthCashFlow({
     { label: "Income this month", amountMinor: month.incomeMinor },
     { label: "Expenses this month", amountMinor: month.expensesMinor },
     { label: "Net this month", amountMinor: month.netMinor },
+    ...(month.otherInMinor !== 0
+      ? [{ label: OTHER_IN_LABEL, amountMinor: month.otherInMinor }]
+      : []),
   ];
   return (
     <section aria-labelledby="month-cash-flow" className="flex flex-col gap-3">
@@ -29,7 +35,13 @@ export function MonthCashFlow({
           Cash flow report
         </Link>
       </div>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div
+        className={
+          tiles.length > 3
+            ? "grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+            : "grid gap-4 sm:grid-cols-3"
+        }
+      >
         {tiles.map((tile) => (
           <section
             key={tile.label}

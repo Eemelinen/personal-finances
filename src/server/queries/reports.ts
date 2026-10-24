@@ -13,6 +13,7 @@ import { getDb, type Db } from "@/server/db/client";
 import { accounts, categories, transactions } from "@/server/db/schema";
 import { UNCATEGORIZED_CATEGORY } from "@/server/categorization/defaults";
 import { getEnv } from "@/server/env";
+import { getAppSettings } from "@/server/settings";
 import type { IsoDate } from "@/server/providers/types";
 import { localDate } from "@/server/dates";
 import { merchantKey, merchantName } from "@/server/reports/merchant-name";
@@ -29,14 +30,17 @@ import {
 } from "@/server/reports/period";
 
 // Read models of the spending and cash-flow reports and the dashboard's
-// month tiles (F-017, D-014).
+// month tiles (F-017, D-014, D-029).
 //
 // What counts: EUR transactions, booked or pending, that are not own
 // transfers (no `transfer_group_id`, category kind not `transfer`). A
 // category's kind says whether it is spending or income, so a refund (a
-// credit in an expense category) nets against that category; without a
-// category a debit is spending and a credit income. A transaction without
-// a category is reported as the Uncategorized category when one exists.
+// credit in an expense category) nets against that category. A
+// transaction in the top-level Uncategorized category counts exactly like
+// one without a category: a debit is spending, and a credit is income
+// while the `uncategorizedCreditsAsIncome` setting is on (the default) or
+// "other money in" (not income, not in net or the savings rate) while it
+// is off. Both are reported as the Uncategorized category when one exists.
 // Months are the `YYYY-MM` of `booking_date`, which is already the bank's
 // calendar day; the caller's "today" is the `APP_TIMEZONE` day.
 
@@ -55,7 +59,8 @@ export const OTHER_COLOR = "#cbd5e1";
 /** The `category` URL value of transactions without a category. */
 export const UNCATEGORIZED_PARAM = "uncategorized";
 
-type Kind = "expense" | "income";
+/** `other_in`: a credit without a category while it is not income. */
+type Kind = "expense" | "income" | "other_in";
 
 interface CategoryRow {
   id: string;
@@ -190,11 +195,19 @@ export function resolveScope(
 
 /**
  * The parts of every report query: transactions joined to their category
- * (Uncategorized for none), the counted ones, and each one's kind.
+ * (Uncategorized for none), the counted ones, and each one's kind. A row
+ * in Uncategorized gets the kind of a row without a category.
  */
-function flowParts(uncategorizedId: string | null) {
+function flowParts(
+  uncategorizedId: string | null,
+  { uncategorizedCreditsAsIncome = true } = {},
+) {
   const join = sql`${categories.id} = coalesce(${transactions.categoryId}, ${uncategorizedId}::uuid)`;
-  const kind = sql<Kind>`case when ${transactions.categoryId} is null then (case when ${transactions.amountMinor} < 0 then 'expense' else 'income' end) else ${categories.kind}::text end`;
+  const none = sql`(${transactions.categoryId} is null or ${transactions.categoryId} = ${uncategorizedId}::uuid)`;
+  const credit = sql.raw(
+    uncategorizedCreditsAsIncome ? "'income'" : "'other_in'",
+  );
+  const kind = sql<Kind>`case when ${none} then (case when ${transactions.amountMinor} < 0 then 'expense' else ${credit} end) else ${categories.kind}::text end`;
   const counted = and(
     eq(transactions.currency, REPORT_CURRENCY),
     isNull(transactions.transferGroupId),
@@ -549,20 +562,22 @@ async function listTransactions(
   };
 }
 
-export interface CashFlowMonth {
-  month: IsoMonth;
-  incomeMinor: number;
-  expensesMinor: number;
-  netMinor: number;
-  /** Net over income, 0…1 (negative when spending more); null without income. */
-  savingsRate: number | null;
-}
-
 export interface CashFlowTotals {
   incomeMinor: number;
   expensesMinor: number;
+  /** Income minus expenses; other money in is not part of it. */
   netMinor: number;
+  /** Net over income, 0…1 (negative when spending more); null without income. */
   savingsRate: number | null;
+  /**
+   * Credits without a category (or in Uncategorized) while the
+   * `uncategorizedCreditsAsIncome` setting is off; 0 while it is on.
+   */
+  otherInMinor: number;
+}
+
+export interface CashFlowMonth extends CashFlowTotals {
+  month: IsoMonth;
 }
 
 export interface CashFlowReport {
@@ -577,6 +592,7 @@ export interface CashFlowReport {
 export function cashFlowTotals(
   incomeMinor: number,
   expensesMinor: number,
+  otherInMinor = 0,
 ): CashFlowTotals {
   const netMinor = incomeMinor - expensesMinor;
   return {
@@ -584,6 +600,7 @@ export function cashFlowTotals(
     expensesMinor,
     netMinor,
     savingsRate: incomeMinor > 0 ? netMinor / incomeMinor : null,
+    otherInMinor,
   };
 }
 
@@ -594,9 +611,11 @@ export interface CashFlowOptions {
   /** Whose calendar decides the current month; `APP_TIMEZONE`. */
   timeZone?: string;
   months?: number;
+  /** Overrides the stored setting (`getAppSettings()`). */
+  uncategorizedCreditsAsIncome?: boolean;
 }
 
-/** Income, expenses and net per month, plus the year to date. */
+/** Income, expenses, net and other money in per month, plus the year to date. */
 export async function getCashFlowReport(
   options: CashFlowOptions,
 ): Promise<CashFlowReport> {
@@ -611,9 +630,16 @@ export async function getCashFlowReport(
   // The year's months may reach before the chart's.
   const from = [firstDay(months[0]), `${year}-01-01`].sort()[0];
 
-  const list = await loadCategories(db);
+  const [list, uncategorizedCreditsAsIncome] = await Promise.all([
+    loadCategories(db),
+    options.uncategorizedCreditsAsIncome ??
+      getAppSettings(db).then(
+        (settings) => settings.uncategorizedCreditsAsIncome,
+      ),
+  ]);
   const { join, kind, counted } = flowParts(
     uncategorizedCategory(list)?.id ?? null,
+    { uncategorizedCreditsAsIncome },
   );
   const month = sql<string>`to_char(${transactions.bookingDate}, 'YYYY-MM')`;
   const [rows, first] = await Promise.all([
@@ -622,6 +648,7 @@ export async function getCashFlowReport(
         month,
         income: sql<string>`coalesce(sum(${transactions.amountMinor}) filter (where ${kind} = 'income'), 0)`,
         expenses: sql<string>`coalesce(sum(-${transactions.amountMinor}) filter (where ${kind} = 'expense'), 0)`,
+        otherIn: sql<string>`coalesce(sum(${transactions.amountMinor}) filter (where ${kind} = 'other_in'), 0)`,
       })
       .from(transactions)
       .leftJoin(categories, join)
@@ -632,25 +659,34 @@ export async function getCashFlowReport(
   const byMonth = new Map(rows.map((row) => [row.month, row]));
   const totalsOf = (key: IsoMonth) => {
     const row = byMonth.get(key);
-    return cashFlowTotals(num(row?.income), num(row?.expenses));
+    return cashFlowTotals(
+      num(row?.income),
+      num(row?.expenses),
+      num(row?.otherIn),
+    );
   };
 
   let income = 0;
   let expenses = 0;
+  let otherIn = 0;
   for (let m = `${year}-01`; m <= current; m = addMonths(m, 1)) {
     const totals = totalsOf(m);
     income += totals.incomeMinor;
     expenses += totals.expensesMinor;
+    otherIn += totals.otherInMinor;
   }
   return {
     currency: REPORT_CURRENCY,
     months: months.map((key) => ({ month: key, ...totalsOf(key) })),
-    yearToDate: { year: Number(year), ...cashFlowTotals(income, expenses) },
+    yearToDate: {
+      year: Number(year),
+      ...cashFlowTotals(income, expenses, otherIn),
+    },
     empty: first === null,
   };
 }
 
-/** This month's income, expenses and net, for the dashboard tiles. */
+/** This month's income, expenses, net and other money in, for the dashboard tiles. */
 export async function getMonthCashFlow(
   options: Omit<CashFlowOptions, "months"> = {},
 ): Promise<CashFlowMonth> {
