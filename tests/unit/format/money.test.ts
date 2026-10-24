@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { formatMoney, formatMoneyChange } from "@/lib/format";
+import {
+  formatMoney,
+  formatMoneyChange,
+  formatMoneyRounded,
+} from "@/lib/format";
 
 // fi-FI groups thousands with a no-break space (U+00A0), puts a no-break
 // space before the euro sign and writes negatives with the minus sign U+2212.
@@ -43,5 +47,13 @@ describe("formatMoneyChange", () => {
     expect(formatMoneyChange(123_456, "EUR")).toBe(`+1${NBSP}234,56${NBSP}€`);
     expect(formatMoneyChange(-1_050, "EUR")).toBe(`${MINUS}10,50${NBSP}€`);
     expect(formatMoneyChange(0, "EUR")).toBe(`0,00${NBSP}€`);
+  });
+});
+
+describe("formatMoneyRounded", () => {
+  it("rounds to whole euros for chart axes", () => {
+    expect(formatMoneyRounded(123_456, "EUR")).toBe("1 235 €");
+    expect(formatMoneyRounded(0, "EUR")).toBe("0 €");
+    expect(formatMoneyRounded(-50_049, "EUR")).toBe("−500 €");
   });
 });

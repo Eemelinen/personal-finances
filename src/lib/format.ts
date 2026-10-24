@@ -50,3 +50,36 @@ export function formatLocalDay(instant: Date, timeZone: string): string {
     dateStyle: "short",
   }).format(instant);
 }
+
+/** Money rounded to whole units, for chart axes, e.g. `1 235 €`. */
+export function formatMoneyRounded(
+  amountMinor: number,
+  currency: string,
+): string {
+  return new Intl.NumberFormat("fi-FI", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  }).format(Math.round(amountMinor / 100));
+}
+
+const percentFormat = new Intl.NumberFormat("fi-FI", {
+  style: "percent",
+  maximumFractionDigits: 1,
+});
+
+/** A share (0…1) as `fi-FI` percent, e.g. `74,8 %`. */
+export function formatPercent(share: number): string {
+  return percentFormat.format(share);
+}
+
+const monthFormat = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+/** A `YYYY-MM` month for labels, e.g. `Oct 2026`. */
+export function formatMonth(month: string): string {
+  return monthFormat.format(new Date(`${month}-01T00:00:00Z`));
+}

@@ -412,7 +412,7 @@
       "area": "dashboard",
       "title": "Spending and cash-flow reports",
       "user_visible_behavior": "`/reports/spending` shows spending per category for a chosen period (chart with amounts and %, drill-down to subcategories and to the filtered transaction list), a 12-month stacked bar per category, comparison to the previous period and the 6-month average, and the top merchants with normalised names. `/reports/cash-flow` shows monthly income vs expenses with a net line, savings rate and year-to-date totals, and the dashboard gets this month's income, expenses and net. Transfers are excluded, refunds net against their category, and months are grouped in `APP_TIMEZONE` in SQL.",
-      "status": "not_started",
+      "status": "in_progress",
       "depends_on": ["F-014", "F-016"],
       "ticket": "FIN-017",
       "spec": "docs/tickets/FIN-017-spending-and-cash-flow-reports.md",

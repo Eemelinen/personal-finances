@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { Wallet } from "lucide-react";
 import { AccountList } from "@/components/dashboard/account-list";
 import { ConnectionStatus } from "@/components/dashboard/connection-status";
+import { MonthCashFlow } from "@/components/dashboard/month-cash-flow";
 import { StatTile } from "@/components/dashboard/stat-tile";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
@@ -14,6 +15,7 @@ import {
   getDashboardOverview,
   SPARKLINE_DAYS,
 } from "@/server/queries/dashboard";
+import { getMonthCashFlow, REPORT_CURRENCY } from "@/server/queries/reports";
 
 export default function DashboardPage() {
   return (
@@ -35,7 +37,10 @@ async function Overview() {
   // Also awaits io(), so reading the clock below is request-time.
   await verifySession();
   const timeZone = getEnv().APP_TIMEZONE;
-  const overview = await getDashboardOverview({ timeZone });
+  const [overview, month] = await Promise.all([
+    getDashboardOverview({ timeZone }),
+    getMonthCashFlow({ timeZone }),
+  ]);
 
   if (overview.empty) {
     return (
@@ -87,6 +92,7 @@ async function Overview() {
           changeDays={CHANGE_DAYS}
         />
       </div>
+      <MonthCashFlow month={month} currency={REPORT_CURRENCY} />
       <div className="grid gap-8 lg:grid-cols-[2fr_1fr]">
         <AccountList
           banks={overview.banks}
