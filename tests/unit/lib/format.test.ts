@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   formatDateTime,
+  formatDuration,
   formatDay,
   formatLocalDay,
   formatMonth,
@@ -23,6 +24,17 @@ describe("formatDateTime", () => {
       "5.1.2026 klo 9.04",
     );
     expect(formatDateTime(instant, "UTC")).toBe("5.1.2026 klo 7.04");
+  });
+});
+
+describe("formatDuration", () => {
+  it("shows milliseconds, seconds with a fi-FI decimal, or minutes", () => {
+    expect(formatDuration(0)).toBe("0 ms");
+    expect(formatDuration(349.6)).toBe("350 ms");
+    expect(formatDuration(1_000)).toBe("1 s");
+    expect(formatDuration(1_250)).toBe("1,2 s");
+    expect(formatDuration(59_999)).toBe("59,9 s");
+    expect(formatDuration(125_400)).toBe("2 min 5 s");
   });
 });
 

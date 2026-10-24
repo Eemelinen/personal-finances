@@ -1,9 +1,10 @@
 import cron from "node-cron";
 import { closeDb } from "@/server/db/client";
 import { getEnv } from "@/server/env";
-import { jobs } from "./jobs";
+import { createJobs } from "./jobs";
 
 const env = getEnv();
+const jobs = createJobs(env);
 
 for (const job of jobs) {
   cron.schedule(

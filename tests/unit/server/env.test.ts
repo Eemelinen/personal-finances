@@ -13,6 +13,17 @@ describe("parseEnv", () => {
 
     expect(env.NODE_ENV).toBe("development");
     expect(env.APP_TIMEZONE).toBe("Europe/Helsinki");
+    expect(env.SYNC_CRON).toBe("0 */6 * * *");
+  });
+
+  it("reads SYNC_CRON and rejects one that is not a cron expression", () => {
+    const url = "postgres://user:pass@localhost:5432/finances";
+    expect(
+      parseEnv({ DATABASE_URL: url, SYNC_CRON: " 0 6,18 * * * " }).SYNC_CRON,
+    ).toBe("0 6,18 * * *");
+    expect(() =>
+      parseEnv({ DATABASE_URL: url, SYNC_CRON: "every hour" }),
+    ).toThrow(/SYNC_CRON/);
   });
 
   it("reads an optional PRICE_API_KEY, blank as unset", () => {

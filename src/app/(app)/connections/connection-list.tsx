@@ -2,8 +2,10 @@
 
 import { useId, useState, useTransition } from "react";
 import { NativeSelect } from "@/components/form-controls";
+import { SyncNowButton } from "@/components/sync/sync-now-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { syncConnectionAction } from "@/lib/sync/actions";
 import {
   BANK_ACCOUNT_TYPES,
   MAX_ACCOUNT_NAME_LENGTH,
@@ -17,8 +19,8 @@ import {
 } from "./actions";
 
 // The bank connections on /connections: status, consent expiry, last sync,
-// the accounts (rename, checking or savings) and Archive / Remove, each
-// confirmed in place.
+// Sync now and the sync log (F-010), the accounts (rename, checking or
+// savings) and Archive / Remove, each confirmed in place.
 
 export interface ConnectionView {
   id: string;
@@ -28,7 +30,36 @@ export interface ConnectionView {
   consentExpires: string | null;
   lastSynced: string | null;
   accounts: ConnectionAccount[];
+  /** The latest sync runs, newest first. */
+  syncLog: SyncRunView[];
 }
+
+/** A `sync_runs` row, formatted for display. */
+export interface SyncRunView {
+  id: string;
+  kind: "balances" | "transactions" | "holdings" | null;
+  status: "running" | "succeeded" | "failed";
+  started: string;
+  /** Null while running. */
+  duration: string | null;
+  accounts: number;
+  fetched: number;
+  inserted: number;
+  updated: number;
+  error: string | null;
+}
+
+const KIND_LABELS: Record<NonNullable<SyncRunView["kind"]>, string> = {
+  balances: "Balances",
+  transactions: "Transactions",
+  holdings: "Holdings",
+};
+
+const RUN_STATUS_LABELS: Record<SyncRunView["status"], string> = {
+  running: "Running",
+  succeeded: "Succeeded",
+  failed: "Failed",
+};
 
 const STATUS_LABELS: Record<ConnectionView["status"], string> = {
   active: "Active",
@@ -127,6 +158,9 @@ function ConnectionCard({ connection }: { connection: ConnectionView }) {
         <dt>Last sync</dt>
         <dd>{connection.lastSynced ?? "Not synced yet"}</dd>
       </dl>
+      {connection.status === "active" && (
+        <SyncNowButton sync={() => syncConnectionAction(connection.id)} />
+      )}
 
       {connection.accounts.length === 0 ? (
         <p className="text-muted-foreground text-sm">No accounts.</p>
@@ -141,6 +175,8 @@ function ConnectionCard({ connection }: { connection: ConnectionView }) {
           ))}
         </ul>
       )}
+
+      <SyncLog runs={connection.syncLog} />
 
       {confirm === "none" ? (
         <div className="flex flex-wrap gap-2">
@@ -198,6 +234,100 @@ function ConnectionCard({ connection }: { connection: ConnectionView }) {
       )}
       {feedback}
     </li>
+  );
+}
+
+function SyncLog({ runs }: { runs: SyncRunView[] }) {
+  const id = useId();
+  return (
+    <section aria-labelledby={`${id}-log`} className="flex flex-col gap-2">
+      <h3 id={`${id}-log`} className="text-sm font-medium">
+        Sync log
+      </h3>
+      {runs.length === 0 ? (
+        <p className="text-muted-foreground text-sm">No syncs yet.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm" aria-labelledby={`${id}-log`}>
+            <thead className="text-muted-foreground text-left">
+              <tr>
+                <th scope="col" className="py-1 pr-3 font-normal">
+                  Started
+                </th>
+                <th scope="col" className="py-1 pr-3 font-normal">
+                  Step
+                </th>
+                <th scope="col" className="py-1 pr-3 font-normal">
+                  Status
+                </th>
+                <th scope="col" className="py-1 pr-3 font-normal">
+                  Duration
+                </th>
+                <th scope="col" className="py-1 pr-3 text-right font-normal">
+                  Accounts
+                </th>
+                <th scope="col" className="py-1 pr-3 text-right font-normal">
+                  Fetched
+                </th>
+                <th scope="col" className="py-1 pr-3 text-right font-normal">
+                  New
+                </th>
+                <th scope="col" className="py-1 pr-3 text-right font-normal">
+                  Changed
+                </th>
+                <th scope="col" className="py-1 font-normal">
+                  Error
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {runs.map((run) => (
+                <tr key={run.id} data-testid="sync-run">
+                  <td className="py-1 pr-3 whitespace-nowrap">{run.started}</td>
+                  <td className="py-1 pr-3" data-testid="sync-run-kind">
+                    {run.kind ? KIND_LABELS[run.kind] : "—"}
+                  </td>
+                  <td
+                    className={
+                      run.status === "failed"
+                        ? "text-destructive py-1 pr-3"
+                        : "py-1 pr-3"
+                    }
+                    data-testid="sync-run-status"
+                  >
+                    {RUN_STATUS_LABELS[run.status]}
+                  </td>
+                  <td className="py-1 pr-3 whitespace-nowrap">
+                    {run.duration ?? "—"}
+                  </td>
+                  <td className="py-1 pr-3 text-right tabular-nums">
+                    {run.accounts}
+                  </td>
+                  <td
+                    className="py-1 pr-3 text-right tabular-nums"
+                    data-testid="sync-run-fetched"
+                  >
+                    {run.fetched}
+                  </td>
+                  <td
+                    className="py-1 pr-3 text-right tabular-nums"
+                    data-testid="sync-run-inserted"
+                  >
+                    {run.inserted}
+                  </td>
+                  <td className="py-1 pr-3 text-right tabular-nums">
+                    {run.updated}
+                  </td>
+                  <td className="py-1" data-testid="sync-run-error">
+                    {run.error ?? ""}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
   );
 }
 

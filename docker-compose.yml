@@ -69,6 +69,8 @@ services:
     environment:
       DATABASE_URL: *database-url
       APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Helsinki}
+      # The bank sync's schedule (FIN-010); every 6 hours by default.
+      SYNC_CRON: ${SYNC_CRON:-0 */6 * * *}
       # Optional: closing prices (FIN-020); without it only FX rates update.
       PRICE_API_KEY: ${PRICE_API_KEY:-}
       # Optional: the Kraken sync and crypto prices (FIN-021). The worker

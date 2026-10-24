@@ -254,7 +254,7 @@
       "area": "banking",
       "title": "Scheduled sync, Sync now and sync log",
       "user_visible_behavior": "The worker runs a `bank-sync` job on `SYNC_CRON` (default every 6 hours) for every active connection; a Postgres advisory lock prevents two syncs of one connection at once, and a failing connection is logged and retried on the next tick without stopping the others or crashing the worker. A Sync now button on the dashboard and `/connections` runs the same sync with a pending state, the first sync runs right after connecting, the connection page shows the last sync runs (status, duration, counts, errors) and the header shows the last successful sync.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-007", "F-009"],
       "ticket": "FIN-010",
       "spec": "docs/tickets/FIN-010-scheduled-sync.md",
@@ -263,9 +263,16 @@
         "L2: pnpm test:integration tests/integration/bank-sync-job.int.test.ts (advisory lock blocks a concurrent run; a failing connection does not stop the others)",
         "L3: pnpm test:e2e tests/e2e/sync-now.spec.ts (Sync now through the fake provider updates balances and the sync log)"
       ],
-      "evidence": [],
-      "attempts": 0,
-      "notes": "Replaces old FIN-010."
+      "evidence": [
+        "2026-10-24 pnpm check → pass (commit ac8d2e1)",
+        "2026-10-24 pnpm test:integration tests/integration/bank-sync-job.int.test.ts → pass (commit ac8d2e1, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/sync-now.spec.ts → pass (commit ac8d2e1, Docker available)",
+        "2026-10-24 pnpm check → pass (commit d8d05ee)",
+        "2026-10-24 pnpm test:integration tests/integration/bank-sync-job.int.test.ts → pass (commit d8d05ee, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/sync-now.spec.ts → pass (commit d8d05ee, Docker available)"
+      ],
+      "attempts": 1,
+      "notes": "Replaces old FIN-010. Attempt 1 failed 2026-10-24: evaluator: Revise"
     },
     {
       "id": "F-011",

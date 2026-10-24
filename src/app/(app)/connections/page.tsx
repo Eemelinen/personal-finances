@@ -6,13 +6,14 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { verifySession } from "@/lib/auth/session";
-import { formatDateTime, formatLocalDay } from "@/lib/format";
+import { formatDateTime, formatDuration, formatLocalDay } from "@/lib/format";
 import {
   SUPPORTED_BANKS,
   type CallbackError,
 } from "@/server/connections/authorization";
 import { listConnections } from "@/server/connections/manage";
 import { getEnv } from "@/server/env";
+import { getSyncLog } from "@/server/queries/sync-log";
 import { ConnectForm } from "./connect-form";
 import { ConnectionList, type ConnectionView } from "./connection-list";
 
@@ -57,6 +58,7 @@ async function ConnectionsSection({
   const query = await searchParams;
   const timeZone = getEnv().APP_TIMEZONE;
   const connections = await listConnections();
+  const syncLog = await getSyncLog(connections.map(({ id }) => id));
 
   const error = single(query.error);
   const errorMessage =
@@ -66,6 +68,11 @@ async function ConnectionsSection({
   const connected = connections.find(
     (connection) => connection.id === single(query.connected),
   );
+  // The callback synced it: its latest run is the transactions', unless the
+  // balances already failed.
+  const latestRun = connected && syncLog.get(connected.id)?.[0];
+  const firstSyncSucceeded =
+    latestRun?.kind === "transactions" && latestRun.status === "succeeded";
 
   const views: ConnectionView[] = connections.map((connection) => ({
     id: connection.id,
@@ -81,6 +88,18 @@ async function ConnectionsSection({
       ? formatDateTime(connection.lastSyncedAt, timeZone)
       : null,
     accounts: connection.accounts,
+    syncLog: (syncLog.get(connection.id) ?? []).map((run) => ({
+      id: run.id,
+      kind: run.kind,
+      status: run.status,
+      started: formatDateTime(run.startedAt, timeZone),
+      duration: run.durationMs === null ? null : formatDuration(run.durationMs),
+      accounts: run.accounts,
+      fetched: run.fetched,
+      inserted: run.inserted,
+      updated: run.updated,
+      error: run.error,
+    })),
   }));
 
   return (
@@ -96,9 +115,11 @@ async function ConnectionsSection({
       {connected && (
         <p role="status" className="rounded-lg border px-4 py-3 text-sm">
           Connected {connected.institutionName} with {connected.accounts.length}{" "}
-          {connected.accounts.length === 1 ? "account" : "accounts"}. Name them
-          and choose checking or savings below; balances and transactions arrive
-          with the next sync.
+          {connected.accounts.length === 1 ? "account" : "accounts"}.{" "}
+          {firstSyncSucceeded
+            ? "Its balances and transactions are synced."
+            : "The first sync did not finish (see the sync log below); it is retried with the next scheduled sync, or use Sync now."}{" "}
+          Name the accounts and choose checking or savings below.
         </p>
       )}
       <ConnectForm banks={SUPPORTED_BANKS.map((bank) => bank.name)} />

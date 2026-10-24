@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { Wallet } from "lucide-react";
+import { LastSync } from "./last-sync";
 import { LogoutButton } from "./logout-button";
 import { MobileNav } from "./mobile-nav";
 import { ActiveNavList, NavList } from "./nav-list";
@@ -21,7 +22,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Wallet className="size-5" aria-hidden="true" />
           Personal Finances
         </Link>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-3">
+          <Suspense fallback={null}>
+            <LastSync />
+          </Suspense>
           <Suspense fallback={null}>
             <LogoutButton />
           </Suspense>
