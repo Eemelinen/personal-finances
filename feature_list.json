@@ -379,7 +379,10 @@
         "2026-10-24 pnpm test:e2e tests/e2e/categories-settings.spec.ts → pass (commit 25a7fcf, Docker available)",
         "2026-10-24 pnpm check → pass (commit f838029)",
         "2026-10-24 pnpm test:e2e tests/e2e/transactions.spec.ts → pass (commit f838029, Docker available)",
-        "2026-10-24 pnpm test:e2e tests/e2e/categories-settings.spec.ts → pass (commit f838029, Docker available)"
+        "2026-10-24 pnpm test:e2e tests/e2e/categories-settings.spec.ts → pass (commit f838029, Docker available)",
+        "2026-10-24 pnpm check → pass (commit 22ac1f1)",
+        "2026-10-24 pnpm test:e2e tests/e2e/transactions.spec.ts → pass (commit 22ac1f1, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/categories-settings.spec.ts → pass (commit 22ac1f1, Docker available)"
       ],
       "attempts": 1,
       "notes": "Replaces old FIN-015 plus the `/settings/categories` UI from old FIN-013. Attempt 1 failed 2026-10-24: evaluator: Revise"
