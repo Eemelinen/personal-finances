@@ -23,3 +23,4 @@ Imported history is never lost by managing bank connections, and connecting a ba
 ## Notes
 
 - Found on 2026-10-24: after the database was reset by hand, no imported history survived and nightly backups were off; F-024's backups need `BACKUP_AGE_RECIPIENTS`. This feature removes the in-app ways to lose imported data.
+- Implemented 2026-10-24 (D-034). The sync's matching of imported rows (`mergeTransactions()` → `matchCsvRows()`) did not exist before (a sync adopted imported rows only by ref or hash), so it was added; it runs on every sync, not only after an account is taken over. Takeover candidates are manual accounts (archived or not) and accounts of archived connections; accounts of an expired or revoked connection are not taken (renew those). Accounts without an IBAN are not matched.

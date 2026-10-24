@@ -457,3 +457,77 @@ describe("mergeTransactions (pending to booked)", () => {
     });
   });
 });
+
+describe("mergeTransactions (imported rows, F-033)", () => {
+  function imported(overrides: Partial<ProviderTransaction> = {}) {
+    return {
+      ...stored(
+        identified({
+          ref: null,
+          bookingDate: "2026-03-09",
+          valueDate: null,
+          counterparty: "EXAMPLE CAFE OY",
+          description: "Korttiosto",
+          ...overrides,
+        }),
+      ),
+      source: "csv" as const,
+    };
+  }
+
+  it("adopts an imported row the bank lists with other texts and a later day", () => {
+    const row = imported();
+    const plan = mergeTransactions([row], identifyTransactions([txn()]));
+
+    expect(plan.insert).toEqual([]);
+    expect(plan.update).toEqual([
+      {
+        id: row.id,
+        values: identified(),
+        rekey: true,
+      },
+    ]);
+  });
+
+  it("matches neither a synced row by amount nor an imported row too far away or pending", () => {
+    const synced = stored(
+      identified({
+        ref: null,
+        description: "other",
+        bookingDate: "2026-03-09",
+      }),
+    );
+    const far = imported({ bookingDate: "2026-03-05" });
+    const plan = mergeTransactions(
+      [synced, far],
+      identifyTransactions([
+        txn(),
+        txn({ ref: "p", status: "pending", bookingDate: "2026-03-06" }),
+      ]),
+    );
+
+    expect(plan.update).toEqual([]);
+    expect(plan.insert.map((row) => row.providerTxnRef)).toEqual(["t1", "p"]);
+  });
+
+  it("takes each imported row once, the most similar first", () => {
+    const other = imported({ counterparty: "Kiosk", description: null });
+    const cafe = imported();
+    const plan = mergeTransactions(
+      [other, cafe],
+      identifyTransactions([
+        txn({ ref: "a", counterparty: "Kiosk", description: null }),
+        txn({ ref: "b" }),
+        txn({ ref: "c", counterparty: "Third", description: null }),
+      ]),
+    );
+
+    expect(
+      plan.update.map((update) => [update.id, update.values.providerTxnRef]),
+    ).toEqual([
+      [other.id, "a"],
+      [cafe.id, "b"],
+    ]);
+    expect(plan.insert.map((row) => row.providerTxnRef)).toEqual(["c"]);
+  });
+});

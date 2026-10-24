@@ -870,7 +870,7 @@
       "area": "banking",
       "title": "History survives connection removal and reconnects",
       "user_visible_behavior": "Removing a connection keeps accounts that hold CSV-imported transactions as manual accounts with those rows, and the confirmation says what goes and what stays. Connecting a bank anew attaches its accounts to existing archived or manual accounts with the same IBAN instead of creating duplicates counted twice in reports.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-032", "F-011"],
       "ticket": "FIN-033",
       "spec": "docs/tickets/FIN-033-history-across-removal-and-reconnect.md",
@@ -879,7 +879,11 @@
         "L2: pnpm test:integration tests/integration/connections.int.test.ts (remove keeps imported rows; connect anew reuses an account by IBAN without duplicates)",
         "L3: pnpm test:e2e tests/e2e/connect-bank.spec.ts (Remove confirmation lists what stays)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (working tree on 1045bdd)",
+        "2026-10-24 pnpm test:integration tests/integration/connections.int.test.ts → pass (working tree on 1045bdd, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/connect-bank.spec.ts → pass (working tree on 1045bdd, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Found 2026-10-24: Remove deleted imported history with the bank rows, and a reconnect created second accounts beside archived ones."
     }

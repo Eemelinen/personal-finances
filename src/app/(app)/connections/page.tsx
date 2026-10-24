@@ -11,7 +11,10 @@ import {
   SUPPORTED_BANKS,
   type CallbackError,
 } from "@/server/connections/authorization";
-import { listConnections } from "@/server/connections/manage";
+import {
+  listConnections,
+  summarizeRemovals,
+} from "@/server/connections/manage";
 import { getEnv } from "@/server/env";
 import { connectionHealth } from "@/server/queries/dashboard";
 import { getSyncLog } from "@/server/queries/sync-log";
@@ -60,6 +63,7 @@ async function ConnectionsSection({
   const timeZone = getEnv().APP_TIMEZONE;
   const connections = await listConnections();
   const syncLog = await getSyncLog(connections.map(({ id }) => id));
+  const removals = await summarizeRemovals(connections.map(({ id }) => id));
 
   const error = single(query.error);
   const errorMessage =
@@ -100,6 +104,7 @@ async function ConnectionsSection({
       ? formatDateTime(connection.lastSyncedAt, timeZone)
       : null,
     accounts: connection.accounts,
+    removal: removals.get(connection.id)!,
     syncLog: (syncLog.get(connection.id) ?? []).map((run) => ({
       id: run.id,
       kind: run.kind,

@@ -11,7 +11,10 @@ import {
   BANK_ACCOUNT_TYPES,
   MAX_ACCOUNT_NAME_LENGTH,
 } from "@/server/connections/account-input";
-import type { ConnectionAccount } from "@/server/connections/manage";
+import type {
+  ConnectionAccount,
+  RemovalSummary,
+} from "@/server/connections/manage";
 import {
   archiveConnectionAction,
   removeConnectionAction,
@@ -23,7 +26,8 @@ import {
 // it ends within 14 days or has ended (F-011), last sync, Sync now and the
 // sync log (F-010), Re-read history (F-028: the whole history again, which
 // fills columns added since the first sync), the accounts (rename, checking or
-// savings) and Archive / Remove, each confirmed in place.
+// savings) and Archive / Remove, each confirmed in place; Remove's
+// confirmation says what goes and what stays (F-033).
 
 export interface ConnectionView {
   id: string;
@@ -35,6 +39,8 @@ export interface ConnectionView {
   consentExpires: string | null;
   lastSynced: string | null;
   accounts: ConnectionAccount[];
+  /** What Remove deletes and keeps (F-033). */
+  removal: RemovalSummary;
   /** The latest sync runs, newest first. */
   syncLog: SyncRunView[];
 }
@@ -221,11 +227,17 @@ function ConnectionCard({ connection }: { connection: ConnectionView }) {
         </div>
       ) : (
         <div className="flex flex-col gap-2 rounded-lg border p-3">
-          <p className="text-sm">
-            {confirm === "archive"
-              ? `Archive ${connection.institutionName}? The consent is ended at the bank and the connection is no longer synced; its accounts and their history stay in reports and transactions.`
-              : `Remove ${connection.institutionName}? ${archived ? "Its accounts are" : "The consent is ended at the bank, and its accounts are"} deleted with all their transactions and balances.`}
-          </p>
+          {confirm === "archive" ? (
+            <p className="text-sm">
+              {`Archive ${connection.institutionName}? The consent is ended at the bank and the connection is no longer synced; its accounts and their history stay in reports and transactions.`}
+            </p>
+          ) : (
+            <RemovalText
+              institution={connection.institutionName}
+              archived={archived}
+              removal={connection.removal}
+            />
+          )}
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
@@ -256,6 +268,42 @@ function ConnectionCard({ connection }: { connection: ConnectionView }) {
       )}
       {feedback}
     </li>
+  );
+}
+
+function count(value: number, one: string, many: string): string {
+  return `${value.toLocaleString("fi-FI")} ${value === 1 ? one : many}`;
+}
+
+function RemovalText({
+  institution,
+  archived,
+  removal,
+}: {
+  institution: string;
+  archived: boolean;
+  removal: RemovalSummary;
+}) {
+  const deleted = [
+    ...(removal.deletedAccounts > 0
+      ? [count(removal.deletedAccounts, "account", "accounts")]
+      : []),
+    count(removal.bankTransactions, "bank transaction", "bank transactions"),
+  ];
+  const kept = removal.keptAccounts;
+  return (
+    <div className="flex flex-col gap-1 text-sm" data-testid="removal-summary">
+      <p>
+        Remove {institution}?
+        {archived ? "" : " The consent is ended at the bank."}
+      </p>
+      <p>Deleted: {deleted.join(", ")} and the balances.</p>
+      <p>
+        {kept.length === 0
+          ? "Kept: nothing, no account has imported transactions."
+          : `Kept as ${kept.length === 1 ? "a manual account" : "manual accounts"}: ${kept.join(", ")}, with ${count(removal.importedTransactions, "imported transaction", "imported transactions")}.`}
+      </p>
+    </div>
   );
 }
 

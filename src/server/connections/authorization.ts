@@ -13,6 +13,7 @@ import { getBankConnector } from "@/server/providers/registry";
 import {
   BANK_PROVIDER_IDS,
   type BankConnectorProvider,
+  type ProviderAccount,
   type ProviderAspsp,
   type ProviderAuthorizedSession,
   type ProviderBank,
@@ -20,13 +21,17 @@ import {
 import { lockConnectionSync } from "@/server/sync/bank-sync";
 import type { Tx } from "@/server/sync/runs";
 import { matchRenewedAccounts } from "./account-matching";
+import { reuseAccounts } from "./account-reuse";
 
 // Connecting a bank (F-007). `startBankConnection()` stores a fresh random
 // `state` (as its hash) and returns the bank's authorisation URL;
 // `completeBankConnection()` runs on `/connections/callback`: it consumes the
 // state (single-use, expiring), exchanges the code for a session and stores
 // the connection, its encrypted session id, the institution and the
-// accounts in one transaction. The first sync is F-010's job.
+// accounts in one transaction. An account the app already holds as an
+// archived or manual one with the same IBAN is attached to the new
+// connection instead of added again (F-033, `account-reuse.ts`). The first
+// sync is F-010's job.
 //
 // Renewing a connection (F-011) runs the same authorisation for the
 // connection's bank, with the connection's id kept in the pending row: the
@@ -309,9 +314,12 @@ export async function completeBankConnection(
       })
       .returning({ id: connections.id });
 
-    if (session.accounts.length > 0) {
+    const fresh = (
+      await reuseAccounts(tx, connection.id, institution.id, session.accounts)
+    ).flatMap((match) => (match.existingId === null ? [match.account] : []));
+    if (fresh.length > 0) {
       await tx.insert(accounts).values(
-        session.accounts.map((account) => ({
+        fresh.map((account) => ({
           connectionId: connection.id,
           institutionId: institution.id,
           type: account.type,
@@ -337,7 +345,7 @@ export async function completeBankConnection(
  * Attaches a renewed session to its connection: the new session id and
  * consent end, status `active`, and the session's accounts matched to the
  * connection's (archived ones included, which come back); unmatched ones
- * are added. Accounts the session no longer lists are left to the next
+ * take over an archived or manual account with their IBAN, or are added. Accounts the session no longer lists are left to the next
  * sync, which archives them. Waits for a running sync of the connection.
  */
 async function renewConnection(
@@ -433,6 +441,7 @@ async function attachAccounts(
     .from(accounts)
     .where(eq(accounts.connectionId, connectionId));
 
+  const unmatched: ProviderAccount[] = [];
   for (const match of matchRenewedAccounts(stored, session.accounts)) {
     const { account } = match;
     if (match.existingId !== null) {
@@ -447,6 +456,17 @@ async function attachAccounts(
         })
         .where(eq(accounts.id, match.existingId));
     } else {
+      unmatched.push(account);
+    }
+  }
+  for (const match of await reuseAccounts(
+    tx,
+    connectionId,
+    institutionId,
+    unmatched,
+  )) {
+    const { account } = match;
+    if (match.existingId === null) {
       await tx.insert(accounts).values({
         connectionId,
         institutionId,

@@ -1,3 +1,4 @@
+import { matchCsvRows } from "@/server/csv/match";
 import { addDays, dayNumber, localDate } from "@/server/dates";
 import { dedupeHash, normaliseText } from "@/server/dedupe-hash";
 import type { IsoDate, ProviderTransaction } from "@/server/providers/types";
@@ -35,6 +36,8 @@ export interface TransactionValues {
 
 export interface StoredTransaction extends TransactionValues {
   id: string;
+  /** Who inserted the row (F-032); absent means `bank`. */
+  source?: "bank" | "csv";
 }
 
 export interface TransactionUpdate {
@@ -154,7 +157,13 @@ function sameValues(a: TransactionValues, b: TransactionValues): boolean {
  * then to a pending one with the same amount and currency at most
  * `PENDING_MATCH_DAYS` away (same counterparty first, then the nearest day):
  * that is how a pending transaction is replaced by its booked version even
- * when the bank gives the booked one a new id, date or text. A match is
+ * when the bank gives the booked one a new id, date or text. A booked one
+ * still unmatched is then matched to an imported (`csv`) row the way an
+ * import matches the bank's rows (`matchCsvRows()`, F-033): an export's
+ * texts and dates differ from the API's, so an account whose history was
+ * imported first (a manual account a new connection attached) does not get
+ * every row again. `stored` must then also hold the account's booked
+ * imported rows dated within `CSV_MATCH_DAYS` of the listing. A match is
  * updated in place, so its id, category, note and transfer link survive; an
  * unmatched one is inserted; a stored pending one nothing matched is removed.
  * Booked transactions the listing lacks are kept.
@@ -188,6 +197,22 @@ export function mergeTransactions(
   fetched.forEach((txn, index) => {
     if (!matches[index]) claim(index, closestPending(stored, claimed, txn));
   });
+  const imported = stored.filter(
+    (row) =>
+      row.source === "csv" && row.status === "booked" && !claimed.has(row.id),
+  );
+  const open = fetched.flatMap((txn, index) =>
+    !matches[index] && txn.status === "booked" ? [index] : [],
+  );
+  if (imported.length > 0 && open.length > 0) {
+    const byId = new Map(imported.map((row) => [row.id, row]));
+    matchCsvRows(
+      imported,
+      open.map((index) => fetched[index]),
+    ).matches.forEach((id, position) => {
+      if (id !== null) claim(open[position], byId.get(id));
+    });
+  }
 
   // A transaction matched by its ref can hash like a stored one nothing
   // matched (a duplicate without a ref): it takes the next free occurrence,

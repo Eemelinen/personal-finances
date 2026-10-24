@@ -1,6 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import { getDb } from "@/server/db/client";
 import { accounts, balanceSnapshots, connections } from "@/server/db/schema";
+import { reuseAccounts } from "@/server/connections/account-reuse";
 import { isProviderError } from "@/server/providers/errors";
 import type {
   FinancialProvider,
@@ -169,7 +170,8 @@ async function fetchAccounts(
 }
 
 /**
- * Adds the accounts the provider lists for the first time, updates and
+ * Adds the accounts the provider lists for the first time (taking over an
+ * archived or manual account with the same IBAN, F-033), updates and
  * restores known ones, archives the connection's accounts it no longer
  * lists (keeping their history) and upserts the balances. A known account
  * keeps its name and type: the user sets them on /connections (F-007).
@@ -192,13 +194,28 @@ async function storeAccounts(
     existing.map((account) => [account.providerAccountRef, account]),
   );
   const seen = new Set<string>();
+  const reused = new Map<string, string>();
+  for (const match of await reuseAccounts(
+    tx,
+    connectionId,
+    institutionId,
+    fetched.flatMap(({ account }) => (byRef.has(account.ref) ? [] : [account])),
+  )) {
+    if (match.existingId !== null) {
+      reused.set(match.account.ref, match.existingId);
+    }
+  }
 
   for (const { account, balances } of fetched) {
     seen.add(account.ref);
     const values = { iban: account.iban, currency: account.currency };
     const stored = byRef.get(account.ref);
+    const reusedId = reused.get(account.ref);
     let accountId: string;
-    if (!stored) {
+    if (!stored && reusedId !== undefined) {
+      accountId = reusedId;
+      counts.accountsAdded++;
+    } else if (!stored) {
       const [inserted] = await tx
         .insert(accounts)
         .values({
