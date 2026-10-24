@@ -32,6 +32,8 @@
     "harness:loop": "harness loop",
     "harness:report": "harness report",
     "harness:doctor": "harness doctor",
+    "harness:update": "harness update",
+    "harness:selftest": "harness selftest",
     "prepare": "husky"
   },
   "dependencies": {
@@ -55,7 +57,7 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.4",
-    "@eemelinen/harness": "github:Eemelinen/harness#v0.3.0",
+    "@eemelinen/harness": "github:Eemelinen/harness#v0.3.1",
     "@playwright/test": "1.63.0",
     "@tailwindcss/turbopack": "^4",
     "@testcontainers/postgresql": "^12.2.1",
