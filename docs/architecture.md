@@ -110,7 +110,8 @@ tests/
                        webServer (Testcontainers Postgres + build + standalone server);
                        the run fails if the app server logs an error line
                        (support/server-errors.ts), even when every test passed; the
-                       server seeds the default categories and rules like db:migrate
+                       server seeds the default categories and rules like db:migrate,
+                       and support/fixtures.ts (a pending transaction, own account)
   fixtures/            Synthetic or anonymised fixtures only, never real data
                        (csv/: synthetic Nordea, S-Pankki and generic exports)
 drizzle/               Generated SQL migrations (committed)
@@ -250,7 +251,8 @@ Providers return **normalized** DTOs whose fields mirror the table columns: amou
 - **Pages** of 50 rows, LIMIT/OFFSET ordered by booking day, creation time and id; the totals (count, income, expenses, net per currency) are one aggregate over the whole filter. A page past the end shows the last one.
 - **Edits** (`transaction-edits.ts`) are `manual`, so the engine never undoes them: the inline category; "Automatic (rules)" hands a transaction back to the rules (a transfer leg gets Transfers); a note; "Mark as transfer" makes a one-sided transfer (own group, Transfers); "Unlink transfer" takes every leg out of its group with its rule category (or none).
 - **Rules**: a new rule runs before all others (priority = lowest − 10); "apply to similar past ones" is `reapplyRules()`. Moving a rule places it before or after another (the settings page can list one category's rules) and renumbers all rules 10, 20, …; creating and moving take an advisory lock. Regex patterns are compiled before saving (`rule-input.ts`).
-- **Categories**: two levels, a subcategory has its parent's kind; deleting one deletes its subcategories and their rules and returns its transactions to no category (`none`). The top-level Transfers category cannot be renamed or deleted.
+- **Categories**: two levels, a subcategory has its parent's kind; deleting one deletes its subcategories and their rules and returns its transactions to no category (`none`; transfer legs get Transfers). The top-level Transfers category cannot be renamed or deleted.
+- **Concurrency**: categorisation runs under one transaction-scoped advisory lock (`lockCategorization()` in `categorize.ts`), which the sync takes at the start of each account's write transaction; the engine's updates re-check that a row is not `manual`, so a concurrent user edit wins.
 
 ## Conventions
 

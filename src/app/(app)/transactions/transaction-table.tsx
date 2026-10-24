@@ -30,7 +30,7 @@ export function TransactionTable({ rows, categories }: TransactionTableProps) {
           {error}
         </p>
       )}
-      <div className="overflow-x-auto">
+      <div className="relative overflow-x-auto">
         <table className="w-full text-sm" aria-label="Transactions">
           <thead>
             <tr className="border-b text-left">

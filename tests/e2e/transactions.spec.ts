@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { PENDING_FIXTURE_ACCOUNT } from "./support/fixtures";
 import {
   euros,
   importIntoNewAccount,
@@ -345,4 +346,23 @@ test("pages through more than 10 000 transactions with totals for the filter", a
   past.searchParams.set("page", "999");
   await page.goto(`${past.pathname}${past.search}`);
   await expect(pagination).toContainText("Page 201 of 201");
+});
+
+test("marks pending transactions with a badge", async ({ page }) => {
+  // The e2e server's fixture account (support/fixtures.ts): one booked, one
+  // pending row.
+  await openAccount(page, PENDING_FIXTURE_ACCOUNT);
+  await expectRowCount(page, 2);
+  await expect(
+    transactionRow(page, "Card reservation fixture").getByText("Pending", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    transactionRow(page, "Corner shop fixture").getByText("Pending", {
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  // Pending ones count in the totals.
+  await expect(total(page, "Expenses")).toHaveText(euros(-9_999));
 });

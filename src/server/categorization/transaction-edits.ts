@@ -3,7 +3,11 @@ import { eq } from "drizzle-orm";
 import { getDb, type Db } from "@/server/db/client";
 import { categoryRules, transactions } from "@/server/db/schema";
 import type { Tx } from "@/server/sync/runs";
-import { categorizeTransactions, transfersCategoryId } from "./categorize";
+import {
+  categorizeTransactions,
+  lockCategorization,
+  transfersCategoryId,
+} from "./categorize";
 import { categoryExists, CategoryManageError } from "./manage";
 import { compileRules, matchRule } from "./rules";
 
@@ -47,6 +51,8 @@ export async function setTransactionCategory(
 ): Promise<void> {
   const db = options.db ?? getDb();
   await db.transaction(async (tx) => {
+    // "auto" re-categorises: lock before writing the row (see the lock).
+    if (choice === "auto") await lockCategorization(tx);
     const row = await load(tx, id);
     if (choice !== "auto") {
       if (!(await categoryExists(tx, choice))) {

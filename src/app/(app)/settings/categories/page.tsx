@@ -12,7 +12,7 @@ export default function CategoriesPage() {
     <>
       <PageHeader
         title="Categories and rules"
-        description="Rules run from the top; the first one that matches a transaction gives its category. Categories you set by hand are never changed."
+        description="Rules run from the top; the first one that matches a transaction gives its category. Rules never change a category you set by hand."
       />
       <Suspense
         fallback={<p className="text-muted-foreground">Loading categories…</p>}

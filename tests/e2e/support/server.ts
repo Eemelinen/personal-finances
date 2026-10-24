@@ -1,8 +1,8 @@
 /**
  * Playwright's `webServer` for L3 (playwright.config.ts). It starts a
  * throwaway Postgres 18 with Testcontainers, applies the committed migrations,
- * seeds the default categories and rules (as `pnpm db:migrate` does), builds
- * the app and serves the standalone output, which is what the Docker
+ * seeds the default categories and rules (as `pnpm db:migrate` does) and the
+ * rows no UI can create yet (./fixtures.ts), builds the app and serves the standalone output, which is what the Docker
  * image runs, on 127.0.0.1:E2E_PORT, logging in with the test-only password
  * from ./credentials.ts and the deterministic fake bank (`BANK_PROVIDER=fake`).
  * It never touches the dev database.
@@ -25,6 +25,7 @@ import type { Readable, Writable } from "node:stream";
 import { encodePasswordHash } from "@/server/auth/hash-encoding";
 import { hashPassword } from "@/server/auth/password";
 import { seedDefaults } from "@/server/categorization/seed";
+import { seedE2eFixtures } from "./fixtures";
 import {
   E2E_ENCRYPTION_KEY,
   E2E_PASSWORD,
@@ -85,6 +86,7 @@ async function main(): Promise<void> {
   database = await startTestDatabase();
   // What the Compose `migrate` service does after the migrations.
   await seedDefaults(database.db);
+  await seedE2eFixtures(database.db);
 
   if (process.env.E2E_SKIP_BUILD === "1") {
     console.info("[e2e] E2E_SKIP_BUILD=1: using the existing build");

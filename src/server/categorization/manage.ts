@@ -1,7 +1,17 @@
-import { count, eq, inArray, min, sql } from "drizzle-orm";
+import {
+  and,
+  count,
+  eq,
+  inArray,
+  isNotNull,
+  isNull,
+  min,
+  sql,
+} from "drizzle-orm";
 import { getDb, type Db } from "@/server/db/client";
 import { categories, categoryRules, transactions } from "@/server/db/schema";
 import type { Tx } from "@/server/sync/runs";
+import { transfersCategoryId } from "./categorize";
 import { TRANSFERS_CATEGORY, type CategoryKind } from "./defaults";
 import { moveRuleIds, type MovePlace, type RuleInput } from "./rule-input";
 import { compareRules } from "./rules";
@@ -11,7 +21,8 @@ import { compareRules } from "./rules";
 // - Categories have two levels: a subcategory's parent is top-level and the
 //   subcategory takes its kind. Deleting a category deletes its
 //   subcategories and their rules; their transactions lose the category and
-//   go back to the rules (`none`), manual ones too. The top-level Transfers
+//   go back to the rules (`none`), manual ones too; transfer legs get
+//   Transfers. The top-level Transfers
 //   category, which transfer detection assigns, cannot be deleted.
 // - A new rule runs first (priority below every other rule): it is usually
 //   more specific than the ones before it. Moving a rule renumbers every
@@ -219,10 +230,25 @@ export async function deleteCategory(
       ).map((row) => row.id),
     ];
     // The foreign key would only null the category; the source goes too.
+    // Transfer legs keep Transfers (and their source): the rules skip them.
     await tx
       .update(transactions)
       .set({ categoryId: null, categorySource: "none" })
-      .where(inArray(transactions.categoryId, ids));
+      .where(
+        and(
+          inArray(transactions.categoryId, ids),
+          isNull(transactions.transferGroupId),
+        ),
+      );
+    await tx
+      .update(transactions)
+      .set({ categoryId: await transfersCategoryId(tx) })
+      .where(
+        and(
+          inArray(transactions.categoryId, ids),
+          isNotNull(transactions.transferGroupId),
+        ),
+      );
     await tx.delete(categories).where(eq(categories.id, id));
   });
 }

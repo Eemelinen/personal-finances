@@ -183,6 +183,22 @@ describe("listTransactions", () => {
     ).toBe(7);
   });
 
+  it("lists pending transactions with their status and counts them", async () => {
+    const id = await account();
+    const [pending, booked] = await insert(id, [
+      { date: "2024-05-03", amount: -500, status: "pending" },
+      { date: "2024-05-02", amount: -300 },
+    ]);
+    const result = await listTransactions(forAccounts([id]), 1, db());
+    expect(
+      result.rows.map((row) => ({ id: row.id, status: row.status })),
+    ).toEqual([
+      { id: pending, status: "pending" },
+      { id: booked, status: "booked" },
+    ]);
+    expect(result.totals[0]).toMatchObject({ count: 2, expense: -800 });
+  });
+
   it("filters transfers in or out", async () => {
     const id = await account();
     const [kept, marked] = await insert(id, [
@@ -474,6 +490,24 @@ describe("categories and rules", () => {
         categorySource: "none",
       });
     }
+  });
+
+  it("a transfer leg in a deleted category gets Transfers back", async () => {
+    const category = await createCategory(
+      { name: `Moves ${randomUUID()}`, parentId: null, kind: "transfer" },
+      db(),
+    );
+    const id = await account();
+    const [leg] = await insert(id, [{ date: "2024-09-10", amount: -4_444 }]);
+    await markTransfer(leg, db());
+    await setTransactionCategory(leg, category, db());
+    await deleteCategory(category, db());
+    const row = await stored(leg);
+    expect(row).toMatchObject({
+      categoryId: await categoryId("Transfers"),
+      categorySource: "manual",
+    });
+    expect(row.transferGroupId).not.toBeNull();
   });
 
   it("new rules run first; moving renumbers in the new order", async () => {

@@ -160,7 +160,7 @@ function RulesSection({
       {visible.length === 0 ? (
         <p className="text-muted-foreground text-sm">No rules.</p>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
           <table className="w-full text-sm" aria-label="Rules">
             <thead>
               <tr className="border-b text-left">
@@ -355,7 +355,7 @@ function NewCategoryForm({ categories }: { categories: CategoryUsage[] }) {
 
 function CategoryTable({ categories }: { categories: CategoryUsage[] }) {
   return (
-    <div className="overflow-x-auto">
+    <div className="relative overflow-x-auto">
       <table className="w-full text-sm" aria-label="Categories">
         <thead>
           <tr className="border-b text-left">

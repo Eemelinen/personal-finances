@@ -1,5 +1,8 @@
 import { and, asc, eq, inArray, isNotNull, sql } from "drizzle-orm";
-import { categorizeTransactions } from "@/server/categorization/categorize";
+import {
+  categorizeTransactions,
+  lockCategorization,
+} from "@/server/categorization/categorize";
 import { getDb } from "@/server/db/client";
 import { accounts, connections, transactions } from "@/server/db/schema";
 import { getEnv } from "@/server/env";
@@ -152,6 +155,7 @@ export async function syncTransactions(
           ),
         );
         await db.transaction(async (tx) => {
+          await lockCategorization(tx);
           const stored = await loadStored(tx, account.id, listing);
           const plan = mergeTransactions(stored, listing);
           const insertedIds = await applyPlan(tx, account.id, plan);
