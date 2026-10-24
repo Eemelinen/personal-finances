@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { cn } from "cn";
-import { CASH_FLOW_PATH, SPENDING_PATH } from "@/lib/reports";
+import { BALANCES_PATH, CASH_FLOW_PATH, SPENDING_PATH } from "@/lib/reports";
 
 const TABS = [
   { href: SPENDING_PATH, label: "Spending" },
   { href: CASH_FLOW_PATH, label: "Cash flow" },
+  { href: BALANCES_PATH, label: "Balances" },
 ] as const;
 
-/** Switches between the two reports. */
+/** Switches between the reports. */
 export function ReportTabs({
   active,
 }: {

@@ -14,7 +14,7 @@ import { accounts, categories, transactions } from "@/server/db/schema";
 import { UNCATEGORIZED_CATEGORY } from "@/server/categorization/defaults";
 import { getEnv } from "@/server/env";
 import type { IsoDate } from "@/server/providers/types";
-import { localDate } from "@/server/sync/transaction-merge";
+import { localDate } from "@/server/dates";
 import { merchantKey, merchantName } from "@/server/reports/merchant-name";
 import {
   addMonths,

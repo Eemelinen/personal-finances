@@ -8,7 +8,7 @@ import {
   transactions,
 } from "@/server/db/schema";
 import { addMonths, firstDay, monthOf } from "@/server/reports/period";
-import { localDate } from "@/server/sync/transaction-merge";
+import { localDate } from "@/server/dates";
 import { E2E_TIME_ZONE, openTestDatabase } from "./support/database";
 
 // The spending and cash-flow reports end to end. This spec has its own

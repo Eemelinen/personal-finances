@@ -1,3 +1,4 @@
+import { addDays, dayNumber, localDate } from "@/server/dates";
 import { dedupeHash, normaliseText } from "@/server/dedupe-hash";
 import type { IsoDate, ProviderTransaction } from "@/server/providers/types";
 
@@ -45,28 +46,6 @@ export interface MergePlan {
   remove: string[];
   /** Fetched transactions already stored exactly as they are. */
   unchanged: number;
-}
-
-const DAY_MS = 86_400_000;
-
-function dayNumber(date: IsoDate): number {
-  return Date.parse(`${date}T00:00:00Z`) / DAY_MS;
-}
-
-/** `date` moved by `days` calendar days. */
-export function addDays(date: IsoDate, days: number): IsoDate {
-  return new Date((dayNumber(date) + days) * DAY_MS).toISOString().slice(0, 10);
-}
-
-/** The calendar day of `instant` in `timeZone`. */
-export function localDate(instant: Date, timeZone: string): IsoDate {
-  // `en-CA` formats as YYYY-MM-DD.
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(instant);
 }
 
 /**

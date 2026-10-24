@@ -9,7 +9,7 @@ import {
 import { getEnv } from "@/server/env";
 import type { IsoDate } from "@/server/providers/types";
 import { balanceTypePreference } from "@/server/sync/balance-types";
-import { addDays, localDate } from "@/server/sync/transaction-merge";
+import { addDays, localDate } from "@/server/dates";
 import {
   balanceOn,
   dailyBalances,
@@ -273,7 +273,7 @@ export async function getDashboardOverview(
  * The accounts' snapshots from `windowStart` on, plus each balance type's
  * last one before it, which carries over into the window.
  */
-async function loadSnapshots(
+export async function loadSnapshots(
   db: Db,
   accountIds: string[],
   windowStart: IsoDate,

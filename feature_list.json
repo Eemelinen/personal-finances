@@ -441,7 +441,7 @@
       "area": "dashboard",
       "title": "Balance and net-worth history",
       "user_visible_behavior": "`/reports/balances` shows a net-worth line and a stacked per-account area chart for 3 months, 6 months, 1 year or all, carrying the last known balance over days without a sync and reconstructing history before the first sync from transactions (marked estimated), with a tooltip of the per-account breakdown.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-016"],
       "ticket": "FIN-018",
       "spec": "docs/tickets/FIN-018-balance-history.md",
@@ -451,7 +451,16 @@
         "L2: pnpm test:integration tests/integration/balance-history.int.test.ts (series built from snapshots and transactions)",
         "L3: pnpm test:e2e tests/e2e/balance-history.spec.ts (range selector changes the series)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (working tree on 140927f)",
+        "2026-10-24 pnpm test:unit tests/unit/reports/balance-series.test.ts → pass (working tree on 140927f)",
+        "2026-10-24 pnpm test:integration tests/integration/balance-history.int.test.ts → pass (working tree on 140927f, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/balance-history.spec.ts → pass (working tree on 140927f, Docker available)",
+        "2026-10-24 pnpm check → pass (commit a8d1abd)",
+        "2026-10-24 pnpm test:unit tests/unit/reports/balance-series.test.ts → pass (commit a8d1abd)",
+        "2026-10-24 pnpm test:integration tests/integration/balance-history.int.test.ts → pass (commit a8d1abd, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/balance-history.spec.ts → pass (commit a8d1abd, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Replaces old FIN-019."
     },

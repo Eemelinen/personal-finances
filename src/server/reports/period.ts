@@ -1,5 +1,5 @@
 import type { IsoDate } from "@/server/providers/types";
-import { addDays } from "@/server/sync/transaction-merge";
+import { addDays } from "@/server/dates";
 
 // Report periods (F-017): the presets of the period selector and custom
 // ranges, as inclusive calendar days. Pure, so the pages and the tests share

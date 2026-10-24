@@ -1,4 +1,5 @@
 import { formatDay } from "@/lib/format";
+import type { BalanceRangeId } from "@/server/reports/balance-series";
 import {
   PERIOD_PRESETS,
   type DayRange,
@@ -6,11 +7,17 @@ import {
   type PeriodId,
 } from "@/server/reports/period";
 
-// URLs and labels of the report pages (F-017). The period and the drilled
-// category live in the query string, so every view can be linked to.
+// URLs and labels of the report pages (F-017, F-018). The period, the
+// drilled category and the balance range live in the query string, so every view can be linked to.
 
 export const SPENDING_PATH = "/reports/spending";
 export const CASH_FLOW_PATH = "/reports/cash-flow";
+export const BALANCES_PATH = "/reports/balances";
+
+/** The balance history over `range` (F-018). */
+export function balancesHref(range: BalanceRangeId): string {
+  return `${BALANCES_PATH}?${new URLSearchParams({ range })}`;
+}
 
 /** The spending report for `period`, drilled into `category` if given. */
 export function spendingHref(

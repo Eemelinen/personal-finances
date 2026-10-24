@@ -44,7 +44,7 @@ src/
   app/                 Next.js App Router: pages, layouts, route handlers (UI + HTTP)
     (app)/             Route group: every page inside the app shell (layout.tsx renders
                        AppShell); Dashboard (page.tsx: overview, F-016), transactions/,
-                       reports/ (spending/, cash-flow/; F-017), connections/, settings/,
+                       reports/ (spending/, cash-flow/; F-017; balances/, F-018), connections/, settings/,
                        import/ (CSV upload: page, preview/import Server Actions, form)
     login/             Login page (outside the shell, public)
     api/health/        Health check (DB connectivity, public)
@@ -57,7 +57,9 @@ src/
                        month's income, expenses and net
     reports/           Spending and cash-flow reports (F-017): period selector, category
                        table, comparison tiles, top merchants, transaction list; the
-                       Recharts stacked bar and cash-flow charts are client components
+                       Recharts stacked bar and cash-flow charts are client components;
+                       the balance history's net-worth line and stacked account areas
+                       (balance-history-chart.tsx, F-018)
     empty-state.tsx    Placeholder for pages without data yet
   lib/                 App helpers: cn() (utils.ts), the navigation items, fi-FI
                        money, change, percent, day, month and time formatting for
@@ -79,6 +81,7 @@ src/
                        transactions, sync; shared column builders in columns.ts)
       migrations.ts    applyMigrations(): shared by migrate.ts and the L2 tests
       migrate.ts       Migration runner (used by the `migrate` service and pnpm db:migrate)
+    dates.ts           Calendar-day helpers: addDays(), dayNumber(), localDate()
     dedupe-hash.ts     Fallback identity of a transaction (normalised date, amount, text)
     providers/         FinancialProvider contract: types.ts (interface, DTOs, ids),
                        errors.ts (typed errors, HTTP status mapping), registry.ts
@@ -100,10 +103,12 @@ src/
     queries/           Read models for the dashboard: balances.ts (balance on a day,
                        daily series), dashboard.ts (overview: totals, accounts by bank,
                        connection health; F-016), reports.ts (spending, cash flow and
-                       the month tiles; F-017)
+                       the month tiles; F-017), balance-history.ts (daily balances and
+                       net worth over a range; F-018)
     reports/           Pure report helpers (F-017): period.ts (presets, custom ranges,
                        previous period, average window), merchant-name.ts (normalised
-                       merchant names)
+                       merchant names), balance-series.ts (balance ranges, carried and
+                       reconstructed daily balances; F-018)
   worker/
     index.ts           Worker entrypoint: registers jobs, graceful shutdown
     jobs.ts            Job registry (name, cron schedule, run function)
@@ -258,17 +263,18 @@ Providers return **normalized** DTOs whose fields mirror the table columns: amou
 - **Connection health** of every non-archived connection: Expired when the consent has ended or the status is `expired` / `revoked`, Expiring within 14 days of `consent_expires_at` (the FIN-011 warning window), else OK; each links to `/connections`.
 - **Empty**: without non-archived accounts the page shows "Connect bank" (`/connections`) and "Import CSV" (`/import`), plus connection status if a connection exists.
 - **This month** (F-017): income, expenses and net of the current `APP_TIMEZONE` month from `getMonthCashFlow()` (`queries/reports.ts`, the rules of the Reports section), linking to `/reports/cash-flow`.
-- The full balance history comes with F-018, which can reuse `balances.ts`.
+- The full balance history is `/reports/balances` (F-018, see Reports); it reuses `balances.ts`.
 
 ## Reports
 
-`/reports` links to `/reports/spending` and `/reports/cash-flow` (F-017, D-014); both render their read model from `src/server/queries/reports.ts` inside a Suspense boundary after `verifySession()`. The period and the drilled category live in the query string.
+`/reports` links to `/reports/spending` and `/reports/cash-flow` (F-017, D-014), both rendering their read model from `src/server/queries/reports.ts`, and to `/reports/balances` (F-018, D-015, `src/server/queries/balance-history.ts`); each renders inside a Suspense boundary after `verifySession()`. The period, the drilled category and the balance range live in the query string.
 
 - **What counts**: EUR transactions, booked and pending, that are not own transfers (no `transfer_group_id`, category kind not `transfer`). The category's kind decides: `expense` rows are spending (debits minus credits, so a refund nets against its category), `income` rows are income. Without a category a debit is spending and a credit income, both shown under the top-level Uncategorized category (or as "Uncategorized" when there is none). Months are the `YYYY-MM` of `booking_date` (a calendar day already, grouped in SQL); the current month is the request's `APP_TIMEZONE` month.
 - **Periods** (`src/server/reports/period.ts`, pure): `?period=this-month|last-month|3m|6m|12m` are whole months ending with the current (or previous) month; `?period=custom&from=…&to=…` any valid range up to 10 years; anything else is this month. The previous period is as many whole months (or days) before; the 6-month average is the mean per month over the 6 whole months before the period, counted from the first transaction.
 - **Spending** (`getSpendingReport()`): per top-level category (`coalesce(parent_id, id)`) the period's spending, share, previous period and 6-month average, with colours from `categories.color` (a subcategory without one takes its parent's; a repeated colour gets a lighter step); `?category=<id>` drills into a top-level category (its subcategories plus a "(no subcategory)" row and its transactions) or a subcategory (its transactions); `?category=uncategorized` is the no-category rows. Also a 12-month stacked bar ending with the period's last month (7 series at most, the rest as Other), the top 10 merchants by `merchantName()` and, when drilled, up to 200 transactions newest first with the total count.
 - **Cash flow** (`getCashFlowReport()`): income, expenses, net and savings rate (net over income) for the 12 months ending with the current one, as bars plus a net line on one axis and a table, and the year to date (January to the current month).
 - **Merchant names** (`merchant-name.ts`, pure): the counterparty, else the description, without payment processor prefixes, trailing store or reference numbers and legal forms; known Finnish chains fold to the chain name; all-capital names are title-cased. SQL groups by the raw text and JS merges by the normalised key.
+- **Balances** (`getBalanceHistory()`, D-015): `?range=3m|6m|1y|all` (default 3 months; a month range starts the day after the same day that many months ago, `all` at the earliest snapshot or transaction). Each non-archived EUR account with at least one snapshot gets a daily balance (`balance-series.ts`, pure): from its first snapshot on `balanceOn()` (the last known balance carried over), before it, back to its first transaction, the first snapshot's balance minus the transactions booked after each day (booked and pending, transfers included), marked estimated. Net worth is the daily sum of the known balances, estimated when any part is and partial when some account has no balance yet. The page draws net worth as a line (dashed where estimated, grey where partial) and the accounts as stacked areas (8 categorical colours, `--series-1…8` in `globals.css`, the rest folded into Other; unknown is a gap) with each estimated run shaded and a tooltip of the per-account breakdown, plus a table of each account's balance at the range's start and today; the net-worth change there is like for like (`likeForLikeChange()`: accounts known on both days).
 
 ## Conventions
 

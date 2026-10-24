@@ -7,7 +7,7 @@ import {
   connections,
   institutions,
 } from "@/server/db/schema";
-import { addDays, localDate } from "@/server/sync/transaction-merge";
+import { addDays, localDate } from "@/server/dates";
 import { E2E_TIME_ZONE, openTestDatabase } from "./support/database";
 
 // The dashboard overview end to end. This spec has its own Playwright project
