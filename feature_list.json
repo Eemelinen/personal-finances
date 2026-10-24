@@ -1,6 +1,6 @@
 {
   "project": "personal-finances",
-  "last_updated": "2026-10-23",
+  "last_updated": "2026-10-24",
   "rules": {
     "single_active_feature": true,
     "passing_requires_evidence": true,
@@ -383,7 +383,7 @@
       "area": "dashboard",
       "title": "Dashboard overview",
       "user_visible_behavior": "The dashboard shows net worth, totals in checking and in savings and the change vs 30 days ago, accounts grouped by bank with current balance, last sync and a 90-day sparkline, and connection status (OK, expiring, expired) linking to `/connections`; with no data it guides to Connect bank or Import CSV. Amounts are formatted fi-FI in EUR.",
-      "status": "not_started",
+      "status": "in_progress",
       "depends_on": ["F-004", "F-008"],
       "ticket": "FIN-016",
       "spec": "docs/tickets/FIN-016-dashboard-overview.md",

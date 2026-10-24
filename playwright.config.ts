@@ -11,6 +11,9 @@ import { E2E_AUTH_STATE } from "./tests/e2e/support/credentials";
  *
  * The `setup` project logs in once (tests/e2e/auth.setup.ts); specs start
  * logged in from its storage state unless they reset it (auth.spec.ts).
+ * The `dashboard` project (tests/e2e/dashboard.spec.ts) runs before every
+ * other spec: it checks the empty dashboard while the database has no
+ * accounts, then seeds accounts and balances, which later specs see too.
  * The run fails if the app server logged an error line
  * (tests/e2e/support/server-errors.ts), even when every test passed.
  */
@@ -33,9 +36,16 @@ export default defineConfig({
   projects: [
     { name: "setup", testMatch: "**/*.setup.ts" },
     {
-      name: "chromium",
+      name: "dashboard",
+      testMatch: "**/dashboard.spec.ts",
       use: { ...devices["Desktop Chrome"], storageState: E2E_AUTH_STATE },
       dependencies: ["setup"],
+    },
+    {
+      name: "chromium",
+      testIgnore: "**/dashboard.spec.ts",
+      use: { ...devices["Desktop Chrome"], storageState: E2E_AUTH_STATE },
+      dependencies: ["setup", "dashboard"],
     },
   ],
   webServer: {
