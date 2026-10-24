@@ -47,6 +47,8 @@ To leave a single transaction out of every report without deleting it (a loan dr
 
 Synced transactions keep the other party's account number (IBAN) when the bank gives one; it is shown in the transaction's **Details**, and a payment to or from the IBAN of another own account counts as a transfer even when the other leg is missing or differs. Transactions synced before this was stored get it with **Re-read history** on the connection's card under Connections: it fetches the whole history the bank still has again and updates the stored rows in place, without duplicates.
 
+Own accounts that no connection shows (a savings account the bank consent does not cover, an account at another bank) go under **Settings → Accounts** (also linked from Connections): bank, name, IBAN, checking or savings and optionally a balance on a date. Saving re-runs the categorisation over every transaction, so payments to and from that IBAN become own transfers instead of income or spending (the page says how many were linked), and the balance counts in net worth and the balance history from its day until you give a newer one. An IBAN can belong to one account only. Accounts created by a CSV import are listed there too, so you can give them their IBAN. Archiving an account takes it off the dashboard and net worth; its IBAN still marks own transfers.
+
 Notes:
 
 - Postgres is published on host port **5434** (not 5432) to avoid clashing with other local projects. Change `POSTGRES_PORT` and `DATABASE_URL` in `.env` if needed.

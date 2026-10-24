@@ -772,7 +772,7 @@
       "area": "banking",
       "title": "Own accounts outside the bank connections",
       "user_visible_behavior": "Settings → Accounts lists, adds and edits manual accounts (name, institution, validated IBAN, checking or savings, optional balance on a date) for own accounts no connection shows. Saving re-runs categorisation, so money moved to or from that IBAN becomes an own transfer instead of income or spending, and the balance counts in net worth.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-028", "F-015", "F-018"],
       "ticket": "FIN-029",
       "spec": "docs/tickets/FIN-029-own-accounts-outside-connections.md",
@@ -782,7 +782,12 @@
         "L2: pnpm test:integration tests/integration/manual-accounts.int.test.ts (a leg naming the IBAN becomes a one-sided transfer; manual balance in net worth; duplicate IBAN refused)",
         "L3: pnpm test:e2e tests/e2e/manual-accounts.spec.ts (add an account with a balance, see it on the dashboard)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (working tree on c116747)",
+        "2026-10-24 pnpm test:unit tests/unit/connections/account-input.test.ts → pass (working tree on c116747)",
+        "2026-10-24 pnpm test:integration tests/integration/manual-accounts.int.test.ts → pass (working tree on c116747, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/manual-accounts.spec.ts → pass (working tree on c116747, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Found with real data 2026-10-24: ~100 transfers to own savings accounts outside the bank consent were counted as income and spending."
     },

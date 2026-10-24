@@ -53,6 +53,8 @@ src/
                        settings/ (index) + settings/categories/ (categories, rules,
                        re-apply; the shared rule form and actions; F-015) +
                        settings/reports/ (the income setting and its action; F-026),
+                       settings/accounts/ (own accounts outside the connections:
+                       list, add, edit, archive; F-029),
                        import/ (CSV upload: page, preview/import Server Actions, form),
                        investments/ (holdings table, Nordnet import action and form; F-020;
                        manual crypto holding action and form, F-021)
@@ -112,7 +114,9 @@ src/
                        callback, renewal F-011), account-matching.ts (renewed
                        accounts by IBAN, then provider id), manage.ts (list,
                        rename, remove, archive), account-input.ts (what the user
-                       may set, no imports)
+                       may set and its parsing, pure imports only),
+                       manual-accounts.ts (own accounts outside the connections,
+                       F-029)
     csv/               CSV import (F-012): parse.ts (RFC 4180 reader), values.ts
                        (decoding, amounts, dates), bank-csv.ts (Nordea, S-Pankki and
                        generic layouts), import-csv.ts (write rows, manual accounts)
@@ -396,6 +400,7 @@ F-011 (D-026): a connection's consent ends at `connections.consent_expires_at` (
 - **Reading** (`src/server/csv/bank-csv.ts`, `readBankCsv()`): UTF-8 or else Windows-1252; delimiter `;`, tab or `,`; the Nordea and S-Pankki layouts are found by their Finnish header names (so column order and preamble lines above the header may vary), anything else is read with a chosen date, amount, counterparty and description column (guessed from common names). Amounts with a decimal comma and space groups become integer minor units, `d.m.yyyy` dates `YYYY-MM-DD`. A row that cannot be read is an error with its file line; the rest are still read.
 - **Writing** (`import-csv.ts`, `importCsvRows()`): rows become booked transactions without a ref, numbered by the sync's `identifyTransactions()` (identical rows get occurrence numbers in their hash) and inserted with `ON CONFLICT (account_id, dedupe_hash) DO NOTHING`, in one database transaction with the `categorize` hook (the rule engine by default, F-014). So a row already stored by an earlier import or by the bank sync (with the same texts) is skipped as a duplicate, and a later bank sync adopts imported rows by hash instead of adding them again. An import never changes, books or deletes a stored row. The summary counts rows read, inserted, skipped as duplicates and errors (with row numbers; a currency other than the account's is an error too).
 - **Accounts**: any non-archived account, or a new manual one (`connection_id` null, EUR, checking or savings) under the `csv` institution of the export's format (`provider_ref` `nordea`, `s-pankki` or `generic`), created in the same database transaction as its rows (`importCsvIntoNewAccount()`). Imports write no `sync_runs` row.
+- **Own accounts** (F-029, D-032, `manual-accounts.ts`, `/settings/accounts`): the same `insertManualAccount()` creates an account the user adds by hand, under an institution per typed bank name (provider `manual`, `provider_ref` `bank:<name>`) and with its IBAN (normalised, mod-97 checked, unique across all accounts). Settings → Accounts lists every non-archived manual checking and savings account (imported ones too) and edits name, IBAN and type or archives it. A "Balance on date" is a `balance_snapshots` row of type `manual` for that day. Saving re-runs `reapplyRules()`, so legs naming the IBAN become one-sided transfers.
 
 ## Categorization
 

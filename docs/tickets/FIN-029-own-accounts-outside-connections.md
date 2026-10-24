@@ -26,3 +26,4 @@ The user can add their own accounts that no bank connection shows (a savings or 
 ## Notes
 
 - Found with real data on 2026-10-24: about a hundred transfers between a connected checking account and the user's own savings accounts (not in the bank consent) were counted as income and spending. One savings account was known only from a netbank CSV export.
+- Implemented in session 032 (D-032). Choices beyond the criteria: the manual institutions use `provider_ref` `bank:<name>` (the crypto wallets already own `manual` / `manual`); an edit may empty the IBAN of a CSV import's account (adding requires one); the edit form also takes a newer balance on a date; a balance date in the future is refused; changing an IBAN does not unlink transfers it linked before.

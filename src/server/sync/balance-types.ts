@@ -3,6 +3,13 @@
 // which one a view picks.
 
 /**
+ * A balance the user typed for an account no connection syncs (F-029,
+ * "Balance on date" under Settings → Accounts); not an ISO 20022 type. It
+ * comes last in every list: a synced type of the same day wins.
+ */
+export const MANUAL_BALANCE_TYPE = "manual";
+
+/**
  * Most preferred first: what is available now, then what is booked now,
  * then the closing balances of the previous day, then the opening ones.
  */
@@ -14,6 +21,7 @@ export const DEFAULT_BALANCE_TYPE_PREFERENCE: readonly string[] = [
   "XPCD",
   "OPAV",
   "OPBD",
+  MANUAL_BALANCE_TYPE,
 ];
 
 /**
@@ -29,6 +37,7 @@ const BOOKED_FIRST: readonly string[] = [
   "XPCD",
   "OPBD",
   "OPAV",
+  MANUAL_BALANCE_TYPE,
 ];
 
 /**
