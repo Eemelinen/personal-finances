@@ -568,7 +568,11 @@
         "2026-10-24 pnpm check → pass (commit 8dfb33a)",
         "2026-10-24 pnpm test:unit tests/unit/investments/performance.test.ts → pass (commit 8dfb33a)",
         "2026-10-24 pnpm test:integration tests/integration/net-worth-investments.int.test.ts → pass (commit 8dfb33a, Docker available)",
-        "2026-10-24 pnpm test:e2e tests/e2e/allocation.spec.ts → pass (commit 8dfb33a, Docker available)"
+        "2026-10-24 pnpm test:e2e tests/e2e/allocation.spec.ts → pass (commit 8dfb33a, Docker available)",
+        "2026-10-24 pnpm check → pass (commit 8498a89)",
+        "2026-10-24 pnpm test:unit tests/unit/investments/performance.test.ts → pass (commit 8498a89)",
+        "2026-10-24 pnpm test:integration tests/integration/net-worth-investments.int.test.ts → pass (commit 8498a89, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/allocation.spec.ts → pass (commit 8498a89, Docker available)"
       ],
       "attempts": 0,
       "notes": "Replaces old FIN-025."
