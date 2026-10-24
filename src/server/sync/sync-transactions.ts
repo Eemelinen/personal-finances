@@ -105,7 +105,12 @@ export async function syncTransactions(
 ): Promise<SyncTransactionsResult> {
   const db = options.db ?? getDb();
   const now = options.now ?? (() => new Date());
-  const { connection, runId } = await startRun(db, connectionId, now);
+  const { connection, runId } = await startRun(
+    db,
+    connectionId,
+    "transactions",
+    now,
+  );
   const counts: SyncTransactionsCounts = { ...NO_COUNTS };
 
   const failed = (failure: SyncFailure): SyncTransactionsResult => ({

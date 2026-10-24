@@ -17,6 +17,17 @@ const envSchema = z
       .default("development"),
     DATABASE_URL: z.url(),
     APP_TIMEZONE: z.string().default("Europe/Helsinki"),
+    // When the worker syncs the bank connections (F-010), a cron expression
+    // in APP_TIMEZONE. The default, every 6 hours, is PSD2's four unattended
+    // fetches a day per consent (FIN-001 → Findings); the worker refuses to
+    // start with an expression node-cron rejects.
+    SYNC_CRON: z
+      .string()
+      .trim()
+      .default("0 */6 * * *")
+      .refine((value) => [5, 6].includes(value.split(/\s+/).length), {
+        message: "must be a cron expression of 5 or 6 fields",
+      }),
     // `fake` (the deterministic in-memory bank) is for tests and e2e only.
     BANK_PROVIDER: z.enum(BANK_PROVIDER_IDS).default("enable_banking"),
     // Twelve Data key for daily closing prices (F-020); without it the price

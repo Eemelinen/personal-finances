@@ -254,7 +254,7 @@
       "area": "banking",
       "title": "Scheduled sync, Sync now and sync log",
       "user_visible_behavior": "The worker runs a `bank-sync` job on `SYNC_CRON` (default every 6 hours) for every active connection; a Postgres advisory lock prevents two syncs of one connection at once, and a failing connection is logged and retried on the next tick without stopping the others or crashing the worker. A Sync now button on the dashboard and `/connections` runs the same sync with a pending state, the first sync runs right after connecting, the connection page shows the last sync runs (status, duration, counts, errors) and the header shows the last successful sync.",
-      "status": "not_started",
+      "status": "in_progress",
       "depends_on": ["F-007", "F-009"],
       "ticket": "FIN-010",
       "spec": "docs/tickets/FIN-010-scheduled-sync.md",

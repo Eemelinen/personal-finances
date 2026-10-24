@@ -36,6 +36,13 @@
       "when": 1792826956410,
       "tag": "0004_connect_bank",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792828857678,
+      "tag": "0005_sync_log",
+      "breakpoints": true
     }
   ]
 }

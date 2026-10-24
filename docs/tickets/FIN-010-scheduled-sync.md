@@ -21,3 +21,5 @@ The worker runs a `bank-sync` job on `SYNC_CRON` (default every 6 hours) for eve
 ## Notes
 
 - Replaces old FIN-010.
+- Implementation choices (D-025): a second sync of a connection is skipped, not queued; remove and archive wait for a running sync; the dashboard's Sync now syncs every active connection, each `/connections` card syncs its own; the callback runs the first sync before redirecting; `sync_runs` gained a nullable `kind` so the log can label the balance and transaction runs; the header shows the newest `last_synced_at` of the bank connections.
+- Not in scope: the CSV import does not take the connection lock (D-025 → Consequences); whether Sync now counts against the bank's four unattended fetches a day is for F-013.

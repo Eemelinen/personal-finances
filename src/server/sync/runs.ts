@@ -26,6 +26,7 @@ import type {
 export type Connection = typeof connections.$inferSelect;
 export type ConnectionStatus = Connection["status"];
 export type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
+export type SyncRunKind = NonNullable<(typeof syncRuns.$inferSelect)["kind"]>;
 
 /**
  * Why a failed run failed: the provider error's kind, or `not_active` when
@@ -69,6 +70,7 @@ export function errorMessage(error: unknown): string {
 export async function startRun(
   db: Db,
   connectionId: string,
+  kind: SyncRunKind,
   now: () => Date,
 ): Promise<{ connection: Connection; runId: string }> {
   const [connection] = await db
@@ -79,7 +81,7 @@ export async function startRun(
 
   const [run] = await db
     .insert(syncRuns)
-    .values({ connectionId, startedAt: now() })
+    .values({ connectionId, kind, startedAt: now() })
     .returning({ id: syncRuns.id });
   return { connection, runId: run.id };
 }

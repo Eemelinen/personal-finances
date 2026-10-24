@@ -9,6 +9,7 @@ import {
   type ProviderRegistry,
 } from "@/server/providers/registry";
 import { BANK_PROVIDER_IDS } from "@/server/providers/types";
+import { lockConnectionSync } from "@/server/sync/bank-sync";
 import { BANK_ACCOUNT_TYPES, MAX_ACCOUNT_NAME_LENGTH } from "./account-input";
 import { BankConnectionError } from "./authorization";
 
@@ -23,6 +24,9 @@ import { BankConnectionError } from "./authorization";
 // - A session the provider no longer knows (expired, already revoked) counts
 //   as revoked. Any other failure keeps the connection as it was, so a
 //   consent is never left running at the bank without the app knowing it.
+// - Both wait for a running sync of the connection to finish before they
+//   change anything (F-010), so a sync never writes into a connection that
+//   is being ended.
 
 export type ConnectionStatus = (typeof connections.$inferSelect)["status"];
 
@@ -226,6 +230,7 @@ export async function removeConnection(
     options,
   );
   await db.transaction(async (tx) => {
+    await lockConnectionSync(tx, connectionId);
     // `accounts.connection_id` is `ON DELETE SET NULL`, so the accounts go
     // first; their transactions and balances cascade.
     await tx.delete(accounts).where(eq(accounts.connectionId, connectionId));
@@ -250,6 +255,7 @@ export async function archiveConnection(
     options,
   );
   await db.transaction(async (tx) => {
+    await lockConnectionSync(tx, connectionId);
     await tx
       .update(connections)
       .set({ status: "archived", sessionRef: null })

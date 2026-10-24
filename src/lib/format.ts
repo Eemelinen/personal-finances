@@ -51,6 +51,22 @@ export function formatLocalDay(instant: Date, timeZone: string): string {
   }).format(instant);
 }
 
+/**
+ * A duration in milliseconds, e.g. `350 ms`, `1,2 s` or `2 min 5 s`
+ * (`fi-FI` decimals).
+ */
+export function formatDuration(ms: number): string {
+  if (ms < 1000) return `${Math.max(0, Math.round(ms))} ms`;
+  if (ms < 60_000) {
+    const seconds = new Intl.NumberFormat("fi-FI", {
+      maximumFractionDigits: 1,
+    }).format(Math.floor(ms / 100) / 10);
+    return `${seconds} s`;
+  }
+  const seconds = Math.floor(ms / 1000);
+  return `${Math.floor(seconds / 60)} min ${seconds % 60} s`;
+}
+
 /** Money rounded to whole units, for chart axes, e.g. `1 235 €`. */
 export function formatMoneyRounded(
   amountMinor: number,

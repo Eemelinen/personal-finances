@@ -4,8 +4,9 @@ import { expect, test, type Page } from "@playwright/test";
 // The connect-bank flow end to end (F-007) through the fake provider
 // (`BANK_PROVIDER=fake`): /connections redirects to the fake's stand-in bank
 // page, which approves or cancels back to /connections/callback like a
-// bank. Other specs seed connections too, so each test finds its own
-// connection by the id the callback puts in the URL.
+// bank. The callback syncs the new connection right away (F-010). Other
+// specs seed connections too, so each test finds its own connection by the
+// id the callback puts in the URL.
 
 /** Opens /connections and waits for hydration (Connect is disabled while pending). */
 async function openConnections(page: Page) {
@@ -42,12 +43,23 @@ test("connects a bank through the fake provider and renames an account", async (
 
   await expect(
     page.getByRole("status").filter({ hasText: "Connected S-Pankki" }),
-  ).toHaveText(/^Connected S-Pankki with 2 accounts\./);
+  ).toHaveText(
+    /^Connected S-Pankki with 2 accounts\. Its balances and transactions are synced\./,
+  );
   await expect(card.getByRole("heading", { level: 2 })).toHaveText("S-Pankki");
   await expect(card).toContainText("Active");
   // 180 days less ten minutes from now, as a fi-FI day.
   await expect(card).toContainText(/Consent until\s*\d{1,2}\.\d{1,2}\.\d{4}/);
-  await expect(card).toContainText("Not synced yet");
+  // The first sync ran in the callback: balances, then transactions.
+  await expect(card).toContainText(/Last sync\s*\d{1,2}\.\d{1,2}\.\d{4}/);
+  await expect(card.getByTestId("sync-run-kind")).toHaveText([
+    "Transactions",
+    "Balances",
+  ]);
+  await expect(card.getByTestId("sync-run-status")).toHaveText([
+    "Succeeded",
+    "Succeeded",
+  ]);
 
   const checking = card.getByRole("form", {
     name: "Account FI00 0000 0000 0000 01",

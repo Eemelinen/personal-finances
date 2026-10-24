@@ -90,7 +90,12 @@ export async function syncBalances(
 ): Promise<SyncBalancesResult> {
   const db = options.db ?? getDb();
   const now = options.now ?? (() => new Date());
-  const { connection, runId } = await startRun(db, connectionId, now);
+  const { connection, runId } = await startRun(
+    db,
+    connectionId,
+    "balances",
+    now,
+  );
 
   const failed = (failure: SyncFailure): SyncBalancesResult => ({
     runId,

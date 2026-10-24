@@ -1,7 +1,9 @@
 import { CircleCheck, Clock, TriangleAlert } from "lucide-react";
 import Link from "next/link";
+import { SyncNowButton } from "@/components/sync/sync-now-button";
 import { cn } from "@/lib/utils";
 import { formatLocalDay } from "@/lib/format";
+import { syncAllBanksAction } from "@/lib/sync/actions";
 import type {
   ConnectionHealth,
   ConnectionSummary,
@@ -29,7 +31,10 @@ interface ConnectionStatusProps {
   timeZone: string;
 }
 
-/** Each bank connection's consent state, linking to /connections. */
+/**
+ * Each bank connection's consent state, linking to /connections, and Sync
+ * now for all of them (F-010).
+ */
 export function ConnectionStatus({
   connections,
   timeZone,
@@ -39,9 +44,12 @@ export function ConnectionStatus({
       aria-labelledby="connections-heading"
       className="flex flex-col gap-3"
     >
-      <h2 id="connections-heading" className="text-lg font-medium">
-        Connections
-      </h2>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <h2 id="connections-heading" className="text-lg font-medium">
+          Connections
+        </h2>
+        {connections.length > 0 && <SyncNowButton sync={syncAllBanksAction} />}
+      </div>
       {connections.length === 0 ? (
         <p className="text-muted-foreground text-sm">
           No bank connected.{" "}
