@@ -32,7 +32,11 @@ export interface HoldingsDay {
    * null before the account's first holding snapshot.
    */
   valueMinor: number | null;
-  /** EUR value of the day's movements at the day's prices (0 if unpriced). */
+  /**
+   * EUR value of the day's movements at the day's prices. Units that moved
+   * while their asset had no price (or rate) count on the first day it has
+   * one, at that day's price, so they are not left to the market gain.
+   */
   movedMinor: number;
 }
 
@@ -44,8 +48,9 @@ function byDate<T extends { date: IsoDate }>(rows: readonly T[]): T[] {
  * The holdings' value on each of `days` (consecutive, oldest first): each
  * asset's latest snapshot, price and rate on or before the day, as
  * `valueHoldings()` would give for every day, in one pass. Movements dated
- * on one of the days are valued at that day's price; before it they are
- * ignored.
+ * on one of the days are valued at that day's price; earlier ones are in
+ * the first day's value already, unless their asset is still unpriced then.
+ * Unpriced movements wait until the asset is priced.
  */
 export function holdingsSeries(
   input: {
@@ -72,6 +77,8 @@ export function holdingsSeries(
   let p = 0;
   let r = 0;
   let m = 0;
+  /** Units moved in (or out) while unpriced, by asset. */
+  const pending = new Map<string, bigint>();
 
   /** EUR minor units of `units` of the asset today; null when unpriced. */
   const value = (assetId: string, units: string): number | null => {
@@ -97,8 +104,22 @@ export function holdingsSeries(
     }
     let movedMinor = 0;
     for (; m < movements.length && movements[m].date <= day; m++) {
-      if (movements[m].date < day) continue;
-      movedMinor += value(movements[m].assetId, movements[m].quantity) ?? 0;
+      const move = movements[m];
+      const moved = value(move.assetId, move.quantity);
+      if (moved === null) {
+        pending.set(
+          move.assetId,
+          (pending.get(move.assetId) ?? ZERO) + parseDecimal(move.quantity),
+        );
+      } else if (move.date === day) {
+        movedMinor += moved;
+      }
+    }
+    for (const [assetId, units] of pending) {
+      const priced = value(assetId, formatDecimal(units));
+      if (priced === null) continue;
+      movedMinor += priced;
+      pending.delete(assetId);
     }
     if (quantity.size === 0) return { valueMinor: null, movedMinor };
 
@@ -197,7 +218,8 @@ export interface InvestmentAccountSeries {
   /**
    * Money and units moved into (+) or out of (−) the account per day, in
    * EUR minor units at the day's prices: transfers, or for an account
-   * without transactions the changes between its holding snapshots.
+   * without transactions or synced cash the changes between its holding
+   * snapshots.
    */
   flows: number[];
 }
@@ -219,13 +241,22 @@ export function investmentAccountSeries(
 ): InvestmentAccountSeries {
   const hasTransactions = input.transactions.length > 0;
   const transfers = input.transactions.filter((tx) => tx.type === "transfer");
-  const movements = hasTransactions
-    ? transfers.flatMap((tx) =>
-        tx.assetId !== null && tx.quantity !== null
-          ? [{ assetId: tx.assetId, date: tx.tradeDate, quantity: tx.quantity }]
-          : [],
-      )
-    : snapshotMovements(input.holdings);
+  // Snapshot changes are flows only for a wallet with nothing else: with a
+  // synced cash balance they may be trades against that cash.
+  const movements =
+    hasTransactions || input.syncedCash
+      ? transfers.flatMap((tx) =>
+          tx.assetId !== null && tx.quantity !== null
+            ? [
+                {
+                  assetId: tx.assetId,
+                  date: tx.tradeDate,
+                  quantity: tx.quantity,
+                },
+              ]
+            : [],
+        )
+      : snapshotMovements(input.holdings);
   const holdings = holdingsSeries(
     {
       holdings: input.holdings,

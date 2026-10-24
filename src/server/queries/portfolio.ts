@@ -297,9 +297,12 @@ export async function getPortfolioPerformance(
   const synced = firsts[0];
   let earliest: IsoDate | null = null;
   const withData = new Set<string>();
-  for (const first of firsts) {
+  for (const [source, first] of firsts.entries()) {
     for (const [id, date] of first) {
       withData.add(id);
+      // A synced account's ledger can be older than its first balance; its
+      // value is unknown before that, so it does not stretch `all`.
+      if (source === 2 && synced.has(id)) continue;
       if (earliest === null || date < earliest) earliest = date;
     }
   }

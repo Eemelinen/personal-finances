@@ -99,6 +99,194 @@ describe("portfolioPerformance", () => {
   });
 });
 
+describe("contributions of holdings without a price yet", () => {
+  const days = daysBetween("2026-03-01", "2026-03-05");
+
+  it("counts a manual coin as contributed once it is first priced", () => {
+    // Saved on 2.3. before any price; priced on 4.3. at 100,00, 5.3. 120,00.
+    const series = investmentAccountSeries(
+      {
+        holdings: [{ assetId: "coin", date: "2026-03-02", quantity: "2" }],
+        prices: [
+          {
+            assetId: "coin",
+            date: "2026-03-04",
+            priceMinor: "10000",
+            currency: "EUR",
+          },
+          {
+            assetId: "coin",
+            date: "2026-03-05",
+            priceMinor: "12000",
+            currency: "EUR",
+          },
+        ],
+        fxRates: [],
+        transactions: [],
+        syncedCash: false,
+      },
+      days,
+    );
+    const values = withHoldings([], series).map((point) => point.amountMinor);
+    expect(values).toEqual([null, 0, 0, 20_000, 24_000]);
+    const result = portfolioPerformance(
+      [{ values, flows: series.flows }],
+      days.length,
+    );
+    expect(points(result, "contributedMinor")).toEqual([
+      null,
+      0,
+      0,
+      20_000,
+      20_000,
+    ]);
+    expect(points(result, "gainMinor")).toEqual([null, 0, 0, 0, 4_000]);
+  });
+
+  it("counts units transferred in unpriced once priced, but not unpriced buys", () => {
+    const tx = (
+      type: "transfer" | "buy",
+      assetId: string,
+      amountMinor: number,
+    ) => ({
+      assetId,
+      type,
+      tradeDate: "2026-03-02",
+      quantity: "1",
+      amountMinor,
+      currency: "EUR",
+    });
+    const series = investmentAccountSeries(
+      {
+        holdings: [
+          { assetId: "in", date: "2026-03-02", quantity: "1" },
+          { assetId: "bought", date: "2026-03-02", quantity: "1" },
+        ],
+        prices: ["in", "bought"].map((assetId) => ({
+          assetId,
+          date: "2026-03-04",
+          priceMinor: "5000",
+          currency: "EUR",
+        })),
+        fxRates: [],
+        transactions: [
+          {
+            assetId: null,
+            type: "transfer",
+            tradeDate: "2026-03-01",
+            quantity: null,
+            amountMinor: 5_000,
+            currency: "EUR",
+          },
+          tx("transfer", "in", 0),
+          tx("buy", "bought", -5_000),
+        ],
+        syncedCash: false,
+      },
+      days,
+    );
+    const values = withHoldings([], series).map((point) => point.amountMinor);
+    // Cash 50,00 spent on the unpriced buy; both units priced on 4.3.
+    expect(values).toEqual([5_000, 0, 0, 10_000, 10_000]);
+    const result = portfolioPerformance(
+      [{ values, flows: series.flows }],
+      days.length,
+    );
+    // The transferred unit is contributed, the bought one restores the
+    // cash it took.
+    expect(points(result, "contributedMinor")).toEqual([
+      5_000, 5_000, 5_000, 10_000, 10_000,
+    ]);
+    expect(points(result, "gainMinor")).toEqual([0, -5_000, -5_000, 0, 0]);
+  });
+
+  it("does not count a synced account's snapshot changes as flows", () => {
+    // Kraken-like: cash synced, a coin bought with it (no ledger yet).
+    const series = investmentAccountSeries(
+      {
+        holdings: [{ assetId: "coin", date: "2026-03-02", quantity: "1" }],
+        prices: [
+          {
+            assetId: "coin",
+            date: "2026-03-01",
+            priceMinor: "4000",
+            currency: "EUR",
+          },
+        ],
+        fxRates: [],
+        transactions: [],
+        syncedCash: true,
+      },
+      days,
+    );
+    expect(series.flows).toEqual([0, 0, 0, 0, 0]);
+    const cash = [10_000, 6_000, 6_000, 6_000, 6_000].map((amountMinor) => ({
+      amountMinor,
+      estimated: false,
+    }));
+    const values = withHoldings(cash, series).map((point) => point.amountMinor);
+    expect(values).toEqual(Array(5).fill(10_000));
+  });
+
+  it("counts a synced account's EUR and coin transfers as contributions", () => {
+    const series = investmentAccountSeries(
+      {
+        holdings: [{ assetId: "coin", date: "2026-03-03", quantity: "2" }],
+        prices: [
+          {
+            assetId: "coin",
+            date: "2026-03-01",
+            priceMinor: "4000",
+            currency: "EUR",
+          },
+          {
+            assetId: "coin",
+            date: "2026-03-05",
+            priceMinor: "4500",
+            currency: "EUR",
+          },
+        ],
+        fxRates: [],
+        transactions: [
+          {
+            assetId: null,
+            type: "transfer",
+            tradeDate: "2026-03-02",
+            quantity: null,
+            amountMinor: 3_000,
+            currency: "EUR",
+          },
+          {
+            assetId: "coin",
+            type: "transfer",
+            tradeDate: "2026-03-03",
+            quantity: "2",
+            amountMinor: 0,
+            currency: "EUR",
+          },
+        ],
+        syncedCash: true,
+      },
+      days,
+    );
+    expect(series.derivedCash).toBeNull();
+    expect(series.flows).toEqual([0, 3_000, 8_000, 0, 0]);
+    const cash = [1_000, 4_000, 4_000, 4_000, 4_000].map((amountMinor) => ({
+      amountMinor,
+      estimated: false,
+    }));
+    const values = withHoldings(cash, series).map((point) => point.amountMinor);
+    const result = portfolioPerformance(
+      [{ values, flows: series.flows }],
+      days.length,
+    );
+    expect(points(result, "contributedMinor")).toEqual([
+      1_000, 4_000, 12_000, 12_000, 12_000,
+    ]);
+    expect(result.gainMinor).toBe(1_000);
+  });
+});
+
 describe("contributions vs market gain of an account's transactions", () => {
   const days = daysBetween("2026-03-01", "2026-03-06");
   const STOCK = "stock";

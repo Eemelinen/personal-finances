@@ -128,9 +128,12 @@ export async function getBalanceHistory(
   const firstTransaction = new Map(
     firstTransactions.map((row) => [row.accountId, row.date]),
   );
-  // An investment account's history starts with its first holding or trade.
+  // An investment account's history starts with its first holding, or its
+  // first trade when the trades are its cash (no snapshot): a synced
+  // account's older ledger would only add unknown days.
   const firstInvestment = new Map(firstHolding);
   for (const [id, date] of firstTrade) {
+    if (firstSnapshot.has(id)) continue;
     const known = firstInvestment.get(id);
     if (known === undefined || date < known) firstInvestment.set(id, date);
   }

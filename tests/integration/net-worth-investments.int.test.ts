@@ -430,6 +430,70 @@ describe("getPortfolioPerformance", () => {
     });
   });
 
+  it("counts a holding saved before its first price as contributed once priced", async () => {
+    // A manual coin saved 10 days ago; the price job first prices it 9 days
+    // ago at 100,00, then 120,00.
+    const wallet = await account("Ledger", "crypto", "Manual");
+    const coin = await asset("NEWCOIN", "crypto");
+    await holding(wallet.id, coin.id, 10, "3");
+    await price(coin.id, 9, "10000");
+    await price(coin.id, 2, "12000");
+
+    const report = await getPortfolioPerformance({
+      db: testDb.db,
+      now: NOW,
+      timeZone: TIME_ZONE,
+      range: "3m",
+    });
+    const at = (daysAgo: number) =>
+      report.performance.points[report.days.indexOf(ago(daysAgo))];
+    expect(at(10)).toEqual({
+      valueMinor: 0,
+      contributedMinor: 0,
+      gainMinor: 0,
+    });
+    expect(at(9)).toEqual({
+      valueMinor: 30_000,
+      contributedMinor: 30_000,
+      gainMinor: 0,
+    });
+    expect(report.performance).toMatchObject({
+      endMinor: 36_000,
+      contributionsMinor: 30_000,
+      gainMinor: 6_000,
+    });
+  });
+
+  it("does not stretch `all` back to a synced account's older ledger", async () => {
+    const kraken = await account("Kraken", "crypto");
+    const btc = await asset("BTC", "crypto");
+    await snapshot(kraken.id, 5, 10_000);
+    await trade(kraken.id, {
+      daysAgo: 400,
+      type: "transfer",
+      amountMinor: 0,
+      assetId: btc.id,
+      quantity: "1",
+    });
+    const [performance, history] = await Promise.all([
+      getPortfolioPerformance({
+        db: testDb.db,
+        now: NOW,
+        timeZone: TIME_ZONE,
+        range: "all",
+      }),
+      getBalanceHistory({
+        db: testDb.db,
+        now: NOW,
+        timeZone: TIME_ZONE,
+        range: "all",
+      }),
+    ]);
+    expect(performance.days[0]).toBe(ago(5));
+    expect(history.days[0]).toBe(ago(5));
+    expect(performance.accounts.map((a) => a.id)).toEqual([kraken.id]);
+  });
+
   it("ignores an unknown account id and is empty without investments", async () => {
     const report = await getPortfolioPerformance({
       db: testDb.db,

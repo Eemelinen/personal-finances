@@ -50,6 +50,31 @@ describe("holdingsSeries", () => {
     ]);
   });
 
+  it("counts units moved in before the range once their asset is priced", () => {
+    const series = holdingsSeries(
+      {
+        holdings: [{ assetId: "new", date: "2026-02-25", quantity: "3" }],
+        prices: [
+          {
+            assetId: "new",
+            date: "2026-03-03",
+            priceMinor: "500",
+            currency: "EUR",
+          },
+        ],
+        fxRates: [],
+        movements: [{ assetId: "new", date: "2026-02-25", quantity: "3" }],
+      },
+      days,
+    );
+    expect(series.map((day) => day.valueMinor)).toEqual([
+      0, 0, 1_500, 1_500, 1_500, 1_500, 1_500,
+    ]);
+    expect(series.map((day) => day.movedMinor)).toEqual([
+      0, 0, 1_500, 0, 0, 0, 0,
+    ]);
+  });
+
   it("values the day's movements at the day's prices", () => {
     const series = holdingsSeries(
       {
@@ -67,8 +92,9 @@ describe("holdingsSeries", () => {
       },
       days,
     );
+    // USX had no rate on 3.3., so its 2 units count on 4.3. at 110 / 1,1.
     expect(series.map((day) => day.movedMinor)).toEqual([
-      0, 10_000, 0, 0, -7_503, 0, 0,
+      0, 10_000, 0, 20_000, -7_503, 0, 0,
     ]);
   });
 });
@@ -137,7 +163,7 @@ describe("investmentAccountSeries", () => {
       days,
     );
     expect(series.derivedCash).toBeNull();
-    expect(series.flows).toEqual([0, 10_000, 0, 0, -7_503, -20_000, 0]);
+    expect(series.flows).toEqual([0, 10_000, 0, 20_000, -7_503, -20_000, 0]);
     expect(withHoldings([], series)[0]).toEqual({
       amountMinor: null,
       estimated: false,
