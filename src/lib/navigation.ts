@@ -1,5 +1,6 @@
 import {
   ArrowLeftRight,
+  ChartCandlestick,
   ChartPie,
   LayoutDashboard,
   Landmark,
@@ -18,6 +19,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/transactions", label: "Transactions", icon: ArrowLeftRight },
   { href: "/reports", label: "Reports", icon: ChartPie },
+  { href: "/investments", label: "Investments", icon: ChartCandlestick },
   { href: "/connections", label: "Connections", icon: Landmark },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

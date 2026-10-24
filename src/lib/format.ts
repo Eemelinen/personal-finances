@@ -83,3 +83,26 @@ const monthFormat = new Intl.DateTimeFormat("en-US", {
 export function formatMonth(month: string): string {
   return monthFormat.format(new Date(`${month}-01T00:00:00Z`));
 }
+
+const quantityFormat = new Intl.NumberFormat("fi-FI", {
+  maximumFractionDigits: 6,
+});
+
+/** A decimal-string quantity for display, e.g. `1 234,5`. */
+export function formatQuantity(quantity: string): string {
+  // Display only: up to 6 decimals; the stored value stays exact.
+  return quantityFormat.format(Number(quantity));
+}
+
+/**
+ * A unit price given as a decimal string of minor units, e.g. `12,345 €`:
+ * at least 2 and at most 4 decimals.
+ */
+export function formatUnitPrice(priceMinor: string, currency: string): string {
+  return new Intl.NumberFormat("fi-FI", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
+  }).format(Number(priceMinor) / 100);
+}

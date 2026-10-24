@@ -493,7 +493,7 @@
       "area": "investments",
       "title": "Nordnet import and stock prices",
       "user_visible_behavior": "Importing a Nordnet transaction export (Sivuni → Tapahtumat ja laskelmat → Vie CSV-tiedostoon) records buys, sells, dividends, fees and deposits, derives holdings and dedupes overlapping imports; a daily price-update job fetches closing prices and ECB FX rates through a price client that respects the free-tier limit; `/investments` lists holdings with quantity, price, value, gain or loss and portfolio weight, and their value is included in net worth.",
-      "status": "not_started",
+      "status": "in_progress",
       "depends_on": ["F-004", "F-019"],
       "ticket": "FIN-020",
       "spec": "docs/tickets/FIN-020-nordnet-import-and-stock-prices.md",

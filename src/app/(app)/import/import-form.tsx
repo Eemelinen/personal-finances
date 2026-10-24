@@ -309,8 +309,12 @@ function PreviewSection({
       </h2>
       <p className="text-muted-foreground text-sm" data-testid="csv-detected">
         {preview.fileName}: {FORMAT_LABELS[preview.format]},{" "}
-        {preview.encoding === "utf-8" ? "UTF-8" : "Windows-1252"},{" "}
-        {preview.rowsRead} {preview.rowsRead === 1 ? "row" : "rows"}
+        {preview.encoding === "utf-8"
+          ? "UTF-8"
+          : preview.encoding === "windows-1252"
+            ? "Windows-1252"
+            : "UTF-16"}
+        , {preview.rowsRead} {preview.rowsRead === 1 ? "row" : "rows"}
         {preview.needsMapping
           ? ""
           : `, ${preview.rowCount} readable, ${preview.errors.length} with errors`}

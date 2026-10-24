@@ -33,7 +33,7 @@ flowchart LR
 | `db`      | PostgreSQL 18. Data lives in the `pgdata` volume. The port is bound to `127.0.0.1` only.                      |
 | `migrate` | Applies Drizzle migrations, then exits. `app` and `worker` start only after it succeeds.                      |
 | `app`     | Next.js server: dashboard UI, the bank-connection flow (OAuth-style redirect), CSV upload, "sync now".        |
-| `worker`  | Long-running Node process. It runs scheduled jobs with node-cron: bank sync, later price updates and backups. |
+| `worker`  | Long-running Node process. It runs scheduled jobs with node-cron: price updates, later bank sync and backups. |
 
 The app and the worker share the same code in `src/server`. The worker is not a separate codebase.
 
@@ -45,7 +45,8 @@ src/
     (app)/             Route group: every page inside the app shell (layout.tsx renders
                        AppShell); Dashboard (page.tsx: overview, F-016), transactions/,
                        reports/ (spending/, cash-flow/; F-017; balances/, F-018), connections/, settings/,
-                       import/ (CSV upload: page, preview/import Server Actions, form)
+                       import/ (CSV upload: page, preview/import Server Actions, form),
+                       investments/ (holdings table, Nordnet import action and form; F-020)
     login/             Login page (outside the shell, public)
     api/health/        Health check (DB connectivity, public)
   proxy.ts             Optimistic auth check: no session → /login (401 under /api)
@@ -60,6 +61,7 @@ src/
                        Recharts stacked bar and cash-flow charts are client components;
                        the balance history's net-worth line and stacked account areas
                        (balance-history-chart.tsx, F-018)
+    investments/       The /investments holdings table (F-020)
     empty-state.tsx    Placeholder for pages without data yet
   lib/                 App helpers: cn() (utils.ts), the navigation items, fi-FI
                        money, change, percent, day, month and time formatting for
@@ -102,20 +104,27 @@ src/
                        and Finnish merchant rules, seeded by migrate.ts)
     queries/           Read models for the dashboard: balances.ts (balance on a day,
                        daily series), dashboard.ts (overview: totals, accounts by bank,
-                       connection health; F-016), reports.ts (spending, cash flow and
+                       connection health; F-016, holdings in net worth F-020), reports.ts (spending, cash flow and
                        the month tiles; F-017), balance-history.ts (daily balances and
                        net worth over a range; F-018), investments.ts (an account's
-                       EUR holdings value on a day; F-019)
+                       EUR holdings value on a day, F-019; the /investments holdings
+                       with gain and weight, F-020)
     investments/       Investment valuation (F-019): decimal.ts (exact BigInt fixed-point
                        decimals, currency minor-unit digits), valuation.ts (Σ quantity ×
-                       price × FX with last-known fallbacks)
+                       price × FX with last-known fallbacks); F-020: nordnet-csv.ts
+                       (Nordnet export reader), import-nordnet.ts (accounts, assets,
+                       deduped transactions, trade prices), holdings.ts (derived
+                       holdings, average cost), price-client.ts (Twelve Data with the
+                       free-tier limiter), ecb.ts (ECB reference rates),
+                       update-prices.ts (the daily price-update job)
     reports/           Pure report helpers (F-017): period.ts (presets, custom ranges,
                        previous period, average window), merchant-name.ts (normalised
                        merchant names), balance-series.ts (balance ranges, carried and
                        reconstructed daily balances; F-018)
   worker/
     index.ts           Worker entrypoint: registers jobs, graceful shutdown
-    jobs.ts            Job registry (name, cron schedule, run function)
+    jobs.ts            Job registry (name, cron schedule, run function): heartbeat,
+                       price-update (daily 07:30, F-020)
 tests/
   unit/                Vitest unit project (L1)
   integration/         Vitest + Testcontainers Postgres 18 (L2); helpers/postgres.ts
@@ -127,7 +136,8 @@ tests/
                        the run fails if the app server logs an error line
                        (support/server-errors.ts), even when every test passed
   fixtures/            Synthetic or anonymised fixtures only, never real data
-                       (csv/: synthetic Nordea, S-Pankki and generic exports)
+                       (csv/: synthetic Nordea, S-Pankki and generic exports;
+                       nordnet/: a synthetic UTF-16 Nordnet transaction export)
 drizzle/               Generated SQL migrations (committed)
 secrets/               Private keys (gitignored), mounted into containers
 .claude/               Claude Code permissions and the harness plugin pin (hooks, skills and the
@@ -204,6 +214,16 @@ The investment tables (F-019, `schema/investments.ts`, D-016). Brokerage and cry
 - **Enums.** `asset_class` (`stock`, `etf`, `fund`, `crypto`, `other`), `investment_transaction_type` (`buy`, `sell`, `dividend`, `fee`, `transfer`). A transaction's `quantity` is the signed change in units held, `amount_minor` the signed cash effect (− paid, + received); a cash-only row (deposit, account fee) has no asset.
 - **Idempotency.** `holdings` unique `(account_id, asset_id, date)`; `investment_transactions` unique `(account_id, provider_txn_ref)` and `(account_id, dedupe_hash)` as `transactions`; `prices` unique `(asset_id, date)`; `fx_rates` unique `(date, currency)`. Deleting an account deletes its holdings and investment transactions; an asset in use cannot be deleted.
 - **Valuation.** `getAccountValuation(accountId, date)` (`src/server/queries/investments.ts`) loads each asset's latest holding snapshot, price and exchange rate on or before the day and `valueHoldings()` (`src/server/investments/valuation.ts`) returns the EUR value as Σ quantity × price × FX: `q × p × 10^2 / (10^e(currency) × rate)`, exact until one half-away-from-zero rounding per position; the total is the sum of the rounded positions. A missing price or rate (weekend, holiday, failed fetch) falls back to the last known one; an asset with none at all is listed with `missing: "price"` / `"fx_rate"`, left out of the total and makes the valuation `complete: false`.
+
+## Nordnet import and prices
+
+`/investments` (F-020, D-017) lists the holdings of every non-archived brokerage and crypto account and imports Nordnet transaction exports (Sivuni → Tapahtumat ja laskelmat → Vie CSV-tiedostoon) with the `importNordnet` Server Action (at most 4 MB, no preview: the import is idempotent).
+
+- **Reading** (`readNordnetCsv()`): UTF-16 (byte order mark), UTF-8 or Windows-1252; tab, `;` or `,`; columns by Finnish, English or Swedish header name, the header may sit below preamble lines; a `Valuutta` column belongs to the value column before it (the amount's currency follows `Summa`, the price's `Kurssi` or `Kokonaiskulut`). Decimal commas; trade date (`Kauppapäivä`, else `Kirjauspäivä`). Types become `buy` (`OSTO`, `MERKINTÄ`), `sell` (`MYYNTI`, `LUNASTUS`), `dividend` (`OSINKO`, positive interest), `transfer` (`TALLETUS`, `NOSTO`, cash only) or `fee` (fees, withholding taxes, negative and loan interest); signs follow the type. Currency exchanges and cancelled rows are "not recorded"; unknown types and unreadable cells are errors with the file line.
+- **Writing** (`importNordnetCsv()`, one database transaction): each `Salkku` is a brokerage account (`provider_account_ref` = the portfolio, EUR) under the `csv` institution `nordnet`, created on first use; assets match by ISIN, else symbol and currency; rows insert with `ON CONFLICT DO NOTHING` on Nordnet's `Id` (`provider_txn_ref`) and on a content hash (identical rows numbered in id order); each trade's unit price is stored as the day's price (`source` `nordnet_trade`) unless the day has one. Then the account's holdings are deleted and derived again from all its transactions (`deriveHoldings()`: the units at the end of each trade day, clamped at 0 and reported when the export lacks earlier buys).
+- **Prices** (`updatePrices()`, worker job `price-update`, daily 07:30 `APP_TIMEZONE`): the ECB's `eurofxref-daily.xml` rates upsert on `(date, currency)`; then one Twelve Data `/eod` close per non-crypto asset some account holds today, upserting on `(asset_id, date)` with `source` `twelve_data` (replacing a trade price of that day). The client keeps to the free plan itself (at most 8 requests in any minute, it waits; 800 a UTC day, it stops), sends `PRICE_API_KEY` in the `Authorization` header and adds `mic_code` for Finnish, Swedish, Danish and Norwegian ISINs. An unknown symbol (404, an invalid-symbol 400, or a close in another currency than the asset's) is reported and skipped; a rate limit, key or outage error stops the run. Without `PRICE_API_KEY` only the rates are fetched.
+- **Holdings table** (`getInvestmentsOverview()`): per account and asset the quantity, the price used (with its source and day), the EUR value (`getAccountValuation()`, D-016), the gain or loss over the average cost (`costBasis()`: buys add the cash paid including fees, sells remove the average cost of the units sold; shown when the basis is in EUR and covers the units held) and the weight in the valued total, largest first, with a total row.
+- **Net worth**: the dashboard adds each brokerage and crypto account's holdings value, today and 30 days ago, to its cash balance (D-013's totals), and the account row shows it; the daily history is F-022's.
 
 ## Provider abstraction
 
@@ -283,7 +303,7 @@ Providers return **normalized** DTOs whose fields mirror the table columns: amou
 `/` (F-016, D-013) renders `getDashboardOverview()` (`src/server/queries/dashboard.ts`) inside a Suspense boundary after `verifySession()`; "today" is the `APP_TIMEZONE` day of the request.
 
 - **Balance on a day** (`balances.ts`, pure): `pickDisplayBalance()` (D-009) over the account's snapshots of the latest day on or before that day, so the last known balance carries over days without a sync and an older snapshot of a preferred type never beats a newer one. The query loads the last 90 days of snapshots plus each balance type's last one before them.
-- **Totals**: net worth (every account type), checking and savings are sums of today's balances of non-archived EUR accounts; other currencies are listed but not summed (no exchange rates yet). The change compares with the balance 30 days ago over the accounts that had one then, so a newly added account is not a gain; with none it shows "No balance 30 days ago".
+- **Totals**: net worth (every account type, brokerage and crypto accounts with their holdings' EUR value, F-020), checking and savings are sums of today's balances of non-archived EUR accounts; other currencies are listed but not summed (no exchange rates yet). The change compares with the balance 30 days ago over the accounts that had one then, so a newly added account is not a gain; with none it shows "No balance 30 days ago".
 - **Accounts** are grouped by institution name, so a bank's synced and CSV-imported accounts sit together, ordered by type and name. Each shows today's balance and its day, the connection's `last_synced_at` (or "Manual account" without a connection) and a 90-day sparkline (Recharts `LineChart`, gaps before the first snapshot, hover tooltip).
 - **Connection health** of every non-archived connection: Expired when the consent has ended or the status is `expired` / `revoked`, Expiring within 14 days of `consent_expires_at` (the FIN-011 warning window), else OK; each links to `/connections`.
 - **Empty**: without non-archived accounts the page shows "Connect bank" (`/connections`) and "Import CSV" (`/import`), plus connection status if a connection exists.

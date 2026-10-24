@@ -15,6 +15,17 @@ describe("parseEnv", () => {
     expect(env.APP_TIMEZONE).toBe("Europe/Helsinki");
   });
 
+  it("reads an optional PRICE_API_KEY, blank as unset", () => {
+    const url = "postgres://user:pass@localhost:5432/finances";
+    expect(parseEnv({ DATABASE_URL: url }).PRICE_API_KEY).toBeUndefined();
+    expect(
+      parseEnv({ DATABASE_URL: url, PRICE_API_KEY: " " }).PRICE_API_KEY,
+    ).toBeUndefined();
+    expect(
+      parseEnv({ DATABASE_URL: url, PRICE_API_KEY: "abc" }).PRICE_API_KEY,
+    ).toBe("abc");
+  });
+
   it("rejects a missing DATABASE_URL", () => {
     expect(() => parseEnv({})).toThrow(/DATABASE_URL/);
   });

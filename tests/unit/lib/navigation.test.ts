@@ -2,15 +2,16 @@ import { describe, expect, it } from "vitest";
 import { isActiveHref, NAV_ITEMS } from "@/lib/navigation";
 
 describe("NAV_ITEMS", () => {
-  it("lists the five sections in order with unique hrefs", () => {
+  it("lists the six sections in order with unique hrefs", () => {
     expect(NAV_ITEMS.map((item) => item.label)).toEqual([
       "Dashboard",
       "Transactions",
       "Reports",
+      "Investments",
       "Connections",
       "Settings",
     ]);
-    expect(new Set(NAV_ITEMS.map((item) => item.href)).size).toBe(5);
+    expect(new Set(NAV_ITEMS.map((item) => item.href)).size).toBe(6);
   });
 });
 

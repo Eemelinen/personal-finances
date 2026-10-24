@@ -12,6 +12,13 @@ const envSchema = z.object({
   APP_TIMEZONE: z.string().default("Europe/Helsinki"),
   // `fake` (the deterministic in-memory bank) is for tests and e2e only.
   BANK_PROVIDER: z.enum(BANK_PROVIDER_IDS).default("enable_banking"),
+  // Twelve Data key for daily closing prices (F-020); without it the price
+  // update fetches only the ECB exchange rates.
+  PRICE_API_KEY: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => value || undefined),
 });
 
 // Only the web app needs these, so they are validated separately: the worker

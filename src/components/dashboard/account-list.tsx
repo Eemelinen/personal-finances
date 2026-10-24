@@ -75,11 +75,23 @@ export function AccountList({
                           account.balance.amountMinor,
                           account.currency,
                         )
-                      : "No balance yet"}
+                      : account.holdingsMinor !== null
+                        ? formatMoney(account.holdingsMinor, "EUR")
+                        : "No balance yet"}
                   </span>
                   {account.balance && (
                     <span className="text-muted-foreground text-xs">
                       on {formatDay(account.balance.date)}
+                    </span>
+                  )}
+                  {account.holdingsMinor !== null && (
+                    <span
+                      data-testid="account-holdings"
+                      className="text-muted-foreground text-xs tabular-nums"
+                    >
+                      {account.balance
+                        ? `+ ${formatMoney(account.holdingsMinor, "EUR")} holdings`
+                        : "in holdings"}
                     </span>
                   )}
                 </div>

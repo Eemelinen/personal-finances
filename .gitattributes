@@ -4,3 +4,4 @@
 .husky/* text eol=lf
 
 tests/fixtures/csv/** -text
+tests/fixtures/nordnet/** -text
