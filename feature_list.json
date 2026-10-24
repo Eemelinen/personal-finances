@@ -509,7 +509,12 @@
         "2026-10-24 pnpm test:unit tests/unit/investments/nordnet-csv.test.ts → pass (commit fc8d46e)",
         "2026-10-24 pnpm test:unit tests/unit/investments/price-client.test.ts → pass (commit fc8d46e)",
         "2026-10-24 pnpm test:integration tests/integration/nordnet-import.int.test.ts → pass (commit fc8d46e, Docker available)",
-        "2026-10-24 pnpm test:e2e tests/e2e/investments.spec.ts → pass (commit fc8d46e, Docker available)"
+        "2026-10-24 pnpm test:e2e tests/e2e/investments.spec.ts → pass (commit fc8d46e, Docker available)",
+        "2026-10-24 pnpm check → pass (commit 974b69a)",
+        "2026-10-24 pnpm test:unit tests/unit/investments/nordnet-csv.test.ts → pass (commit 974b69a)",
+        "2026-10-24 pnpm test:unit tests/unit/investments/price-client.test.ts → pass (commit 974b69a)",
+        "2026-10-24 pnpm test:integration tests/integration/nordnet-import.int.test.ts → pass (commit 974b69a, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/investments.spec.ts → pass (commit 974b69a, Docker available)"
       ],
       "attempts": 0,
       "notes": "Replaces old FIN-023. Nordnet's API is closed to new customers, so CSV is the route ([research](../api-access-research.md#2-nordnet-stocks-funds-osakesäästötili))."
