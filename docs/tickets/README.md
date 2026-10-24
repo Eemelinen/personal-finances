@@ -64,6 +64,19 @@ Each ticket is the spec for exactly one harness feature: `FIN-NNN` ↔ `F-NNN` i
 | ----------------------------------------------- | ------- | ------------------------- | ------------ | ------ | ---------- |
 | [FIN-024](FIN-024-backups-and-notifications.md) | F-024   | Backups and notifications | F-010, F-011 | L1 L2  | unattended |
 
+## M6: Data correctness
+
+| Ticket                                                     | Feature | Title                                               | Depends on   | Layers   | Runs       |
+| ---------------------------------------------------------- | ------- | --------------------------------------------------- | ------------ | -------- | ---------- |
+| [FIN-026](FIN-026-income-from-income-categories.md)        | F-026   | App settings and income only from income categories | F-017        | L1 L2 L3 | unattended |
+| [FIN-027](FIN-027-excluded-transactions.md)                | F-027   | Excluded transactions                               | F-015, F-017 | L1 L2 L3 | unattended |
+| [FIN-028](FIN-028-counterparty-account-numbers.md)         | F-028   | Counterparty account numbers                        | F-009, F-014 | L1 L2    | unattended |
+| [FIN-029](FIN-029-own-accounts-outside-connections.md)     | F-029   | Own accounts outside the bank connections           | F-018, F-028 | L1 L2 L3 | unattended |
+| [FIN-030](FIN-030-own-names-and-household.md)              | F-030   | Own names and household members                     | F-026, F-028 | L1 L2 L3 | unattended |
+| [FIN-031](FIN-031-real-bank-csv-exports.md)                | F-031   | Real bank CSV exports                               | F-012, F-028 | L1 L2    | unattended |
+| [FIN-032](FIN-032-csv-matched-to-bank-data.md)             | F-032   | CSV rows matched to bank-synced transactions        | F-031        | L1 L2 L3 | unattended |
+| [FIN-033](FIN-033-history-across-removal-and-reconnect.md) | F-033   | History survives connection removal and reconnects  | F-011, F-032 | L1 L2 L3 | unattended |
+
 ## Backlog (not in the feature list yet)
 
 - Monthly budgets per category with progress and suggested amounts (was FIN-021)

@@ -688,6 +688,165 @@
       ],
       "attempts": 0,
       "notes": "Found in F-013 with real accounts (2026-10-24): the Nordea Gold card answered date_from 540 days back with 400 ASPSP_ERROR, and served only from 2026-07-10 for any range."
+    },
+    {
+      "id": "F-026",
+      "priority": 26,
+      "area": "reports",
+      "title": "App settings and income only from income categories",
+      "user_visible_behavior": "Settings → Reports has \"Count credits without a category as income\" (on by default, today's behaviour). Off, only credits in an income-kind category are income; other non-transfer credits that are not refunds show as \"Other money in (not income)\" on the cash-flow report and the dashboard. A transaction in the Uncategorized category counts exactly like one without a category. A small `app_settings` store backs the setting.",
+      "status": "not_started",
+      "depends_on": ["F-017"],
+      "ticket": "FIN-026",
+      "spec": "docs/tickets/FIN-026-income-from-income-categories.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/settings/app-settings.test.ts (defaults without rows, typed values)",
+        "L2: pnpm test:integration tests/integration/report-queries.int.test.ts (setting on = today's totals; off: uncategorised credit is other-in, Income/Salary stays income, refunds net, Uncategorized like none)",
+        "L3: pnpm test:e2e tests/e2e/settings-reports.spec.ts (toggle changes the dashboard income tile and shows Other money in)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Found with real data 2026-10-24: income was about eight times the salary (loan drawdown, own-account transfers, spouse contributions)."
+    },
+    {
+      "id": "F-027",
+      "priority": 27,
+      "area": "categorization",
+      "title": "Excluded transactions",
+      "user_visible_behavior": "A transaction can be excluded from every calculation without deleting it: the top-level Excluded category (kind `excluded`), set by hand (\"Exclude from reports\" / \"Include again\" in the transaction details) or by a rule. Excluded rows stay in the transaction list with a badge and filter, and are left out of spending, cash flow, dashboard tiles, merchants, averages and own-transfer detection; balances are unchanged.",
+      "status": "not_started",
+      "depends_on": ["F-015", "F-017"],
+      "ticket": "FIN-027",
+      "spec": "docs/tickets/FIN-027-excluded-transactions.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/categorization/rules.test.ts (a rule can target Excluded)",
+        "L2: pnpm test:integration tests/integration/categorization.int.test.ts (excluded legs never pair; Include again re-runs the rules)",
+        "L2: pnpm test:integration tests/integration/report-queries.int.test.ts (excluded credits and debits are in no total or merchant list)",
+        "L3: pnpm test:e2e tests/e2e/transactions.spec.ts (exclude from details, badge and filter, include again)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Found with real data 2026-10-24: a loan drawdown and the property purchase it paid dominated the year's income and spending."
+    },
+    {
+      "id": "F-028",
+      "priority": 28,
+      "area": "banking",
+      "title": "Counterparty account numbers",
+      "user_visible_behavior": "Synced transactions keep the other party's IBAN (`counterparty_iban`, from Enable Banking's creditor/debtor account, or an IBAN-only description), shown in the transaction details. Own-transfer detection checks it against the own accounts' IBANs before the texts. \"Re-read history\" on a connection backfills the column on stored rows without duplicates.",
+      "status": "not_started",
+      "depends_on": ["F-009", "F-014"],
+      "ticket": "FIN-028",
+      "spec": "docs/tickets/FIN-028-counterparty-account-numbers.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/providers/enable-banking.test.ts (debtor/creditor account by indicator, IBAN-only description fallback)",
+        "L1: pnpm test:unit tests/unit/categorization/transfers.test.ts (counterpartyIban of another own account pairs only there or is one-sided)",
+        "L2: pnpm test:integration tests/integration/sync-transactions.int.test.ts (re-read fills the column in place, inserts nothing)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Found with real data 2026-10-24: the provider kept only counterparty names, so own-account IBAN detection almost never applied."
+    },
+    {
+      "id": "F-029",
+      "priority": 29,
+      "area": "banking",
+      "title": "Own accounts outside the bank connections",
+      "user_visible_behavior": "Settings → Accounts lists, adds and edits manual accounts (name, institution, validated IBAN, checking or savings, optional balance on a date) for own accounts no connection shows. Saving re-runs categorisation, so money moved to or from that IBAN becomes an own transfer instead of income or spending, and the balance counts in net worth.",
+      "status": "not_started",
+      "depends_on": ["F-028", "F-015", "F-018"],
+      "ticket": "FIN-029",
+      "spec": "docs/tickets/FIN-029-own-accounts-outside-connections.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/connections/account-input.test.ts (IBAN validation and normalising)",
+        "L2: pnpm test:integration tests/integration/manual-accounts.int.test.ts (a leg naming the IBAN becomes a one-sided transfer; manual balance in net worth; duplicate IBAN refused)",
+        "L3: pnpm test:e2e tests/e2e/manual-accounts.spec.ts (add an account with a balance, see it on the dashboard)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Found with real data 2026-10-24: ~100 transfers to own savings accounts outside the bank consent were counted as income and spending."
+    },
+    {
+      "id": "F-030",
+      "priority": 30,
+      "area": "categorization",
+      "title": "Own names and household members",
+      "user_visible_behavior": "Settings → Household holds the user's own name variants, household members (names and IBANs) and the toggle \"Ignore transfers with household members\" (off by default). A leg from or to an own name becomes an own transfer; a leg with a household member is marked and, while the toggle is on, left out of income and spending in both directions. Names match whole, ignoring case, punctuation and word order; card purchases are unaffected.",
+      "status": "not_started",
+      "depends_on": ["F-026", "F-028"],
+      "ticket": "FIN-030",
+      "spec": "docs/tickets/FIN-030-own-names-and-household.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/categorization/names.test.ts (normalised, word-order-insensitive whole-name matching)",
+        "L2: pnpm test:integration tests/integration/household.int.test.ts (own-name credit is a transfer; household rows leave the totals only with the toggle on; joint-account card purchases still count)",
+        "L3: pnpm test:e2e tests/e2e/household-settings.spec.ts (add a member, flip the toggle, dashboard income changes)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Found with real data 2026-10-24: deposits under the user's own name and a spouse's contributions to shared costs were reported as income."
+    },
+    {
+      "id": "F-031",
+      "priority": 31,
+      "area": "banking",
+      "title": "Real bank CSV exports",
+      "user_visible_behavior": "`/import` reads the real October 2026 exports: S-Pankki (single-quoted cells and `-` placeholders, `Arkistointitunnus` as the row's ref, recipient IBAN), the Nordea netbank layout (`Maksaja`/`Maksunsaaja` are account numbers, name from `Nimi`, lines repeated verbatim including `Saldo` imported once) and the Nordea credit card export (`nordea-card`: quoted cells, decimal point, `Tapahtumapäivä`).",
+      "status": "not_started",
+      "depends_on": ["F-012", "F-028"],
+      "ticket": "FIN-031",
+      "spec": "docs/tickets/FIN-031-real-bank-csv-exports.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/csv/bank-csv.test.ts (the three real layouts with synthetic fixtures; old fixtures still parse)",
+        "L2: pnpm test:integration tests/integration/csv-import.int.test.ts (an imported row keeps its ref and counterparty IBAN)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Verified 2026-10-24 against real exports: S-Pankki Arkistointitunnus equals the Enable Banking entry_reference; Nordea puts account numbers in Maksaja/Maksunsaaja."
+    },
+    {
+      "id": "F-032",
+      "priority": 32,
+      "area": "banking",
+      "title": "CSV rows matched to bank-synced transactions",
+      "user_visible_behavior": "Importing a CSV into an account the bank already syncs inserts only rows the app does not have: each row is matched to a stored one by ref, hash, or same amount within 3 days of the booking or value date (tie-breaks: counterparty IBAN, text similarity, nearest day), each stored row once. The preview shows how many rows are already in the app; transactions record their source (`bank` or `csv`).",
+      "status": "not_started",
+      "depends_on": ["F-031"],
+      "ticket": "FIN-032",
+      "spec": "docs/tickets/FIN-032-csv-matched-to-bank-data.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/csv/match.test.ts (ref, date window, tie-breaks, each stored row once, equal purchases)",
+        "L2: pnpm test:integration tests/integration/csv-import.int.test.ts (export over API rows inserts nothing; older rows only; +1-day Nordea booking date matched; re-import all duplicates)",
+        "L3: pnpm test:e2e tests/e2e/csv-import.spec.ts (preview shows the already-present count)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Verified 2026-10-24: an overlapping real import would have duplicated nearly every row (texts differ between CSV and API; Nordea API booking date can be one day later)."
+    },
+    {
+      "id": "F-033",
+      "priority": 33,
+      "area": "banking",
+      "title": "History survives connection removal and reconnects",
+      "user_visible_behavior": "Removing a connection keeps accounts that hold CSV-imported transactions as manual accounts with those rows, and the confirmation says what goes and what stays. Connecting a bank anew attaches its accounts to existing archived or manual accounts with the same IBAN instead of creating duplicates counted twice in reports.",
+      "status": "not_started",
+      "depends_on": ["F-032", "F-011"],
+      "ticket": "FIN-033",
+      "spec": "docs/tickets/FIN-033-history-across-removal-and-reconnect.md",
+      "verification": [
+        "L1: pnpm check",
+        "L2: pnpm test:integration tests/integration/connections.int.test.ts (remove keeps imported rows; connect anew reuses an account by IBAN without duplicates)",
+        "L3: pnpm test:e2e tests/e2e/connect-bank.spec.ts (Remove confirmation lists what stays)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Found 2026-10-24: Remove deleted imported history with the bank rows, and a reconnect created second accounts beside archived ones."
     }
   ]
 }
