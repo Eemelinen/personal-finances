@@ -67,8 +67,13 @@ repository, never here.
 
 **Merging.** `merge: "auto"`: the loop opens a PR per feature and arms
 `gh pr merge --auto --squash`, and GitHub merges it once the required `Verify` check passes
-(branch protection on `main`, no review requirement). A red check stops the loop; push a fix to
-the branch and the PR still merges.
+(branch protection on `main`, no review requirement). A red check goes to a CI-fixer session in
+the feature's worktree; after `caps.maxCiFixAttempts` (default 2) failed fixes, or 20 minutes
+without any CI report, the driver disables auto-merge, comments on the PR and moves on. A PR that
+changes a `reviewPaths` file (default `.claude/*`, `.github/workflows/*`, `harness.config.json`)
+goes through the merge gate first: hard stops (weaker permissions, removed deny rules, the plugin
+disabled, …) wait for a human, anything else gets a read-only safety review that auto-merges on
+`safe` (`review.mode`, harness v0.3.0).
 
 **Commands.** Start with `pnpm harness:loop --dry-run --no-docker`, then `pnpm harness:loop --once`.
 `pnpm harness:report` shows past runs.
