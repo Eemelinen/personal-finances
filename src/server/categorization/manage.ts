@@ -220,7 +220,7 @@ export async function deleteCategory(
 ): Promise<void> {
   const db = options.db ?? getDb();
   await db.transaction(async (tx) => {
-    // Rewrites the category of many rows: serialised with re-apply (D-013).
+    // Rewrites the category of many rows: serialised with re-apply (D-020).
     await lockCategorization(tx);
     const [current] = await tx
       .select({ name: categories.name, parentId: categories.parentId })

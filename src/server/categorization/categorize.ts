@@ -124,7 +124,7 @@ async function loadScope(
   return rows;
 }
 
-/** Any constant; serialises categorisation (D-013). */
+/** Any constant; serialises categorisation (D-020). */
 const CATEGORIZE_LOCK = 0x46_14_c;
 
 /**

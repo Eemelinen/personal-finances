@@ -2,17 +2,43 @@ import { z } from "zod";
 import { decodePasswordHash } from "@/server/auth/hash-encoding";
 import { BANK_PROVIDER_IDS } from "@/server/providers/types";
 
+const optionalSecret = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value) => value || undefined);
+
 // Shared by the Next.js app, the worker and scripts, so it must not import
 // anything Next-specific. New variables are added here as features need them.
-const envSchema = z.object({
-  NODE_ENV: z
-    .enum(["development", "test", "production"])
-    .default("development"),
-  DATABASE_URL: z.url(),
-  APP_TIMEZONE: z.string().default("Europe/Helsinki"),
-  // `fake` (the deterministic in-memory bank) is for tests and e2e only.
-  BANK_PROVIDER: z.enum(BANK_PROVIDER_IDS).default("enable_banking"),
-});
+const envSchema = z
+  .object({
+    NODE_ENV: z
+      .enum(["development", "test", "production"])
+      .default("development"),
+    DATABASE_URL: z.url(),
+    APP_TIMEZONE: z.string().default("Europe/Helsinki"),
+    // `fake` (the deterministic in-memory bank) is for tests and e2e only.
+    BANK_PROVIDER: z.enum(BANK_PROVIDER_IDS).default("enable_banking"),
+    // Twelve Data key for daily closing prices (F-020); without it the price
+    // update fetches only the ECB exchange rates.
+    PRICE_API_KEY: optionalSecret,
+    // CoinGecko demo key for crypto prices (F-021); optional, the public API
+    // works without one at a lower rate limit.
+    COINGECKO_API_KEY: optionalSecret,
+    // A read-only Kraken key (F-021): Query Funds and Query Ledger Entries
+    // only. The worker stores it encrypted as the Kraken connection.
+    KRAKEN_API_KEY: optionalSecret,
+    KRAKEN_API_SECRET: optionalSecret,
+  })
+  .superRefine((env, ctx) => {
+    if (Boolean(env.KRAKEN_API_KEY) !== Boolean(env.KRAKEN_API_SECRET)) {
+      ctx.addIssue({
+        code: "custom",
+        path: [env.KRAKEN_API_KEY ? "KRAKEN_API_SECRET" : "KRAKEN_API_KEY"],
+        message: "KRAKEN_API_KEY and KRAKEN_API_SECRET go together",
+      });
+    }
+  });
 
 // Only the web app needs these, so they are validated separately: the worker
 // and the migrate job run without the login secrets.

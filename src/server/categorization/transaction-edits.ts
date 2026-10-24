@@ -11,7 +11,7 @@ import {
 import { categoryExists, CategoryManageError } from "./manage";
 import { compileRules, matchRule } from "./rules";
 
-// What the user changes on one transaction in /transactions (F-015, D-013).
+// What the user changes on one transaction in /transactions (F-015, D-020).
 // Every edit leaves the transaction `manual` (except "automatic"), so the
 // rules, re-apply and transfer detection never undo it (D-012):
 //

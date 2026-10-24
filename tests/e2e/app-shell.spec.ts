@@ -1,26 +1,33 @@
 import { expect, test, type Page } from "@playwright/test";
 
-// `placeholder`: the page shows only an empty state so far. Transactions
-// shows one only while no spec has imported any (specs run in parallel).
 const SECTIONS = [
-  { href: "/", label: "Dashboard", placeholder: true },
-  { href: "/transactions", label: "Transactions", placeholder: false },
-  { href: "/reports", label: "Reports", placeholder: true },
-  { href: "/connections", label: "Connections", placeholder: true },
-  { href: "/settings", label: "Settings", placeholder: false },
+  { href: "/", label: "Dashboard" },
+  { href: "/transactions", label: "Transactions" },
+  { href: "/reports", label: "Reports" },
+  { href: "/investments", label: "Investments" },
+  { href: "/connections", label: "Connections" },
+  { href: "/settings", label: "Settings" },
 ] as const;
 
-async function expectSection(
-  page: Page,
-  label: string,
-  href: string,
-  placeholder = true,
-) {
+// The dashboard has data by the time this spec runs (dashboard.spec.ts seeds
+// it first), Reports links to its reports, Settings links to category
+// management, and Transactions and Investments may already show what other
+// specs (running in parallel) imported; every other section is still a
+// placeholder.
+const WITH_DATA = new Set<string>([
+  "/",
+  "/transactions",
+  "/reports",
+  "/investments",
+  "/settings",
+]);
+
+async function expectSection(page: Page, label: string, href: string) {
   await expect(page).toHaveURL(href);
   await expect(
     page.getByRole("heading", { level: 1, name: label }),
   ).toBeVisible();
-  if (placeholder) {
+  if (!WITH_DATA.has(href)) {
     await expect(
       page.getByTestId("empty-state").filter({ visible: true }),
     ).toBeVisible();
@@ -47,10 +54,10 @@ test.describe("desktop", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
   test("every page renders inside the shell", async ({ page }) => {
-    for (const { href, label, placeholder } of SECTIONS) {
+    for (const { href, label } of SECTIONS) {
       const response = await page.goto(href);
       expect(response?.status()).toBe(200);
-      await expectSection(page, label, href, placeholder);
+      await expectSection(page, label, href);
       await expect(
         page
           .getByRole("navigation", { name: "Main" })
@@ -68,9 +75,9 @@ test.describe("desktop", () => {
       SECTIONS.map((s) => s.label),
     );
 
-    for (const { href, label, placeholder } of SECTIONS) {
+    for (const { href, label } of SECTIONS) {
       await nav.getByRole("link", { name: label }).click();
-      await expectSection(page, label, href, placeholder);
+      await expectSection(page, label, href);
       await expect(nav.getByRole("link", { name: label })).toHaveAttribute(
         "aria-current",
         "page",
@@ -78,15 +85,6 @@ test.describe("desktop", () => {
       await expect(nav.locator('[aria-current="page"]')).toHaveCount(1);
     }
     await expectNoHorizontalScroll(page);
-  });
-
-  test("the dashboard empty state links to Connections", async ({ page }) => {
-    await page.goto("/");
-    await page
-      .getByTestId("empty-state")
-      .getByRole("link", { name: "Go to Connections" })
-      .click();
-    await expectSection(page, "Connections", "/connections");
   });
 });
 
@@ -104,13 +102,13 @@ test.describe("mobile", () => {
     await expect(page.getByRole("navigation", { name: "Main" })).toBeHidden();
     await expectNoHorizontalScroll(page);
 
-    for (const { href, label, placeholder } of SECTIONS) {
+    for (const { href, label } of SECTIONS) {
       await page.getByRole("button", { name: "Open menu" }).click();
       const menu = page.getByRole("dialog", { name: "Personal Finances" });
       await expect(menu).toBeVisible();
       await menu.getByRole("link", { name: label }).click();
       await expect(menu).toBeHidden();
-      await expectSection(page, label, href, placeholder);
+      await expectSection(page, label, href);
       await expectNoHorizontalScroll(page);
     }
   });

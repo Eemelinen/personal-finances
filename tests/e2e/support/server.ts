@@ -5,7 +5,8 @@
  * rows no UI can create yet (./fixtures.ts), builds the app and serves the standalone output, which is what the Docker
  * image runs, on 127.0.0.1:E2E_PORT, logging in with the test-only password
  * from ./credentials.ts and the deterministic fake bank (`BANK_PROVIDER=fake`).
- * It never touches the dev database.
+ * It never touches the dev database. The database URL goes to
+ * ./database.ts's file, so specs can seed data directly.
  *
  *   E2E_PORT=3100        port to serve on (playwright.config.ts sets it)
  *   E2E_SKIP_BUILD=1     reuse an existing `pnpm build` (CI builds once)
@@ -18,7 +19,13 @@
  * removes the container.
  */
 import { spawn, type ChildProcess } from "node:child_process";
-import { appendFileSync, cpSync, existsSync, mkdirSync } from "node:fs";
+import {
+  appendFileSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  writeFileSync,
+} from "node:fs";
 import path from "node:path";
 import { createInterface } from "node:readline";
 import type { Readable, Writable } from "node:stream";
@@ -31,6 +38,7 @@ import {
   E2E_PASSWORD,
   E2E_SESSION_SECRET,
 } from "./credentials";
+import { DATABASE_URL_FILE, E2E_TIME_ZONE } from "./database";
 import { ERRORS_FILE, isServerErrorLine } from "./server-errors";
 import {
   startTestDatabase,
@@ -112,6 +120,8 @@ async function main(): Promise<void> {
   });
 
   mkdirSync(path.dirname(path.join(root, ERRORS_FILE)), { recursive: true });
+  // For specs that seed the database directly (./database.ts).
+  writeFileSync(path.join(root, DATABASE_URL_FILE), database.url);
 
   console.info(`[e2e] serving the standalone build on 127.0.0.1:${port}`);
   server = spawn(process.execPath, [serverJs], {
@@ -125,6 +135,7 @@ async function main(): Promise<void> {
       DATABASE_URL: database.url,
       AUTH_PASSWORD_HASH: encodePasswordHash(await hashPassword(E2E_PASSWORD)),
       SESSION_SECRET: E2E_SESSION_SECRET,
+      APP_TIMEZONE: E2E_TIME_ZONE,
       BANK_PROVIDER: "fake",
       ENCRYPTION_KEY: E2E_ENCRYPTION_KEY,
     },

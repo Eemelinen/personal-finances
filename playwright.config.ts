@@ -11,6 +11,16 @@ import { E2E_AUTH_STATE } from "./tests/e2e/support/credentials";
  *
  * The `setup` project logs in once (tests/e2e/auth.setup.ts); specs start
  * logged in from its storage state unless they reset it (auth.spec.ts).
+ * The `dashboard` project (tests/e2e/dashboard.spec.ts) runs before every
+ * other spec: it checks the empty dashboard while the database has no
+ * accounts, then seeds accounts and balances, which later specs see too.
+ * The `reports` project (tests/e2e/reports.spec.ts) runs next, alone, so
+ * the report totals see only the transactions it seeds.
+ * The `investments` project (tests/e2e/investments.spec.ts) runs after the
+ * shared `chromium` one, so the balance history there never sees its
+ * brokerage and crypto accounts (F-022 counts them in net worth), and
+ * `allocation` (tests/e2e/allocation.spec.ts) last, so the holdings table
+ * of `investments` lists only its own holdings.
  * The run fails if the app server logged an error line
  * (tests/e2e/support/server-errors.ts), even when every test passed.
  */
@@ -33,9 +43,45 @@ export default defineConfig({
   projects: [
     { name: "setup", testMatch: "**/*.setup.ts" },
     {
-      name: "chromium",
+      name: "dashboard",
+      testMatch: "**/dashboard.spec.ts",
       use: { ...devices["Desktop Chrome"], storageState: E2E_AUTH_STATE },
       dependencies: ["setup"],
+    },
+    {
+      name: "reports",
+      testMatch: "**/reports.spec.ts",
+      use: { ...devices["Desktop Chrome"], storageState: E2E_AUTH_STATE },
+      dependencies: ["setup", "dashboard"],
+    },
+    {
+      name: "chromium",
+      testIgnore: [
+        "**/dashboard.spec.ts",
+        "**/reports.spec.ts",
+        "**/investments.spec.ts",
+        "**/allocation.spec.ts",
+      ],
+      use: { ...devices["Desktop Chrome"], storageState: E2E_AUTH_STATE },
+      dependencies: ["setup", "dashboard", "reports"],
+    },
+    {
+      name: "investments",
+      testMatch: "**/investments.spec.ts",
+      use: { ...devices["Desktop Chrome"], storageState: E2E_AUTH_STATE },
+      dependencies: ["setup", "dashboard", "reports", "chromium"],
+    },
+    {
+      name: "allocation",
+      testMatch: "**/allocation.spec.ts",
+      use: { ...devices["Desktop Chrome"], storageState: E2E_AUTH_STATE },
+      dependencies: [
+        "setup",
+        "dashboard",
+        "reports",
+        "chromium",
+        "investments",
+      ],
     },
   ],
   webServer: {

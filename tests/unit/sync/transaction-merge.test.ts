@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { localDate } from "@/server/dates";
 import { dedupeHash } from "@/server/dedupe-hash";
 import type { ProviderTransaction } from "@/server/providers/types";
 import {
   identifyTransactions,
-  localDate,
   mergeTransactions,
   OVERLAP_DAYS,
   PENDING_MATCH_DAYS,

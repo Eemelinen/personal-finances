@@ -393,7 +393,7 @@
       "area": "dashboard",
       "title": "Dashboard overview",
       "user_visible_behavior": "The dashboard shows net worth, totals in checking and in savings and the change vs 30 days ago, accounts grouped by bank with current balance, last sync and a 90-day sparkline, and connection status (OK, expiring, expired) linking to `/connections`; with no data it guides to Connect bank or Import CSV. Amounts are formatted fi-FI in EUR.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-004", "F-008"],
       "ticket": "FIN-016",
       "spec": "docs/tickets/FIN-016-dashboard-overview.md",
@@ -403,7 +403,16 @@
         "L2: pnpm test:integration tests/integration/dashboard-queries.int.test.ts (net worth, per-type totals and 30-day change from snapshots)",
         "L3: pnpm test:e2e tests/e2e/dashboard.spec.ts (seeded data renders the tiles and account list; empty state)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (commit 0aef46e)",
+        "2026-10-24 pnpm test:unit tests/unit/format/money.test.ts → pass (commit 0aef46e)",
+        "2026-10-24 pnpm test:integration tests/integration/dashboard-queries.int.test.ts → pass (commit 0aef46e, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/dashboard.spec.ts → pass (commit 0aef46e, Docker available)",
+        "2026-10-24 pnpm check → pass (commit fcb9135)",
+        "2026-10-24 pnpm test:unit tests/unit/format/money.test.ts → pass (commit fcb9135)",
+        "2026-10-24 pnpm test:integration tests/integration/dashboard-queries.int.test.ts → pass (commit fcb9135, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/dashboard.spec.ts → pass (commit fcb9135, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Replaces old FIN-016 minus the app shell (now F-003). Month income/expense tiles come with F-017, which can exclude transfers."
     },
@@ -413,7 +422,7 @@
       "area": "dashboard",
       "title": "Spending and cash-flow reports",
       "user_visible_behavior": "`/reports/spending` shows spending per category for a chosen period (chart with amounts and %, drill-down to subcategories and to the filtered transaction list), a 12-month stacked bar per category, comparison to the previous period and the 6-month average, and the top merchants with normalised names. `/reports/cash-flow` shows monthly income vs expenses with a net line, savings rate and year-to-date totals, and the dashboard gets this month's income, expenses and net. Transfers are excluded, refunds net against their category, and months are grouped in `APP_TIMEZONE` in SQL.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-014", "F-016"],
       "ticket": "FIN-017",
       "spec": "docs/tickets/FIN-017-spending-and-cash-flow-reports.md",
@@ -423,7 +432,16 @@
         "L2: pnpm test:integration tests/integration/report-queries.int.test.ts (category and monthly aggregates, transfers excluded, refunds netted, Helsinki month boundaries)",
         "L3: pnpm test:e2e tests/e2e/reports.spec.ts (period switch, drill-down to transactions, cash-flow chart)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (commit 0aa7acd)",
+        "2026-10-24 pnpm test:unit tests/unit/reports/merchant-name.test.ts → pass (commit 0aa7acd)",
+        "2026-10-24 pnpm test:integration tests/integration/report-queries.int.test.ts → pass (commit 0aa7acd, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/reports.spec.ts → pass (commit 0aa7acd, Docker available)",
+        "2026-10-24 pnpm check → pass (working tree on 4eedf38)",
+        "2026-10-24 pnpm test:unit tests/unit/reports/merchant-name.test.ts → pass (working tree on 4eedf38)",
+        "2026-10-24 pnpm test:integration tests/integration/report-queries.int.test.ts → pass (working tree on 4eedf38, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/reports.spec.ts → pass (working tree on 4eedf38, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Replaces old FIN-017, FIN-018 and the top-merchants part of FIN-020. Recurring-payment detection moved to the backlog."
     },
@@ -433,7 +451,7 @@
       "area": "dashboard",
       "title": "Balance and net-worth history",
       "user_visible_behavior": "`/reports/balances` shows a net-worth line and a stacked per-account area chart for 3 months, 6 months, 1 year or all, carrying the last known balance over days without a sync and reconstructing history before the first sync from transactions (marked estimated), with a tooltip of the per-account breakdown.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-016"],
       "ticket": "FIN-018",
       "spec": "docs/tickets/FIN-018-balance-history.md",
@@ -443,7 +461,16 @@
         "L2: pnpm test:integration tests/integration/balance-history.int.test.ts (series built from snapshots and transactions)",
         "L3: pnpm test:e2e tests/e2e/balance-history.spec.ts (range selector changes the series)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (working tree on 140927f)",
+        "2026-10-24 pnpm test:unit tests/unit/reports/balance-series.test.ts → pass (working tree on 140927f)",
+        "2026-10-24 pnpm test:integration tests/integration/balance-history.int.test.ts → pass (working tree on 140927f, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/balance-history.spec.ts → pass (working tree on 140927f, Docker available)",
+        "2026-10-24 pnpm check → pass (commit a8d1abd)",
+        "2026-10-24 pnpm test:unit tests/unit/reports/balance-series.test.ts → pass (commit a8d1abd)",
+        "2026-10-24 pnpm test:integration tests/integration/balance-history.int.test.ts → pass (commit a8d1abd, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/balance-history.spec.ts → pass (commit a8d1abd, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Replaces old FIN-019."
     },
@@ -453,7 +480,7 @@
       "area": "investments",
       "title": "Investment data model and valuation",
       "user_visible_behavior": "The schema adds assets (symbol, ISIN or CoinGecko id, asset class, currency), holdings with quantity snapshots, investment transactions (buy, sell, dividend, fee, transfer), daily prices and ECB FX rates; brokerage and crypto accounts reuse `accounts`. A valuation function returns an account's EUR value on a date as Σ quantity × price × FX, and `FinancialProvider` gains an optional `getHoldings()`.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-002"],
       "ticket": "FIN-019",
       "spec": "docs/tickets/FIN-019-investment-data-model.md",
@@ -462,7 +489,11 @@
         "L1: pnpm test:unit tests/unit/investments/valuation.test.ts (quantity × price × FX; a missing price falls back to the last known one)",
         "L2: pnpm test:integration tests/integration/investment-schema.int.test.ts (migration applies; numeric quantities keep 18 decimals)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (commit 3f12ce5)",
+        "2026-10-24 pnpm test:unit tests/unit/investments/valuation.test.ts → pass (commit 3f12ce5)",
+        "2026-10-24 pnpm test:integration tests/integration/investment-schema.int.test.ts → pass (commit 3f12ce5, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Replaces old FIN-022."
     },
@@ -472,7 +503,7 @@
       "area": "investments",
       "title": "Nordnet import and stock prices",
       "user_visible_behavior": "Importing a Nordnet transaction export (Sivuni → Tapahtumat ja laskelmat → Vie CSV-tiedostoon) records buys, sells, dividends, fees and deposits, derives holdings and dedupes overlapping imports; a daily price-update job fetches closing prices and ECB FX rates through a price client that respects the free-tier limit; `/investments` lists holdings with quantity, price, value, gain or loss and portfolio weight, and their value is included in net worth.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-004", "F-019"],
       "ticket": "FIN-020",
       "spec": "docs/tickets/FIN-020-nordnet-import-and-stock-prices.md",
@@ -483,7 +514,18 @@
         "L2: pnpm test:integration tests/integration/nordnet-import.int.test.ts (holdings derived from transactions; re-import dedupes)",
         "L3: pnpm test:e2e tests/e2e/investments.spec.ts (import, then the holdings table)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (commit fc8d46e)",
+        "2026-10-24 pnpm test:unit tests/unit/investments/nordnet-csv.test.ts → pass (commit fc8d46e)",
+        "2026-10-24 pnpm test:unit tests/unit/investments/price-client.test.ts → pass (commit fc8d46e)",
+        "2026-10-24 pnpm test:integration tests/integration/nordnet-import.int.test.ts → pass (commit fc8d46e, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/investments.spec.ts → pass (commit fc8d46e, Docker available)",
+        "2026-10-24 pnpm check → pass (commit 974b69a)",
+        "2026-10-24 pnpm test:unit tests/unit/investments/nordnet-csv.test.ts → pass (commit 974b69a)",
+        "2026-10-24 pnpm test:unit tests/unit/investments/price-client.test.ts → pass (commit 974b69a)",
+        "2026-10-24 pnpm test:integration tests/integration/nordnet-import.int.test.ts → pass (commit 974b69a, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/investments.spec.ts → pass (commit 974b69a, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Replaces old FIN-023. Nordnet's API is closed to new customers, so CSV is the route ([research](../api-access-research.md#2-nordnet-stocks-funds-osakesäästötili))."
     },
@@ -493,16 +535,26 @@
       "area": "investments",
       "title": "Kraken holdings and crypto prices",
       "user_visible_behavior": "`KrakenProvider` signs private REST calls (HMAC-SHA512 with a nonce) with a read-only key from `KRAKEN_API_KEY` / `KRAKEN_API_SECRET`, maps `BalanceEx` to holdings and `Ledgers` to investment transactions (deposits, withdrawals, trades, staking); manual holdings cover wallets without an API; CoinGecko prices are added to the price-update job; crypto appears on `/investments` and in net worth.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-019"],
       "ticket": "FIN-021",
       "spec": "docs/tickets/FIN-021-kraken-and-crypto-prices.md",
       "verification": [
         "L1: pnpm check",
         "L1: pnpm test:unit tests/unit/investments/kraken.test.ts (signature against Kraken's documented example; BalanceEx and Ledgers mapping from fixtures)",
-        "L2: pnpm test:integration tests/integration/crypto-holdings.int.test.ts (holdings and prices stored; a manual holding is valued)"
+        "L2: pnpm test:integration tests/integration/crypto-holdings.int.test.ts (holdings and prices stored; a manual holding is valued)",
+        "L3: pnpm test:e2e tests/e2e/investments.spec.ts (a manual crypto holding saved through the form is valued and counted in net worth)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (commit 6cc271b)",
+        "2026-10-24 pnpm test:unit tests/unit/investments/kraken.test.ts → pass (commit 6cc271b)",
+        "2026-10-24 pnpm test:integration tests/integration/crypto-holdings.int.test.ts → pass (commit 6cc271b, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/investments.spec.ts → pass (commit 6cc271b, Docker available)",
+        "2026-10-24 pnpm check → pass (commit 3985f9c)",
+        "2026-10-24 pnpm test:unit tests/unit/investments/kraken.test.ts → pass (commit 3985f9c)",
+        "2026-10-24 pnpm test:integration tests/integration/crypto-holdings.int.test.ts → pass (commit 3985f9c, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/investments.spec.ts → pass (commit 3985f9c, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Replaces old FIN-024. See [research: Kraken](../api-access-research.md#3-kraken-crypto)."
     },
@@ -512,7 +564,7 @@
       "area": "investments",
       "title": "Net worth and allocation including investments",
       "user_visible_behavior": "Net-worth history and the dashboard tiles include brokerage and crypto accounts valued with historical prices; an allocation chart breaks wealth down by asset class (cash, stocks and ETFs, funds, crypto) and by account; portfolio performance over time separates contributions from market gains.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-018", "F-020", "F-021"],
       "ticket": "FIN-022",
       "spec": "docs/tickets/FIN-022-net-worth-with-investments.md",
@@ -522,9 +574,26 @@
         "L2: pnpm test:integration tests/integration/net-worth-investments.int.test.ts (historical valuation in the net-worth series)",
         "L3: pnpm test:e2e tests/e2e/allocation.spec.ts (allocation and performance charts render seeded data)"
       ],
-      "evidence": [],
-      "attempts": 0,
-      "notes": "Replaces old FIN-025."
+      "evidence": [
+        "2026-10-24 pnpm check → pass (commit 8dfb33a)",
+        "2026-10-24 pnpm test:unit tests/unit/investments/performance.test.ts → pass (commit 8dfb33a)",
+        "2026-10-24 pnpm test:integration tests/integration/net-worth-investments.int.test.ts → pass (commit 8dfb33a, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/allocation.spec.ts → pass (commit 8dfb33a, Docker available)",
+        "2026-10-24 pnpm check → pass (commit 8498a89)",
+        "2026-10-24 pnpm test:unit tests/unit/investments/performance.test.ts → pass (commit 8498a89)",
+        "2026-10-24 pnpm test:integration tests/integration/net-worth-investments.int.test.ts → pass (commit 8498a89, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/allocation.spec.ts → pass (commit 8498a89, Docker available)",
+        "2026-10-24 pnpm check → pass (commit 7b93480)",
+        "2026-10-24 pnpm test:unit tests/unit/investments/performance.test.ts → pass (commit 7b93480)",
+        "2026-10-24 pnpm test:integration tests/integration/net-worth-investments.int.test.ts → pass (commit 7b93480, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/allocation.spec.ts → pass (commit 7b93480, Docker available)",
+        "2026-10-24 pnpm check → pass (commit 55301b0)",
+        "2026-10-24 pnpm test:unit tests/unit/investments/performance.test.ts → pass (commit 55301b0)",
+        "2026-10-24 pnpm test:integration tests/integration/net-worth-investments.int.test.ts → pass (commit 55301b0, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/allocation.spec.ts → pass (commit 55301b0, Docker available)"
+      ],
+      "attempts": 1,
+      "notes": "Replaces old FIN-025. Attempt 1 failed 2026-10-24: evaluator: Revise"
     },
     {
       "id": "F-023",

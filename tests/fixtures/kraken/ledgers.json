@@ -1,0 +1,217 @@
+{
+  "error": [],
+  "result": {
+    "ledger": {
+      "LADJ01-AAAAA-AAAAAA": {
+        "refid": "RADJ01-AAAAA-AAAAAA",
+        "time": 1790056800.1234,
+        "type": "adjustment",
+        "subtype": "",
+        "aclass": "currency",
+        "asset": "XXBT",
+        "amount": "0.0000000100",
+        "fee": "0.0000000000",
+        "balance": "0.0000"
+      },
+      "LERN02-AAAAA-AAAAAA": {
+        "refid": "RERN02-AAAAA-AAAAAA",
+        "time": 1789970400.1234,
+        "type": "earn",
+        "subtype": "allocation",
+        "aclass": "currency",
+        "asset": "DOT",
+        "amount": "-3.0000000000",
+        "fee": "0.0000000000",
+        "balance": "0.0000"
+      },
+      "LERN01-AAAAA-AAAAAA": {
+        "refid": "RERN01-AAAAA-AAAAAA",
+        "time": 1789884000.1234,
+        "type": "earn",
+        "subtype": "reward",
+        "aclass": "currency",
+        "asset": "EUR.M",
+        "amount": "0.1200",
+        "fee": "0.0000",
+        "balance": "0.0000"
+      },
+      "LFXC02-AAAAA-AAAAAA": {
+        "refid": "TFXC01-AAAAA-AAAAAA",
+        "time": 1789466400.1234,
+        "type": "trade",
+        "subtype": "",
+        "aclass": "currency",
+        "asset": "ZUSD",
+        "amount": "108.5000",
+        "fee": "0.0000",
+        "balance": "0.0000"
+      },
+      "LFXC01-AAAAA-AAAAAA": {
+        "refid": "TFXC01-AAAAA-AAAAAA",
+        "time": 1789466400.1234,
+        "type": "trade",
+        "subtype": "",
+        "aclass": "currency",
+        "asset": "ZEUR",
+        "amount": "-100.0000",
+        "fee": "0.2000",
+        "balance": "0.0000"
+      },
+      "LSEL02-AAAAA-AAAAAA": {
+        "refid": "TSEL01-AAAAA-AAAAAA",
+        "time": 1789390800.1234,
+        "type": "trade",
+        "subtype": "",
+        "aclass": "currency",
+        "asset": "ZEUR",
+        "amount": "130.0000",
+        "fee": "0.3400",
+        "balance": "0.0000"
+      },
+      "LSEL01-AAAAA-AAAAAA": {
+        "refid": "TSEL01-AAAAA-AAAAAA",
+        "time": 1789390800.1234,
+        "type": "trade",
+        "subtype": "",
+        "aclass": "currency",
+        "asset": "XXBT",
+        "amount": "-0.0020000000",
+        "fee": "0.0000000000",
+        "balance": "0.0000"
+      },
+      "LSWP02-AAAAA-AAAAAA": {
+        "refid": "TSWP01-AAAAA-AAAAAA",
+        "time": 1789297200.1234,
+        "type": "trade",
+        "subtype": "",
+        "aclass": "currency",
+        "asset": "DOT",
+        "amount": "5.0000000000",
+        "fee": "0.0100000000",
+        "balance": "0.0000"
+      },
+      "LSWP01-AAAAA-AAAAAA": {
+        "refid": "TSWP01-AAAAA-AAAAAA",
+        "time": 1789297200.1234,
+        "type": "trade",
+        "subtype": "",
+        "aclass": "currency",
+        "asset": "XXBT",
+        "amount": "-0.0050000000",
+        "fee": "0.0000000000",
+        "balance": "0.0000"
+      },
+      "LWDR01-AAAAA-AAAAAA": {
+        "refid": "QWDR01-AAAAA-AAAAAA",
+        "time": 1789225200.1234,
+        "type": "withdrawal",
+        "subtype": "",
+        "aclass": "currency",
+        "asset": "DOT",
+        "amount": "-2.0000000000",
+        "fee": "0.0500000000",
+        "balance": "0.0000"
+      },
+      "LDEP02-AAAAA-AAAAAA": {
+        "refid": "QDEP02-AAAAA-AAAAAA",
+        "time": 1789165800.1234,
+        "type": "deposit",
+        "subtype": "",
+        "aclass": "currency",
+        "asset": "DOT",
+        "amount": "10.0000000000",
+        "fee": "0.0000000000",
+        "balance": "0.0000"
+      },
+      "LRWD01-AAAAA-AAAAAA": {
+        "refid": "RRWD01-AAAAA-AAAAAA",
+        "time": 1789005600.1234,
+        "type": "staking",
+        "subtype": "",
+        "aclass": "currency",
+        "asset": "ETH2.S",
+        "amount": "0.0000500000",
+        "fee": "0.0000010000",
+        "balance": "0.0000"
+      },
+      "LSTK02-AAAAA-AAAAAA": {
+        "refid": "RSTK02-AAAAA-AAAAAA",
+        "time": 1788512401.1234,
+        "type": "transfer",
+        "subtype": "stakingfromspot",
+        "aclass": "currency",
+        "asset": "ETH2.S",
+        "amount": "0.0200000000",
+        "fee": "0.0000000000",
+        "balance": "0.0000"
+      },
+      "LSTK01-AAAAA-AAAAAA": {
+        "refid": "RSTK01-AAAAA-AAAAAA",
+        "time": 1788512400.1234,
+        "type": "transfer",
+        "subtype": "spottostaking",
+        "aclass": "currency",
+        "asset": "XETH",
+        "amount": "-0.0200000000",
+        "fee": "0.0000000000",
+        "balance": "0.0000"
+      },
+      "LRCV01-AAAAA-AAAAAA": {
+        "refid": "RSPN01-AAAAA-AAAAAA",
+        "time": 1788422400.1234,
+        "type": "receive",
+        "subtype": "",
+        "aclass": "currency",
+        "asset": "XETH",
+        "amount": "0.0200000000",
+        "fee": "0.0000000000",
+        "balance": "0.0000"
+      },
+      "LSPN01-AAAAA-AAAAAA": {
+        "refid": "RSPN01-AAAAA-AAAAAA",
+        "time": 1788422400.1234,
+        "type": "spend",
+        "subtype": "",
+        "aclass": "currency",
+        "asset": "ZEUR",
+        "amount": "-50.0000",
+        "fee": "0.7500",
+        "balance": "0.0000"
+      },
+      "LBUY02-AAAAA-AAAAAA": {
+        "refid": "TBUY01-AAAAA-AAAAAA",
+        "time": 1788350400.1234,
+        "type": "trade",
+        "subtype": "",
+        "aclass": "currency",
+        "asset": "XXBT",
+        "amount": "0.0150000000",
+        "fee": "0.0000000000",
+        "balance": "0.0000"
+      },
+      "LBUY01-AAAAA-AAAAAA": {
+        "refid": "TBUY01-AAAAA-AAAAAA",
+        "time": 1788350400.1234,
+        "type": "trade",
+        "subtype": "",
+        "aclass": "currency",
+        "asset": "ZEUR",
+        "amount": "-900.0000",
+        "fee": "2.3400",
+        "balance": "0.0000"
+      },
+      "LDEP01-AAAAA-AAAAAA": {
+        "refid": "QDEP01-AAAAA-AAAAAA",
+        "time": 1788256800.1234,
+        "type": "deposit",
+        "subtype": "",
+        "aclass": "currency",
+        "asset": "ZEUR",
+        "amount": "1000.0000",
+        "fee": "0.0000",
+        "balance": "0.0000"
+      }
+    },
+    "count": 19
+  }
+}
