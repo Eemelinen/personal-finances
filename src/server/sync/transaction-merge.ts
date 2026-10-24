@@ -53,7 +53,8 @@ function dayNumber(date: IsoDate): number {
   return Date.parse(`${date}T00:00:00Z`) / DAY_MS;
 }
 
-function addDays(date: IsoDate, days: number): IsoDate {
+/** `date` moved by `days` calendar days. */
+export function addDays(date: IsoDate, days: number): IsoDate {
   return new Date((dayNumber(date) + days) * DAY_MS).toISOString().slice(0, 10);
 }
 
