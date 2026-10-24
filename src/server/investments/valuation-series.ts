@@ -54,7 +54,7 @@ function byDate<T extends { date: IsoDate }>(rows: readonly T[]): T[] {
  * the first day's value already, unless their asset is still unpriced then.
  * Unpriced movements wait until the asset is priced. So do the units held
  * on the day the account enters (`knownFrom` or its first holding snapshot,
- * whichever comes first; the first of `days` at the latest) while unpriced:
+ * whichever comes first, but not before the first of `days`) while unpriced:
  * the value it enters with leaves them out, whatever brought them in (a
  * buy before a synced account's first balance, F-022 review).
  */
@@ -88,6 +88,7 @@ export function holdingsSeries(
   /** Units moved in (or out) while unpriced, by asset. */
   const pending = new Map<string, bigint>();
   let entered = false;
+  const knownFrom = input.knownFrom ?? null;
 
   /** EUR minor units of `units` of the asset today; null when unpriced. */
   const value = (assetId: string, units: string): number | null => {
@@ -130,7 +131,6 @@ export function holdingsSeries(
       movedMinor += priced;
       pending.delete(assetId);
     }
-    const knownFrom = input.knownFrom ?? null;
     if (
       !entered &&
       (quantity.size > 0 || (knownFrom !== null && day >= knownFrom))

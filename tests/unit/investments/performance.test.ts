@@ -491,6 +491,40 @@ describe("contributions vs market gain of an account's transactions", () => {
     ]);
   });
 
+  it("counts shares bought unpriced on the export's first day once priced", () => {
+    // 1.3. deposit 1 000,00 and buy 10 for 500,00; no close until 3.3.
+    // (50,00), then 55,00 on 5.3.
+    const { series, values, result } = perform(
+      [
+        {
+          assetId: null,
+          type: "transfer",
+          tradeDate: "2026-03-01",
+          quantity: null,
+          amountMinor: 100_000,
+          currency: "EUR",
+        },
+        {
+          assetId: STOCK,
+          type: "buy",
+          tradeDate: "2026-03-01",
+          quantity: "10",
+          amountMinor: -50_000,
+          currency: "EUR",
+        },
+      ],
+      [
+        { date: "2026-03-03", priceMinor: "5000" },
+        { date: "2026-03-05", priceMinor: "5500" },
+      ],
+    );
+    expect(values).toEqual([
+      50_000, 50_000, 100_000, 100_000, 105_000, 105_000,
+    ]);
+    expect(series.flows.slice(1)).toEqual([0, 50_000, 0, 0, 0]);
+    expect(points(result, "gainMinor")).toEqual([0, 0, 0, 0, 5_000, 5_000]);
+  });
+
   it("values units transferred in at the day's price as a contribution", () => {
     const { result } = perform(
       [
