@@ -25,4 +25,9 @@ My real Nordea and S-Pankki checking and savings accounts are connected through 
 
 ## Findings
 
-_To be filled in._
+Recorded so far (2026-10-24, restricted production application):
+
+- **Redirect URL.** A production application accepts only `https` redirect URLs (`http://localhost:3000/…` is refused as an unsupported scheme); `https://localhost:3000/connections/callback` was accepted. The app serves plain http, so after the bank's approval the browser shows `ERR_SSL_PROTOCOL_ERROR` and the address has to be changed to `http://` by hand to finish the callback.
+- **Key file permissions.** The containers run as uid/gid 1000; a key file owned by another host user with mode `600` cannot be read through the `./secrets` mount. Group-readable by gid 1000 works.
+- **Nordea connected:** consent until 22.4.2027 (180 days), a checking account (`CACC`) and a credit card (`CARD`, `Nordea Gold (credit)`, no IBAN). Balances synced for both; the checking account's 540-day backfill returned 389 transactions.
+- **Nordea card history:** a `date_from` 540 days back fails with `400 ASPSP_ERROR`; any shorter range or none returns only the last ~3½ months (from 2026-07-10), although the netbank shows older purchases. Fixed in [F-025](FIN-025-nordea-card-history.md) (D-028); older card purchases need a CSV import.
