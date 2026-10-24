@@ -12,7 +12,7 @@ export default function ImportPage() {
     <>
       <PageHeader
         title="Import"
-        description="Import a Nordea or S-Pankki netbank CSV export, or any CSV with a date and an amount column. Rows already stored are skipped."
+        description="Import a Nordea or S-Pankki netbank CSV export, a Nordea credit card export, or any CSV with a date and an amount column. Rows already stored are skipped."
       />
       <Suspense
         fallback={<p className="text-muted-foreground">Loading accounts…</p>}

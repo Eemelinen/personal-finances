@@ -11,7 +11,8 @@ import { decodeCsv, parseCsvAmount, parseCsvDate } from "@/server/csv/values";
 
 // Synthetic exports in tests/fixtures/csv/ (never real bank data): the
 // Nordea and S-Pankki layouts in Windows-1252 and UTF-8, a generic CSV and
-// a file with unreadable rows.
+// a file with unreadable rows, and (`*-2026.csv`) the headers and quoting
+// of real October 2026 S-Pankki, Nordea netbank and Nordea card exports.
 
 function fixture(name: string): Uint8Array {
   return readFileSync(path.join("tests/fixtures/csv", name));
@@ -161,6 +162,8 @@ describe("readBankCsv: Nordea", () => {
         currency: null,
         counterparty: "Esimerkki Asunnot Oy",
         description: "Vuokra tammikuu",
+        counterpartyIban: null,
+        ref: null,
       },
       {
         row: 5,
@@ -170,6 +173,8 @@ describe("readBankCsv: Nordea", () => {
         currency: null,
         counterparty: "Kahvila Määränpää",
         description: "Korttiosto",
+        counterpartyIban: null,
+        ref: null,
       },
       {
         row: 6,
@@ -179,6 +184,8 @@ describe("readBankCsv: Nordea", () => {
         currency: null,
         counterparty: "Kahvila Määränpää",
         description: "Korttiosto",
+        counterpartyIban: null,
+        ref: null,
       },
       {
         row: 7,
@@ -188,6 +195,8 @@ describe("readBankCsv: Nordea", () => {
         currency: null,
         counterparty: "Esimerkki Työnantaja Oy",
         description: "Palkka tammikuu",
+        counterpartyIban: null,
+        ref: null,
       },
       {
         row: 8,
@@ -197,6 +206,8 @@ describe("readBankCsv: Nordea", () => {
         currency: null,
         counterparty: "Lähikauppa Öljymäki",
         description: "Korttiosto",
+        counterpartyIban: null,
+        ref: null,
       },
       {
         row: 9,
@@ -206,6 +217,8 @@ describe("readBankCsv: Nordea", () => {
         currency: null,
         counterparty: "Äänikirjapalvelu Esimerkki",
         description: "Kuukausimaksu 12,90 € – ½ hinnalla",
+        counterpartyIban: null,
+        ref: null,
       },
     ]);
   });
@@ -227,6 +240,8 @@ describe("readBankCsv: Nordea", () => {
         currency: "EUR",
         counterparty: "Ravintola Esimerkki",
         description: "Korttiosto",
+        counterpartyIban: null,
+        ref: null,
       },
       {
         row: 3,
@@ -236,6 +251,8 @@ describe("readBankCsv: Nordea", () => {
         currency: "EUR",
         counterparty: "Esimerkki Työnantaja Oy",
         description: "Palkka maaliskuu",
+        counterpartyIban: null,
+        ref: null,
       },
       {
         row: 4,
@@ -245,6 +262,8 @@ describe("readBankCsv: Nordea", () => {
         currency: "EUR",
         counterparty: "Sähköyhtiö Esimerkki Oy",
         description: "E-lasku",
+        counterpartyIban: null,
+        ref: null,
       },
     ]);
     // A card reservation has no booking day yet.
@@ -269,6 +288,8 @@ describe("readBankCsv: Nordea", () => {
         currency: null,
         counterparty: "Kauppa Ä",
         description: "Osto",
+        counterpartyIban: null,
+        ref: null,
       },
     ]);
   });
@@ -364,6 +385,276 @@ describe("readBankCsv: S-Pankki", () => {
   });
 });
 
+// The layouts of real October 2026 exports (F-031), with made-up rows.
+describe("readBankCsv: real S-Pankki export", () => {
+  it("unwraps quoted cells, empties placeholders and keeps the archive id", () => {
+    const parsed = readBankCsv(fixture("s-pankki-2026.csv"));
+    expect(parsed).toMatchObject({
+      format: "s-pankki",
+      encoding: "utf-8",
+      delimiter: ";",
+      rowsRead: 4,
+      repeated: 0,
+      errors: [],
+    });
+    expect(parsed.rows).toEqual([
+      {
+        row: 2,
+        bookingDate: "2026-10-01",
+        valueDate: "2026-10-01",
+        amountMinor: -2_340,
+        currency: null,
+        counterparty: "S-MARKET ESIMERKKI",
+        // `-` in the account and message columns is empty.
+        counterpartyIban: null,
+        description: "KORTTIOSTO",
+        ref: "20261001TEST00000001",
+      },
+      {
+        row: 3,
+        bookingDate: "2026-10-03",
+        valueDate: "2026-10-03",
+        amountMinor: 15_000,
+        currency: null,
+        counterparty: "MAIJA ESIMERKKI",
+        // Money in: the account column is the receiving (own) account.
+        counterpartyIban: null,
+        description: "Wedding gift",
+        ref: "20261003TEST00000002",
+      },
+      {
+        row: 4,
+        bookingDate: "2026-10-05",
+        valueDate: "2026-10-05",
+        amountMinor: -100_000,
+        currency: null,
+        counterparty: "SÄÄSTÖTILI ESIMERKKI",
+        counterpartyIban: "FI5939000000000006",
+        description: "Säästö lokakuu",
+        ref: "20261005TEST00000003",
+      },
+      {
+        row: 5,
+        bookingDate: "2026-10-09",
+        valueDate: "2026-10-08",
+        amountMinor: -5_999,
+        currency: null,
+        counterparty: "SÄHKÖYHTIÖ ESIMERKKI OY",
+        counterpartyIban: "FI3210000000000002",
+        // `'-'` is empty too, so the transaction type is the text.
+        description: "E-LASKU",
+        ref: "20261009TEST00000004",
+      },
+    ]);
+  });
+
+  it("reads the same layout in Windows-1252", () => {
+    const parsed = readBankCsv(
+      encode1252(
+        "Kirjauspäivä;Maksupäivä;Summa;Tapahtumalaji;Maksaja;Saajan nimi;Saajan tilinumero;Saajan BIC-tunnus;Viitenumero;Viesti;Arkistointitunnus\r\n" +
+          "01.10.2026;01.10.2026;-5,00;TILISIIRTO;TESTI HENKILÖ;'Kioski Ä';'fi59 3900 0000 0000 06 ';'-';-;'';'20261001TEST00000009'\r\n",
+      ),
+    );
+    expect(parsed.encoding).toBe("windows-1252");
+    expect(parsed.rows).toMatchObject([
+      {
+        counterparty: "Kioski Ä",
+        counterpartyIban: "FI5939000000000006",
+        description: "TILISIIRTO",
+        ref: "20261001TEST00000009",
+      },
+    ]);
+  });
+});
+
+describe("readBankCsv: real Nordea netbank export", () => {
+  it("reads account numbers as IBANs and drops lines the export repeats", () => {
+    const parsed = readBankCsv(fixture("nordea-2026.csv"));
+    expect(parsed).toMatchObject({
+      format: "nordea",
+      encoding: "utf-8",
+      delimiter: ";",
+      headers: [
+        "Kirjauspäivä",
+        "Määrä",
+        "Maksaja",
+        "Maksunsaaja",
+        "Nimi",
+        "Otsikko",
+        "Viesti",
+        "Viitenumero",
+        "Saldo",
+        "Valuutta",
+      ],
+      rowsRead: 8,
+      repeated: 1,
+      errors: [],
+    });
+    expect(parsed.rows).toEqual([
+      {
+        row: 2,
+        bookingDate: "2026-10-01",
+        valueDate: null,
+        amountMinor: -1_520,
+        currency: "EUR",
+        // No name: a card purchase's title is the merchant.
+        counterparty: "RAVINTOLA ESIMERKKI",
+        counterpartyIban: null,
+        description: null,
+        ref: null,
+      },
+      {
+        row: 3,
+        bookingDate: "2026-10-02",
+        valueDate: null,
+        amountMinor: -95_000,
+        currency: "EUR",
+        counterparty: "Esimerkki Asunnot Oy",
+        counterpartyIban: "FI0510000000000003",
+        description: "Vuokra lokakuu",
+        ref: null,
+      },
+      {
+        row: 4,
+        bookingDate: "2026-10-05",
+        valueDate: null,
+        amountMinor: 250_000,
+        currency: "EUR",
+        counterparty: "Esimerkki Työnantaja Oy",
+        // Money in: the payer's account.
+        counterpartyIban: "FI7510000000000004",
+        description: "Palkka lokakuu",
+        ref: null,
+      },
+      // Line 5 repeats line 4, balance included: one transaction.
+      {
+        row: 6,
+        bookingDate: "2026-10-09",
+        valueDate: null,
+        amountMinor: -4_200,
+        currency: "EUR",
+        counterparty: "Sähköyhtiö Esimerkki Oy",
+        counterpartyIban: "FI3210000000000002",
+        description: "E-lasku",
+        ref: null,
+      },
+      // Two equal coffees with different balances are two transactions.
+      {
+        row: 7,
+        bookingDate: "2026-10-12",
+        valueDate: null,
+        amountMinor: -450,
+        currency: "EUR",
+        counterparty: "KAHVILA ESIMERKKI",
+        counterpartyIban: null,
+        description: null,
+        ref: null,
+      },
+      {
+        row: 8,
+        bookingDate: "2026-10-12",
+        valueDate: null,
+        amountMinor: -450,
+        currency: "EUR",
+        counterparty: "KAHVILA ESIMERKKI",
+        counterpartyIban: null,
+        description: null,
+        ref: null,
+      },
+      {
+        row: 9,
+        bookingDate: "2026-10-15",
+        valueDate: null,
+        amountMinor: -20_000,
+        currency: "EUR",
+        // `Tilisiirto` is the kind of payment, not a name.
+        counterparty: null,
+        counterpartyIban: "FI3239000000000007",
+        description: "Säästöön",
+        ref: null,
+      },
+    ]);
+  });
+
+  it("never takes an account number column as the counterparty", () => {
+    const parsed = readBankCsv(
+      encode1252(
+        "Kirjauspäivä;Määrä;Maksaja;Maksunsaaja;Nimi;Otsikko;Viesti;Viitenumero;Saldo;Valuutta;\r\n" +
+          "2026/10/03;-10,00;FI59 1000 0000 0000 01;FI05 1000 0000 0000 03;;TILISIIRTO;;;90,00;EUR;\r\n",
+      ),
+    );
+    expect(parsed.rows).toMatchObject([
+      {
+        counterparty: null,
+        counterpartyIban: "FI0510000000000003",
+        description: "TILISIIRTO",
+      },
+    ]);
+  });
+});
+
+describe("readBankCsv: Nordea credit card export", () => {
+  it("reads quoted cells, decimal points and the purchase day", () => {
+    const parsed = readBankCsv(fixture("nordea-card-2026.csv"));
+    expect(parsed).toMatchObject({
+      format: "nordea-card",
+      encoding: "utf-8",
+      delimiter: ";",
+      rowsRead: 4,
+      repeated: 0,
+    });
+    expect(parsed.rows).toEqual([
+      {
+        row: 2,
+        bookingDate: "2026-10-01",
+        valueDate: "2026-09-30",
+        amountMinor: -2_345,
+        currency: "EUR",
+        counterparty: null,
+        counterpartyIban: null,
+        description: "K-MARKET ESIMERKKI",
+        ref: null,
+      },
+      {
+        row: 3,
+        bookingDate: "2026-10-05",
+        valueDate: "2026-10-02",
+        // The EUR amount, not the original 50.00 USD.
+        amountMinor: -4_612,
+        currency: "EUR",
+        counterparty: null,
+        counterpartyIban: null,
+        description: "EXAMPLE STORE, NEW YORK",
+        ref: null,
+      },
+      {
+        row: 4,
+        bookingDate: "2026-10-10",
+        valueDate: "2026-10-10",
+        amountMinor: 50_000,
+        currency: "EUR",
+        counterparty: null,
+        counterpartyIban: null,
+        description: "Maksu, kiitos",
+        ref: null,
+      },
+    ]);
+    expect(parsed.errors).toEqual([
+      { row: 5, message: expect.stringMatching(/not booked yet/) },
+    ]);
+  });
+
+  it("is its own format: a Nordea netbank choice refuses it", () => {
+    expect(() =>
+      readBankCsv(fixture("nordea-card-2026.csv"), { format: "nordea" }),
+    ).toThrow(/not a Nordea export/);
+    expect(
+      readBankCsv(fixture("nordea-card-2026.csv"), { format: "nordea-card" })
+        .rows,
+    ).toHaveLength(3);
+  });
+});
+
 describe("readBankCsv: format choice and generic CSV", () => {
   it("refuses a file that is not the chosen bank's export", () => {
     expect(() =>
@@ -406,6 +697,8 @@ describe("readBankCsv: format choice and generic CSV", () => {
         currency: null,
         counterparty: "Example Shop",
         description: "Groceries, weekly",
+        counterpartyIban: null,
+        ref: null,
       },
       {
         row: 3,
@@ -415,6 +708,8 @@ describe("readBankCsv: format choice and generic CSV", () => {
         currency: null,
         counterparty: "Example Employer",
         description: "Salary",
+        counterpartyIban: null,
+        ref: null,
       },
       {
         row: 4,
@@ -424,6 +719,8 @@ describe("readBankCsv: format choice and generic CSV", () => {
         currency: null,
         counterparty: "Example Cafe",
         description: "Coffee",
+        counterpartyIban: null,
+        ref: null,
       },
     ]);
     expect(parsed.errors).toEqual([

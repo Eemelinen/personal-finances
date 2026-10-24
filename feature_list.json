@@ -822,7 +822,7 @@
       "area": "banking",
       "title": "Real bank CSV exports",
       "user_visible_behavior": "`/import` reads the real October 2026 exports: S-Pankki (single-quoted cells and `-` placeholders, `Arkistointitunnus` as the row's ref, recipient IBAN), the Nordea netbank layout (`Maksaja`/`Maksunsaaja` are account numbers, name from `Nimi`, lines repeated verbatim including `Saldo` imported once) and the Nordea credit card export (`nordea-card`: quoted cells, decimal point, `Tapahtumapäivä`).",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-012", "F-028"],
       "ticket": "FIN-031",
       "spec": "docs/tickets/FIN-031-real-bank-csv-exports.md",
@@ -831,7 +831,11 @@
         "L1: pnpm test:unit tests/unit/csv/bank-csv.test.ts (the three real layouts with synthetic fixtures; old fixtures still parse)",
         "L2: pnpm test:integration tests/integration/csv-import.int.test.ts (an imported row keeps its ref and counterparty IBAN)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (working tree on 7eb562c)",
+        "2026-10-24 pnpm test:unit tests/unit/csv/bank-csv.test.ts → pass (working tree on 7eb562c)",
+        "2026-10-24 pnpm test:integration tests/integration/csv-import.int.test.ts → pass (working tree on 7eb562c, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Verified 2026-10-24 against real exports: S-Pankki Arkistointitunnus equals the Enable Banking entry_reference; Nordea puts account numbers in Maksaja/Maksunsaaja."
     },

@@ -1,0 +1,5 @@
+"Tapahtumapäivä";"Kirjauspäivä";"Otsikko";"Määrä";"Valuutta";"Tapahtumatyyppi";"Alkuperäinen määrä";"Alkuperäinen valuutta";"Kurssi"
+"30.9.2026";"1.10.2026";"K-MARKET ESIMERKKI";"-23.45";"EUR";"Osto";"";"";""
+"2.10.2026";"5.10.2026";"EXAMPLE STORE, NEW YORK";"-46.12";"EUR";"Osto";"-50.00";"USD";"1.0841"
+"10.10.2026";"10.10.2026";"Maksu, kiitos";"500.00";"EUR";"Maksu";"";"";""
+"20.10.2026";"";"KAHVILA ESIMERKKI";"-3.90";"EUR";"Osto";"";"";""

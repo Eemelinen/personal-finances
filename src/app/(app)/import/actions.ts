@@ -36,6 +36,8 @@ export interface CsvPreview {
   mapping: ColumnMapping | null;
   needsMapping: boolean;
   rowsRead: number;
+  /** Lines the file repeats verbatim, read once. */
+  repeated: number;
   /** Readable rows in the file (the preview shows the first ones). */
   rowCount: number;
   rows: CsvRow[];
@@ -99,6 +101,7 @@ export async function previewCsv(formData: FormData): Promise<PreviewResult> {
         mapping: parsed.mapping,
         needsMapping: parsed.needsMapping,
         rowsRead: parsed.rowsRead,
+        repeated: parsed.repeated,
         rowCount: parsed.rows.length,
         rows: parsed.rows.slice(0, PREVIEW_ROWS),
         errors: parsed.errors,
@@ -136,7 +139,7 @@ export async function importCsv(formData: FormData): Promise<ImportResult> {
       throw new ImportAccountError("Choose an account.");
     }
     console.info(
-      `[import] ${summary.inserted} inserted, ${summary.duplicates} duplicates, ${summary.errors.length} errors`,
+      `[import] ${summary.inserted} inserted, ${summary.duplicates} duplicates, ${summary.repeated} repeated, ${summary.errors.length} errors`,
     );
     // The account list may have a new account.
     refresh();
