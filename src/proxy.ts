@@ -2,8 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   accessDecision,
   isHealthPath,
-  isServerActionRequest,
   LOGIN_PATH,
+  mayReissueSession,
 } from "@/lib/auth/routes";
 import {
   SESSION_COOKIE,
@@ -17,9 +17,10 @@ import { getAuthEnv, getEnv } from "@/server/env";
  * Optimistic auth check before any route renders: no session → the login
  * page (401 for route handlers); a session on the login page → the
  * dashboard. It also slides the session's 30-day expiry by re-issuing the
- * cookie once a day, except on Server Action calls (logout deletes the
- * cookie in that response). Pages and actions still check the session themselves
- * (`verifySession()` in src/lib/auth/session.ts).
+ * cookie once a day, on page loads only (`mayReissueSession()`): a prefetch,
+ * client navigation or Server Action response could land after logout
+ * deleted the cookie and bring the session back. Pages and actions still
+ * check the session themselves (`verifySession()` in src/lib/auth/session.ts).
  */
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -49,7 +50,7 @@ export async function proxy(request: NextRequest) {
 
   const cookieOptions = sessionCookieOptions(getEnv().NODE_ENV);
   if (session) {
-    if (isServerActionRequest(request.method, request.headers)) {
+    if (!mayReissueSession(request.method, request.headers)) {
       return response;
     }
     const seal = await refreshSession(session, SESSION_SECRET, now);

@@ -26,15 +26,30 @@ export function isApiPath(pathname: string): boolean {
 }
 
 /**
- * A Server Action call: a POST with the `Next-Action` header. The proxy does
- * not re-issue the session cookie on these, because the action may set or
- * delete the cookie itself (logout does) in the same response.
+ * Whether the proxy may re-issue a day-old session on this request: only on
+ * a page load, a GET or HEAD the browser sends as a top-level navigation
+ * (`Sec-Fetch-Mode: navigate`), and not a speculative one (`Sec-Purpose:
+ * prefetch`, e.g. a prerender). A page load replaces the page, so its
+ * response cannot arrive after a logout made from that page.
+ *
+ * Everything else is a fetch from a page that may log out meanwhile: the
+ * router's link prefetches, client navigations and refreshes, and Server
+ * Action calls (which may set or delete the cookie themselves, as logout
+ * does). Their responses can land after logout's deletion, and a fresh
+ * cookie in one would log the browser back in, so they keep the cookie as
+ * it is (D-021). Next strips its own router headers (`rsc`,
+ * `next-router-prefetch`) from the request the proxy sees, so the browser's
+ * Fetch Metadata headers decide. A browser that sends none never re-issues:
+ * its session then ends 30 days after login.
  */
-export function isServerActionRequest(
+export function mayReissueSession(
   method: string,
-  headers: Pick<Headers, "has">,
+  headers: Pick<Headers, "get">,
 ): boolean {
-  return method === "POST" && headers.has("next-action");
+  if (method !== "GET" && method !== "HEAD") return false;
+  if (headers.get("sec-fetch-mode") !== "navigate") return false;
+  const purpose = headers.get("sec-purpose") ?? headers.get("purpose") ?? "";
+  return !purpose.toLowerCase().includes("prefetch");
 }
 
 export type AccessDecision =

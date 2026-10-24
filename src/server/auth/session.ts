@@ -4,8 +4,8 @@ import { sealData, unsealData } from "iron-session";
  * The login session: an iron-session seal (encrypted and signed with
  * `SESSION_SECRET`) in an httpOnly cookie. There is one user, so the session
  * only records when it was issued; it is valid for 30 days after that, and
- * `src/proxy.ts` re-issues it once it is a day old, so the expiry slides with
- * use. Sessions are stateless: logout deletes the cookie, and changing
+ * `src/proxy.ts` re-issues it on a page load once it is a day old, so the
+ * expiry slides with use. Sessions are stateless: logout deletes the cookie, and changing
  * `SESSION_SECRET` signs every browser out.
  */
 export const SESSION_COOKIE = "pf_session";
