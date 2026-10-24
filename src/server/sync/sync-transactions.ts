@@ -255,6 +255,7 @@ const STORED_COLUMNS = {
   amountMinor: transactions.amountMinor,
   currency: transactions.currency,
   counterparty: transactions.counterparty,
+  counterpartyIban: transactions.counterpartyIban,
   description: transactions.description,
   status: transactions.status,
 };

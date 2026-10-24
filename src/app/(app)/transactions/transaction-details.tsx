@@ -23,7 +23,8 @@ import {
   unlinkTransferAction,
 } from "./actions";
 
-// The side sheet of one transaction: its note, excluding it from reports or
+// The side sheet of one transaction: its texts and the counterparty's
+// account number when the bank gave one (F-028), its note, excluding it from reports or
 // including it again, marking it as a (one-sided) transfer or unlinking its
 // transfer, and creating a rule from it.
 
@@ -89,6 +90,15 @@ function DetailsBody({
       <div className="flex flex-col gap-6 px-4 pb-6">
         {row.counterparty && row.description && (
           <p className="text-sm">{row.description}</p>
+        )}
+        {row.counterpartyIban && (
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 text-sm">
+            <dt className="text-muted-foreground">Account number</dt>
+            <dd data-testid="counterparty-iban">
+              {/* Stored without spaces; shown in groups of four. */}
+              {row.counterpartyIban.replace(/(.{4})(?=.)/g, "$1 ")}
+            </dd>
+          </dl>
         )}
         <NoteSection row={row} />
         <ExcludeSection row={row} />

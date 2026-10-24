@@ -6,7 +6,7 @@ import { RenewButton } from "@/components/connections/renew-button";
 import { SyncNowButton } from "@/components/sync/sync-now-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { syncConnectionAction } from "@/lib/sync/actions";
+import { rereadHistoryAction, syncConnectionAction } from "@/lib/sync/actions";
 import {
   BANK_ACCOUNT_TYPES,
   MAX_ACCOUNT_NAME_LENGTH,
@@ -21,7 +21,8 @@ import {
 
 // The bank connections on /connections: status, consent expiry, Renew when
 // it ends within 14 days or has ended (F-011), last sync, Sync now and the
-// sync log (F-010), the accounts (rename, checking or
+// sync log (F-010), Re-read history (F-028: the whole history again, which
+// fills columns added since the first sync), the accounts (rename, checking or
 // savings) and Archive / Remove, each confirmed in place.
 
 export interface ConnectionView {
@@ -172,6 +173,13 @@ function ConnectionCard({ connection }: { connection: ConnectionView }) {
           )}
           {connection.status === "active" && (
             <SyncNowButton sync={() => syncConnectionAction(connection.id)} />
+          )}
+          {connection.status === "active" && (
+            <SyncNowButton
+              sync={() => rereadHistoryAction(connection.id)}
+              label="Re-read history"
+              pendingLabel="Re-reading…"
+            />
           )}
         </div>
       )}

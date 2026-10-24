@@ -11,7 +11,8 @@ import { openTestDatabase } from "./support/database";
 // Sync now end to end (F-010) through the fake provider: a connection is
 // seeded as the connect flow leaves it before its first sync (accounts, no
 // balances), then the card's Sync now syncs it with a pending state and the
-// new balances, the sync log and the header's last sync appear. Other specs
+// new balances, the sync log and the header's last sync appear; Re-read
+// history then fetches the whole history again without duplicates. Other specs
 // connect banks in parallel, so only this spec's connections are asserted,
 // and the dashboard's Sync now (every connection) is not clicked.
 
@@ -161,6 +162,27 @@ test("Sync now syncs a connection through the fake provider and updates balances
     `${BANK} synced, 0 new transactions.`,
   );
   await expect(runs).toHaveCount(4);
+  await expect(runs.first().getByTestId("sync-run-inserted")).toHaveText("0");
+
+  // Re-read history (F-028) fetches the whole history again, as the first
+  // sync did, and inserts nothing.
+  const backfilled = await runs
+    .nth(2)
+    .getByTestId("sync-run-fetched")
+    .innerText();
+  await card.getByRole("button", { name: "Re-read history" }).click();
+  // Its own message next to Sync now's, which still says the same.
+  await expect(card.getByRole("status")).toHaveText([
+    `${BANK} synced, 0 new transactions.`,
+    `${BANK} synced, 0 new transactions.`,
+  ]);
+  await expect(runs).toHaveCount(6);
+  await expect(runs.first().getByTestId("sync-run-kind")).toHaveText(
+    "Transactions",
+  );
+  await expect(runs.first().getByTestId("sync-run-fetched")).toHaveText(
+    backfilled,
+  );
   await expect(runs.first().getByTestId("sync-run-inserted")).toHaveText("0");
 
   // The dashboard shows the synced balances under the user's names.

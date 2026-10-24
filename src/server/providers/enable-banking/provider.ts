@@ -1,4 +1,5 @@
 import { addDays, localDate } from "@/server/dates";
+import { normalizeIban, parseIban } from "@/server/iban";
 import {
   currencyExponent,
   divideRounded,
@@ -155,9 +156,12 @@ function description(transaction: EnableBankingTransaction): string | null {
 /**
  * The normalised transaction, or null for a status that moved no money
  * (cancelled, rejected, scheduled, informational). Money out is negative;
- * the counterparty is the creditor of a debit and the debtor of a credit.
- * The booking date falls back to the transaction and value dates (pending
- * rows may have none), then to `today`.
+ * the counterparty is the creditor of a debit and the debtor of a credit,
+ * and so is its account (F-028): the `iban` as the bank gives it, else an
+ * `other` identification that is an IBAN (a card's masked `CPAN` is not). Without a counterparty
+ * name, a description that is exactly an IBAN (Nordea's own transfers) is
+ * the counterparty's account too. The booking date falls back to the
+ * transaction and value dates (pending rows may have none), then to `today`.
  */
 export function mapTransaction(
   transaction: EnableBankingTransaction,
@@ -174,12 +178,15 @@ export function mapTransaction(
       : indicator === "CRDT"
         ? Math.abs(minor)
         : minor;
-  const counterparty =
+  const [counterparty, counterpartyAccount] =
     indicator === "DBIT"
-      ? transaction.creditor
+      ? [transaction.creditor, transaction.creditor_account]
       : indicator === "CRDT"
-        ? transaction.debtor
-        : null;
+        ? [transaction.debtor, transaction.debtor_account]
+        : [null, null];
+  const name = text(counterparty?.name);
+  const details = description(transaction);
+  const iban = text(counterpartyAccount?.iban);
   return {
     ref: text(transaction.entry_reference) ?? text(transaction.transaction_id),
     bookingDate:
@@ -190,8 +197,12 @@ export function mapTransaction(
     valueDate: transaction.value_date ?? null,
     amountMinor,
     currency,
-    counterparty: text(counterparty?.name),
-    description: description(transaction),
+    counterparty: name,
+    counterpartyIban:
+      (iban && normalizeIban(iban)) ??
+      parseIban(counterpartyAccount?.other?.identification) ??
+      (name === null ? parseIban(details) : null),
+    description: details,
     status,
   };
 }

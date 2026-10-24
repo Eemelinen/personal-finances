@@ -747,7 +747,7 @@
       "area": "banking",
       "title": "Counterparty account numbers",
       "user_visible_behavior": "Synced transactions keep the other party's IBAN (`counterparty_iban`, from Enable Banking's creditor/debtor account, or an IBAN-only description), shown in the transaction details. Own-transfer detection checks it against the own accounts' IBANs before the texts. \"Re-read history\" on a connection backfills the column on stored rows without duplicates.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-009", "F-014"],
       "ticket": "FIN-028",
       "spec": "docs/tickets/FIN-028-counterparty-account-numbers.md",
@@ -757,7 +757,12 @@
         "L1: pnpm test:unit tests/unit/categorization/transfers.test.ts (counterpartyIban of another own account pairs only there or is one-sided)",
         "L2: pnpm test:integration tests/integration/sync-transactions.int.test.ts (re-read fills the column in place, inserts nothing)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (working tree on 09379c7)",
+        "2026-10-24 pnpm test:unit tests/unit/providers/enable-banking.test.ts → pass (working tree on 09379c7)",
+        "2026-10-24 pnpm test:unit tests/unit/categorization/transfers.test.ts → pass (working tree on 09379c7)",
+        "2026-10-24 pnpm test:integration tests/integration/sync-transactions.int.test.ts → pass (working tree on 09379c7, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Found with real data 2026-10-24: the provider kept only counterparty names, so own-account IBAN detection almost never applied."
     },

@@ -24,6 +24,11 @@ export interface TransactionValues {
   amountMinor: number;
   currency: string;
   counterparty: string | null;
+  /**
+   * Not in `dedupeHash` (stored hashes predate it, F-028): a re-read of
+   * the history matches stored rows as before and fills it in place.
+   */
+  counterpartyIban: string | null;
   description: string | null;
   status: "booked" | "pending";
 }
@@ -119,6 +124,7 @@ export function identifyTransactions(
       amountMinor: txn.amountMinor,
       currency: txn.currency,
       counterparty: txn.counterparty,
+      counterpartyIban: txn.counterpartyIban,
       description: txn.description,
       status: txn.status,
     };
@@ -134,6 +140,7 @@ function sameValues(a: TransactionValues, b: TransactionValues): boolean {
     a.amountMinor === b.amountMinor &&
     a.currency === b.currency &&
     a.counterparty === b.counterparty &&
+    a.counterpartyIban === b.counterpartyIban &&
     a.description === b.description &&
     a.status === b.status
   );

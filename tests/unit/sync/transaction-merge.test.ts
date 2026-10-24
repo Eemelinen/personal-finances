@@ -24,6 +24,7 @@ function txn(
     amountMinor: -1_250,
     currency: "EUR",
     counterparty: "Example Cafe",
+    counterpartyIban: null,
     description: "Card purchase",
     status: "booked",
     ...overrides,
@@ -203,6 +204,35 @@ describe("mergeTransactions", () => {
         id: known.id,
         values: expect.objectContaining({ description: "CARD PURCHASE 1234" }),
         rekey: true,
+      },
+    ]);
+  });
+
+  it("fills a counterparty IBAN in place, with or without a ref, keeping the hash", () => {
+    const withRef = stored(identified());
+    const withoutRef = stored(identified({ ref: null, amountMinor: -99 }));
+    const iban = "FI2112345600000785";
+    const listing = identifyTransactions([
+      txn({ counterpartyIban: iban }),
+      txn({ ref: null, amountMinor: -99, counterpartyIban: iban }),
+    ]);
+    expect(listing.map((row) => row.dedupeHash)).toEqual([
+      withRef.dedupeHash,
+      withoutRef.dedupeHash,
+    ]);
+
+    const plan = mergeTransactions([withRef, withoutRef], listing);
+    expect(plan.insert).toEqual([]);
+    expect(plan.update).toEqual([
+      {
+        id: withRef.id,
+        values: expect.objectContaining({ counterpartyIban: iban }),
+        rekey: false,
+      },
+      {
+        id: withoutRef.id,
+        values: expect.objectContaining({ counterpartyIban: iban }),
+        rekey: false,
       },
     ]);
   });

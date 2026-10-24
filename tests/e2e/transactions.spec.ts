@@ -449,4 +449,20 @@ test("marks pending transactions with a badge", async ({ page }) => {
   ).toHaveCount(0);
   // Pending ones count in the totals.
   await expect(total(page, "Expenses")).toHaveText(euros(-9_999));
+
+  // The details show the counterparty's account number when known (F-028).
+  await transactionRow(page, "Corner shop fixture")
+    .getByRole("button", { name: "Details" })
+    .click();
+  await expect(
+    page.getByRole("dialog").getByTestId("counterparty-iban"),
+  ).toHaveText("FI21 1234 5600 0007 85");
+  await page.keyboard.press("Escape");
+  await transactionRow(page, "Card reservation fixture")
+    .getByRole("button", { name: "Details" })
+    .click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(
+    page.getByRole("dialog").getByTestId("counterparty-iban"),
+  ).toHaveCount(0);
 });

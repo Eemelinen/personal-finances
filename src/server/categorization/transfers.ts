@@ -1,10 +1,12 @@
+import { normalizeIban } from "@/server/iban";
 import type { IsoDate } from "@/server/providers/types";
 
 // Own-transfer detection (F-014, D-012), pure. A debit on one own account
 // and a credit of the same absolute amount and currency on another own
 // account at most 3 days apart are the two legs of one transfer. A leg whose
-// counterparty or description names the IBAN of another own account is a
-// transfer to that account: it pairs only with a leg there, and stays a
+// counterparty account (`counterpartyIban`, F-028) or, failing that, whose
+// counterparty or description text names the IBAN of another own account is
+// a transfer to that account: it pairs only with a leg there, and stays a
 // one-sided transfer when that account has no matching leg (yet).
 //
 // Guards against equal amounts that are not transfers: both legs on one
@@ -16,6 +18,8 @@ import type { IsoDate } from "@/server/providers/types";
 
 export const TRANSFER_WINDOW_DAYS = 3;
 
+export { normalizeIban };
+
 /** IBANs shorter than this (normalised) are never searched for in texts. */
 const MIN_IBAN_LENGTH = 15;
 
@@ -26,6 +30,8 @@ export interface TransferCandidate {
   amountMinor: number;
   currency: string;
   counterparty: string | null;
+  /** The counterparty's IBAN, normalised, when the bank gave it. */
+  counterpartyIban: string | null;
   description: string | null;
   /** Set on a one-sided transfer: a partner found later joins its group. */
   transferGroupId: string | null;
@@ -51,11 +57,6 @@ export interface TransferMatches {
   oneSided: string[];
 }
 
-/** Upper-case without whitespace, so `FI12 3456` and `fi123456` agree. */
-export function normalizeIban(value: string): string {
-  return value.replace(/\s+/g, "").toUpperCase();
-}
-
 const DAY_MS = 86_400_000;
 
 function dayNumber(date: IsoDate): number {
@@ -77,9 +78,19 @@ export function findTransfers(input: {
     const iban = account.iban === null ? "" : normalizeIban(account.iban);
     return iban.length >= MIN_IBAN_LENGTH ? [{ id: account.id, iban }] : [];
   });
-  /** The other own account whose IBAN the leg's texts name, if any. */
+  /**
+   * The other own account the leg's counterparty account is, else the one
+   * whose IBAN its texts name, if any.
+   */
   const namedAccount = (leg: TransferCandidate): string | null => {
     if (ibans.length === 0) return null;
+    if (leg.counterpartyIban !== null) {
+      const iban = normalizeIban(leg.counterpartyIban);
+      const own = ibans.find(
+        (account) => account.id !== leg.accountId && account.iban === iban,
+      );
+      if (own) return own.id;
+    }
     const text = normalizeIban(
       `${leg.counterparty ?? ""}|${leg.description ?? ""}`,
     );

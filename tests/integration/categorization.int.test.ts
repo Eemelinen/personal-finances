@@ -434,6 +434,38 @@ describe("the import hook", () => {
   });
 });
 
+describe("transfers by counterparty account (F-028)", () => {
+  it("a stored row whose counterparty IBAN is an own account's becomes a transfer when categorised again", async () => {
+    const savingsId = await newManualAccount("Savings");
+    const iban = `FI${String(randomBytes(4).readUInt32BE()).padStart(16, "0")}`;
+    await testDb.db
+      .update(accounts)
+      .set({ iban })
+      .where(eq(accounts.id, savingsId));
+    const checkingId = await newManualAccount("Checking");
+    await importRows(checkingId, [
+      ["10.05.2026", "-321,00", "Testi Henkilö", "Oma siirto"],
+    ]);
+    const [before] = await transactionsOf(checkingId);
+    expect(before.transferGroupId).toBeNull();
+
+    // As a re-read of the history fills the column and categorises the row.
+    await testDb.db
+      .update(transactions)
+      .set({ counterpartyIban: iban })
+      .where(eq(transactions.id, before.id));
+    await testDb.db.transaction((tx) =>
+      categorizeTransactions(tx, [before.id]),
+    );
+    const [after] = await transactionsOf(checkingId);
+    expect(after).toMatchObject({
+      categoryId: await categoryId("Transfers"),
+      categorySource: "rule",
+    });
+    expect(after.transferGroupId).not.toBeNull();
+  });
+});
+
 describe("manual categories", () => {
   it("are never overwritten: not by the hook, not by re-apply, not by transfers", async () => {
     const accountId = await newManualAccount("Manual");
