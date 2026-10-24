@@ -9,8 +9,9 @@ const SECTIONS = [
 ] as const;
 
 // The dashboard has data by the time this spec runs (dashboard.spec.ts seeds
-// it first); every other section is still a placeholder.
-const WITH_DATA = new Set<string>(["/"]);
+// it first) and Reports links to its two reports; every other section is
+// still a placeholder.
+const WITH_DATA = new Set<string>(["/", "/reports"]);
 
 async function expectSection(page: Page, label: string, href: string) {
   await expect(page).toHaveURL(href);

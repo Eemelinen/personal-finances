@@ -92,8 +92,8 @@ In Claude Code: `/harness:clock-in`, implement, `/harness:verify-feature F-NNN`,
 src/app/        Next.js pages and route handlers; (app)/ holds the pages inside the app shell, login/ the login page
 src/proxy.ts    Redirects requests without a session to /login
 src/lib/        App helpers; lib/auth is the server-only session data access layer
-src/components/ App shell, dashboard widgets, shared components and shadcn/ui primitives (components/ui)
-src/server/     Domain code shared by the app and the worker (env, db, providers, sync, CSV import, dashboard queries)
+src/components/ App shell, dashboard widgets, report charts, shared components and shadcn/ui primitives (components/ui)
+src/server/     Domain code shared by the app and the worker (env, db, providers, sync, CSV import, dashboard and report queries)
 src/worker/     Background worker entrypoint and job registry
 drizzle/        Generated SQL migrations
 secrets/        Private keys, gitignored

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { formatDateTime, formatDay, formatLocalDay } from "@/lib/format";
+import {
+  formatDateTime,
+  formatDay,
+  formatLocalDay,
+  formatMonth,
+  formatPercent,
+} from "@/lib/format";
 
 // Money formatting: tests/unit/format/money.test.ts.
 
@@ -25,5 +31,21 @@ describe("formatLocalDay", () => {
     const instant = new Date("2026-03-31T22:30:00Z");
     expect(formatLocalDay(instant, "Europe/Helsinki")).toBe("1.4.2026");
     expect(formatLocalDay(instant, "UTC")).toBe("31.3.2026");
+  });
+});
+
+describe("formatMonth", () => {
+  it("shows a month as its short name and year", () => {
+    expect(formatMonth("2026-10")).toBe("Oct 2026");
+    expect(formatMonth("2027-01")).toBe("Jan 2027");
+    expect(formatMonth("2026-09")).toBe("Sep 2026");
+  });
+});
+
+describe("formatPercent", () => {
+  it("formats a share as fi-FI percent with one decimal", () => {
+    expect(formatPercent(0.748)).toBe("74,8 %");
+    expect(formatPercent(1)).toBe("100 %");
+    expect(formatPercent(-0.05)).toBe("−5 %");
   });
 });
