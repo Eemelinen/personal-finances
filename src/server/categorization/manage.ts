@@ -11,7 +11,7 @@ import {
 import { getDb, type Db } from "@/server/db/client";
 import { categories, categoryRules, transactions } from "@/server/db/schema";
 import type { Tx } from "@/server/sync/runs";
-import { transfersCategoryId } from "./categorize";
+import { lockCategorization, transfersCategoryId } from "./categorize";
 import { TRANSFERS_CATEGORY, type CategoryKind } from "./defaults";
 import { moveRuleIds, type MovePlace, type RuleInput } from "./rule-input";
 import { compareRules } from "./rules";
@@ -82,6 +82,15 @@ export async function listCategoryOptions(
 export interface CategoryUsage extends CategoryOption {
   rules: number;
   transactions: number;
+  /** The top-level Transfers category: no rename or delete. */
+  protected: boolean;
+}
+
+/** Transfer detection needs the top-level Transfers category. */
+function isTransfersCategory(
+  category: Pick<CategoryOption, "name" | "parentId">,
+): boolean {
+  return category.parentId === null && category.name === TRANSFERS_CATEGORY;
 }
 
 /** The categories with how many rules and transactions use each one. */
@@ -106,6 +115,7 @@ export async function listCategoryUsage(
     ...category,
     rules: rules.get(category.id) ?? 0,
     transactions: used.get(category.id) ?? 0,
+    protected: isTransfersCategory(category),
   }));
 }
 
@@ -188,7 +198,7 @@ export async function renameCategory(
     .from(categories)
     .where(eq(categories.id, id));
   if (!current) throw new CategoryManageError("The category is gone.");
-  if (current.parentId === null && current.name === TRANSFERS_CATEGORY) {
+  if (isTransfersCategory(current)) {
     throw new CategoryManageError(
       `${TRANSFERS_CATEGORY} is used by transfer detection and keeps its name.`,
     );
@@ -210,12 +220,14 @@ export async function deleteCategory(
 ): Promise<void> {
   const db = options.db ?? getDb();
   await db.transaction(async (tx) => {
+    // Rewrites the category of many rows: serialised with re-apply (D-013).
+    await lockCategorization(tx);
     const [current] = await tx
       .select({ name: categories.name, parentId: categories.parentId })
       .from(categories)
       .where(eq(categories.id, id));
     if (!current) throw new CategoryManageError("The category is gone.");
-    if (current.parentId === null && current.name === TRANSFERS_CATEGORY) {
+    if (isTransfersCategory(current)) {
       throw new CategoryManageError(
         `${TRANSFERS_CATEGORY} is used by transfer detection and cannot be deleted.`,
       );
@@ -389,11 +401,4 @@ export async function categoryExists(
     .from(categories)
     .where(eq(categories.id, id));
   return row !== undefined;
-}
-
-/** True when the id is the top-level Transfers category. */
-export function isTransfersCategory(
-  option: Pick<CategoryOption, "name" | "parentId">,
-): boolean {
-  return option.parentId === null && option.name === TRANSFERS_CATEGORY;
 }

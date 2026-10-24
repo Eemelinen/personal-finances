@@ -11,6 +11,7 @@ import {
   createRule,
   deleteCategory,
   listCategoryOptions,
+  listCategoryUsage,
   listRules,
   moveRule,
   renameCategory,
@@ -442,6 +443,10 @@ describe("categories and rules", () => {
     await expect(renameCategory(transfers, "Moves", db())).rejects.toThrow(
       CategoryManageError,
     );
+    const usage = await listCategoryUsage(db());
+    expect(
+      usage.filter((category) => category.protected).map((c) => c.id),
+    ).toEqual([transfers]);
   });
 
   it("deleting a category deletes its subcategories and rules and frees its transactions", async () => {

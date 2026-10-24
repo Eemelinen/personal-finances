@@ -252,7 +252,7 @@ Providers return **normalized** DTOs whose fields mirror the table columns: amou
 - **Edits** (`transaction-edits.ts`) are `manual`, so the engine never undoes them: the inline category; "Automatic (rules)" hands a transaction back to the rules (a transfer leg gets Transfers); a note; "Mark as transfer" makes a one-sided transfer (own group, Transfers); "Unlink transfer" takes every leg out of its group with its rule category (or none).
 - **Rules**: a new rule runs before all others (priority = lowest − 10); "apply to similar past ones" is `reapplyRules()`. Moving a rule places it before or after another (the settings page can list one category's rules) and renumbers all rules 10, 20, …; creating and moving take an advisory lock. Regex patterns are compiled before saving (`rule-input.ts`).
 - **Categories**: two levels, a subcategory has its parent's kind; deleting one deletes its subcategories and their rules and returns its transactions to no category (`none`; transfer legs get Transfers). The top-level Transfers category cannot be renamed or deleted.
-- **Concurrency**: categorisation runs under one transaction-scoped advisory lock (`lockCategorization()` in `categorize.ts`), which the sync takes at the start of each account's write transaction; the engine's updates re-check that a row is not `manual`, so a concurrent user edit wins.
+- **Concurrency**: categorisation runs under one transaction-scoped advisory lock (`lockCategorization()` in `categorize.ts`), which the sync takes at the start of each account's write transaction and every user edit of a category or transfer group takes first; the engine's updates re-check that a row is not `manual`, so a concurrent user edit wins.
 
 ## Conventions
 

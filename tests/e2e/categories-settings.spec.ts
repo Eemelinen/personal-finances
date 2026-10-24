@@ -199,6 +199,18 @@ test("adds, renames and deletes a subcategory", async ({ page }) => {
   await expect(categoryRow(page, `Renamed ${tag}`)).toHaveCount(0);
 });
 
+test("offers no rename or delete for Transfers", async ({ page }) => {
+  await openSettings(page);
+  const transfers = page
+    .getByRole("table", { name: "Categories" })
+    .getByRole("row")
+    .filter({
+      has: page.getByRole("cell", { name: "Transfers", exact: true }),
+    });
+  await expect(transfers).toContainText("Used by transfer detection");
+  await expect(transfers.getByRole("button")).toHaveCount(0);
+});
+
 async function addCategoryExpectingError(
   page: Page,
   name: string,

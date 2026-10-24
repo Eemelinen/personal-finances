@@ -324,7 +324,7 @@ const TRANSFERS_WHERE = and(
 );
 
 /** The top-level Transfers category, if it exists. */
-export async function findTransfersCategory(tx: Tx): Promise<string | null> {
+async function findTransfersCategory(tx: Tx): Promise<string | null> {
   const [row] = await tx
     .select({ id: categories.id })
     .from(categories)

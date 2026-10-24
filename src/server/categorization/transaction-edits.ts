@@ -51,8 +51,9 @@ export async function setTransactionCategory(
 ): Promise<void> {
   const db = options.db ?? getDb();
   await db.transaction(async (tx) => {
-    // "auto" re-categorises: lock before writing the row (see the lock).
-    if (choice === "auto") await lockCategorization(tx);
+    // Lock before writing the row (see the lock): "auto" re-categorises, and
+    // a running re-apply must not overwrite a manual choice it read before.
+    await lockCategorization(tx);
     const row = await load(tx, id);
     if (choice !== "auto") {
       if (!(await categoryExists(tx, choice))) {
@@ -108,6 +109,9 @@ export async function markTransfer(
 ): Promise<void> {
   const db = options.db ?? getDb();
   await db.transaction(async (tx) => {
+    // Writes the transfer group: lock before reading the row, so a running
+    // re-apply or sync cannot link it (or its legs) in between.
+    await lockCategorization(tx);
     const row = await load(tx, id);
     if (row.transferGroupId !== null) {
       throw new CategoryManageError("The transaction is already a transfer.");
@@ -130,6 +134,9 @@ export async function unlinkTransfer(
 ): Promise<void> {
   const db = options.db ?? getDb();
   await db.transaction(async (tx) => {
+    // Writes the transfer group: lock before reading the row, so a running
+    // re-apply or sync cannot link it (or its legs) in between.
+    await lockCategorization(tx);
     const row = await load(tx, id);
     if (row.transferGroupId === null) {
       throw new CategoryManageError("The transaction is not a transfer.");

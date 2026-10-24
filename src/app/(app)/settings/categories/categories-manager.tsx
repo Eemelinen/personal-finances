@@ -497,24 +497,30 @@ function CategoryRow({
         {category.transactions === 1 ? "transaction" : "transactions"}
       </td>
       <td className="py-2">
-        <div className="flex justify-end gap-1">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setMode("rename")}
-          >
-            Rename
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setMode("delete")}
-          >
-            Delete
-          </Button>
-        </div>
+        {category.protected ? (
+          <p className="text-muted-foreground text-right text-sm">
+            Used by transfer detection
+          </p>
+        ) : (
+          <div className="flex justify-end gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setMode("rename")}
+            >
+              Rename
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setMode("delete")}
+            >
+              Delete
+            </Button>
+          </div>
+        )}
       </td>
     </tr>
   );
