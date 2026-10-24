@@ -34,7 +34,9 @@ export const jobs: Job[] = [
     },
   },
   {
-    // Kraken balances and ledger (F-021); a no-op without KRAKEN_API_KEY.
+    // Kraken balances and ledger (F-021) of every active Kraken connection;
+    // the env key creates the connection. Removing the key from the env
+    // does not stop the sync: revoke it on Kraken (D-018).
     name: "kraken-sync",
     schedule: "15 */6 * * *",
     run: async () => {

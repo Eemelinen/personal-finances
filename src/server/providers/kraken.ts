@@ -135,7 +135,11 @@ const LEGACY_CODES: Record<string, string> = {
   ZCAD: "CAD",
   ZJPY: "JPY",
   ZAUD: "AUD",
+  ZCHF: "CHF",
 };
+
+/** Kraken's fee credits: not an asset the account owns. */
+const FEE_CREDIT = "KFEE";
 
 const FIAT = new Set(["EUR", "USD", "GBP", "CAD", "JPY", "AUD", "CHF"]);
 
@@ -204,6 +208,7 @@ export function mapBalanceEx(
   const coins = new Map<string, { asset: ProviderAsset; units: bigint }>();
   const cash = new Map<CurrencyCode, bigint>();
   for (const [code, entry] of Object.entries(result)) {
+    if (code.toUpperCase() === FEE_CREDIT) continue;
     const units = decimal(entry.balance, `balance for ${code}`);
     const mapped = krakenAsset(code);
     if (mapped.fiat) {
@@ -340,7 +345,12 @@ export function mapLedger(
 
   for (const leg of legs) {
     const { type, subtype = "" } = leg.entry;
-    if (TRADE_TYPES.has(type)) {
+    if (leg.entry.asset.toUpperCase() === FEE_CREDIT) {
+      skipped.push({
+        ref: leg.id,
+        reason: "Kraken fee credits (KFEE) are not recorded",
+      });
+    } else if (TRADE_TYPES.has(type)) {
       const group = trades.get(leg.entry.refid);
       if (group) group.push(leg);
       else trades.set(leg.entry.refid, [leg]);
@@ -608,7 +618,11 @@ export function createKrakenProvider(
         (!range.from || date >= range.from) && (!range.to || date <= range.to);
       return {
         transactions: history.transactions.filter((t) => inRange(t.tradeDate)),
-        skipped: history.skipped,
+        skipped: history.skipped.filter(({ ref }) =>
+          inRange(
+            localDate(new Date(ledger[ref].time * 1000), options.timeZone),
+          ),
+        ),
       };
     },
   };

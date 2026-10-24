@@ -137,6 +137,7 @@ describe("krakenAsset", () => {
     ["EUR.HOLD", "EUR"],
     ["EUR.M", "EUR"],
     ["ZUSD", "USD"],
+    ["ZCHF", "CHF"],
     ["CHF", "CHF"],
   ])("maps %s to the fiat currency %s", (code, currency) => {
     expect(krakenAsset(code)).toEqual({ fiat: true, currency });
@@ -206,6 +207,15 @@ describe("mapBalanceEx", () => {
         ["USD", BigInt("108500000000000000000")],
       ]),
     );
+  });
+
+  it("ignores Kraken fee credits", () => {
+    const { holdings, cash } = mapBalanceEx(
+      { KFEE: { balance: "1200.00" }, XXBT: { balance: "1" } },
+      "2026-10-24",
+    );
+    expect(holdings.map((h) => h.symbol)).toEqual(["BTC"]);
+    expect(cash.size).toBe(0);
   });
 
   it("leaves out coins with a zero balance", () => {
@@ -357,6 +367,32 @@ describe("mapLedger", () => {
     });
     // Deposited from elsewhere and bought coin-to-coin: cost unknown.
     expect(bases.get("DOT")).toBeNull();
+  });
+
+  it("skips fee credits, also inside a trade", () => {
+    const time = Date.parse("2026-09-01T12:00:00Z") / 1000;
+    const leg = (asset: string, amount: string) => ({
+      refid: "TKF001",
+      time,
+      type: "trade",
+      asset,
+      amount,
+      fee: "0",
+    });
+    const history = mapLedger(
+      {
+        LKF1: leg("ZEUR", "-100"),
+        LKF2: leg("XXBT", "0.002"),
+        LKF3: leg("KFEE", "-26"),
+      },
+      TIME_ZONE,
+    );
+    expect(history.transactions).toMatchObject([
+      { ref: "LKF2", type: "buy", quantity: "0.002", amountMinor: -10000 },
+    ]);
+    expect(history.skipped).toEqual([
+      { ref: "LKF3", reason: "Kraken fee credits (KFEE) are not recorded" },
+    ]);
   });
 
   it("records an airdrop credited as a transfer in", () => {
@@ -511,6 +547,13 @@ describe("createKrakenProvider", () => {
       "2026-09-13",
       "2026-09-14",
       "2026-09-20",
+    ]);
+    // Skipped entries before the range are not reported again.
+    expect(history.skipped.map((e) => e.ref).sort()).toEqual([
+      "LADJ01-AAAAA-AAAAAA",
+      "LERN02-AAAAA-AAAAAA",
+      "LFXC01-AAAAA-AAAAAA",
+      "LFXC02-AAAAA-AAAAAA",
     ]);
   });
 
