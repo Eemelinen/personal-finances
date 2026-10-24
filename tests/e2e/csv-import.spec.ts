@@ -1,9 +1,15 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { eq } from "drizzle-orm";
+import { createManualAccount } from "@/server/csv/import-csv";
+import { accounts, transactions } from "@/server/db/schema";
+import { openTestDatabase } from "./support/database";
 
 // /import end to end: upload a synthetic export (tests/fixtures/csv/), check
 // the preview, import it into a new manual account and read the summary;
-// a second import of the same file skips every row as a duplicate.
+// a second import of the same file skips every row as a duplicate. An
+// account the bank already synced shows, before the import, how many of the
+// file's rows it has (F-032).
 
 const FIXTURES = "tests/fixtures/csv";
 
@@ -102,6 +108,74 @@ test("imports a Nordea export once and skips it the second time", async ({
       name: `Nordea · ${name} (manual)`,
     }),
   ).toBeAttached();
+});
+
+test("shows how many rows a synced account already has", async ({ page }) => {
+  // Four of nordea.csv's six rows as the bank's API stored them: other
+  // texts, refs, the salary and a purchase booked a day later.
+  const name = `Synced e2e ${randomUUID().slice(0, 8)}`;
+  const db = openTestDatabase();
+  try {
+    const accountId = await createManualAccount(
+      { name, type: "checking", format: "nordea" },
+      { db },
+    );
+    await db
+      .update(accounts)
+      .set({ providerAccountRef: `e2e-${accountId}` })
+      .where(eq(accounts.id, accountId));
+    const bank = (
+      ref: string,
+      bookingDate: string,
+      valueDate: string,
+      amountMinor: number,
+      counterparty: string,
+    ) => ({
+      accountId,
+      providerTxnRef: `${accountId}:${ref}`,
+      dedupeHash: `${accountId}:${ref}`,
+      bookingDate,
+      valueDate,
+      amountMinor,
+      currency: "EUR",
+      counterparty,
+      source: "bank" as const,
+    });
+    await db
+      .insert(transactions)
+      .values([
+        bank("rent", "2026-01-02", "2026-01-02", -95_000, "ESIMERKKI ASUNNOT"),
+        bank("coffee", "2026-01-05", "2026-01-04", -450, "KAHVILA MAARANPAA"),
+        bank("salary", "2026-01-16", "2026-01-15", 350_000, "TYONANTAJA OY"),
+        bank("shop", "2026-01-21", "2026-01-21", -123_456, "LAHIKAUPPA"),
+      ]);
+  } finally {
+    await db.$client.end();
+  }
+
+  await preview(page, `${FIXTURES}/nordea.csv`);
+  await page
+    .getByLabel("Account", { exact: true })
+    .selectOption({ label: `Nordea · ${name} (manual)` });
+  const match = page.getByTestId("csv-match");
+  await expect(match).toHaveText("4 already in the app, 2 new, 0 errors.");
+  await page
+    .getByLabel("Account", { exact: true })
+    .selectOption({ label: "New manual account…" });
+  await expect(match).toHaveText("0 already in the app, 6 new, 0 errors.");
+  await page
+    .getByLabel("Account", { exact: true })
+    .selectOption({ label: `Nordea · ${name} (manual)` });
+  await expect(match).toHaveText("4 already in the app, 2 new, 0 errors.");
+
+  await page.getByRole("button", { name: "Import 6 rows" }).click();
+  await expectSummary(page, {
+    rowsRead: 6,
+    inserted: 2,
+    duplicates: 4,
+    errors: 0,
+  });
+  await expect(match).toHaveText("6 already in the app, 0 new, 0 errors.");
 });
 
 test("lists unreadable S-Pankki rows by row number and imports the rest", async ({

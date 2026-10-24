@@ -12,8 +12,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatDay, formatMoney } from "@/lib/format";
 import type { ColumnMapping, CsvFormat } from "@/server/csv/bank-csv";
-import type { ImportAccount, ImportSummary } from "@/server/csv/import-csv";
-import { importCsv, previewCsv, type CsvPreview } from "./actions";
+import type {
+  ImportAccount,
+  ImportCounts,
+  ImportSummary,
+} from "@/server/csv/import-csv";
+import { countCsv, importCsv, previewCsv, type CsvPreview } from "./actions";
 import { MAX_CSV_BYTES } from "./limits";
 
 // The upload → preview → import flow. The browser keeps the chosen file and
@@ -63,6 +67,8 @@ export function ImportForm({ accounts }: ImportFormProps) {
   );
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState<"checking" | "savings">("checking");
+  const [counts, setCounts] = useState<ImportCounts | null>(null);
+  const countRequest = useRef(0);
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -108,7 +114,28 @@ export function ImportForm({ accounts }: ImportFormProps) {
       }
       setPreview(result.preview);
       setMapping(result.preview.mapping);
+      if (!result.preview.needsMapping) {
+        await runCount(result.preview, account);
+      }
     });
+  };
+
+  // What an import into `target` would do; only the latest answer counts.
+  const runCount = async (shown: CsvPreview, target: string) => {
+    const request = ++countRequest.current;
+    setCounts(null);
+    const data = formData({ format: shown.format, mapping: shown.mapping });
+    data.set("account", target);
+    const result = await countCsv(data);
+    if (request !== countRequest.current) return;
+    if (result.ok) setCounts(result.counts);
+    else setError(result.error);
+  };
+
+  const chooseAccount = (target: string) => {
+    setAccount(target);
+    if (!preview || preview.needsMapping) return;
+    startTransition(() => runCount(preview, target));
   };
 
   const runImport = () => {
@@ -128,12 +155,16 @@ export function ImportForm({ accounts }: ImportFormProps) {
       setSummary(result.summary);
       setAccount(result.accountId);
       setNewName("");
+      // Imported now: the same file is all in the app.
+      await runCount(preview, result.accountId);
     });
   };
 
   const resetPreview = () => {
     setPreview(null);
     setMapping(null);
+    countRequest.current++;
+    setCounts(null);
     setSummary(null);
     setError(null);
   };
@@ -225,7 +256,7 @@ export function ImportForm({ accounts }: ImportFormProps) {
                 id={`${ids}-account`}
                 className={selectClass}
                 value={account}
-                onChange={(event) => setAccount(event.target.value)}
+                onChange={(event) => chooseAccount(event.target.value)}
               >
                 {accounts.map((option) => (
                   <option key={option.id} value={option.id}>
@@ -264,6 +295,11 @@ export function ImportForm({ accounts }: ImportFormProps) {
               </>
             )}
           </div>
+          <p className="text-sm" data-testid="csv-match" aria-live="polite">
+            {counts
+              ? `${counts.present} already in the app, ${counts.new} new, ${counts.errors} ${counts.errors === 1 ? "error" : "errors"}.`
+              : "Checking the account…"}
+          </p>
           <div>
             <Button
               type="button"

@@ -17,6 +17,12 @@ export const transactionStatus = pgEnum("transaction_status", [
   "pending",
 ]);
 
+/**
+ * Where a transaction came from (F-032): the bank sync or a CSV import. An
+ * import matches its rows against stored ones of either source.
+ */
+export const transactionSource = pgEnum("transaction_source", ["bank", "csv"]);
+
 export const categorySource = pgEnum("category_source", [
   "none",
   "rule",
@@ -44,6 +50,8 @@ export const transactions = pgTable(
     counterpartyIban: text(),
     description: text(),
     status: transactionStatus().notNull().default("booked"),
+    /** The sync writes `bank`, an import `csv` (F-032). */
+    source: transactionSource().notNull().default("bank"),
     categoryId: uuid().references(() => categories.id, {
       onDelete: "set null",
     }),

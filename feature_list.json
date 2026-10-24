@@ -845,7 +845,7 @@
       "area": "banking",
       "title": "CSV rows matched to bank-synced transactions",
       "user_visible_behavior": "Importing a CSV into an account the bank already syncs inserts only rows the app does not have: each row is matched to a stored one by ref, hash, or same amount within 3 days of the booking or value date (tie-breaks: counterparty IBAN, text similarity, nearest day), each stored row once. The preview shows how many rows are already in the app; transactions record their source (`bank` or `csv`).",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-031"],
       "ticket": "FIN-032",
       "spec": "docs/tickets/FIN-032-csv-matched-to-bank-data.md",
@@ -855,7 +855,12 @@
         "L2: pnpm test:integration tests/integration/csv-import.int.test.ts (export over API rows inserts nothing; older rows only; +1-day Nordea booking date matched; re-import all duplicates)",
         "L3: pnpm test:e2e tests/e2e/csv-import.spec.ts (preview shows the already-present count)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (working tree on 05c9a2b)",
+        "2026-10-24 pnpm test:unit tests/unit/csv/match.test.ts → pass (working tree on 05c9a2b)",
+        "2026-10-24 pnpm test:integration tests/integration/csv-import.int.test.ts → pass (working tree on 05c9a2b, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/csv-import.spec.ts → pass (working tree on 05c9a2b, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Verified 2026-10-24: an overlapping real import would have duplicated nearly every row (texts differ between CSV and API; Nordea API booking date can be one day later)."
     },

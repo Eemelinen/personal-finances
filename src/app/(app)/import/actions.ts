@@ -13,9 +13,12 @@ import {
   type ParsedCsv,
 } from "@/server/csv/bank-csv";
 import {
+  countCsvMatches,
+  countNewAccountRows,
   ImportAccountError,
   importCsvIntoNewAccount,
   importCsvRows,
+  type ImportCounts,
   type ImportSummary,
 } from "@/server/csv/import-csv";
 import { MAX_CSV_BYTES } from "./limits";
@@ -23,6 +26,8 @@ import { MAX_CSV_BYTES } from "./limits";
 // The /import page's two steps (F-012). Both receive the file again, so the
 // server keeps no upload state: preview parses it, import parses it the same
 // way (the format and columns the preview settled on) and writes the rows.
+// Between them `countCsv()` says, for the chosen account, how many rows it
+// already has (F-032): the import's matching, without writing.
 
 /** How many parsed rows the preview sends to the browser. */
 const PREVIEW_ROWS = 200;
@@ -46,6 +51,9 @@ export interface CsvPreview {
 
 export type PreviewResult =
   { ok: true; preview: CsvPreview } | { ok: false; error: string };
+
+export type CountResult =
+  { ok: true; counts: ImportCounts } | { ok: false; error: string };
 
 export type ImportResult =
   | { ok: true; accountId: string; summary: ImportSummary }
@@ -107,6 +115,26 @@ export async function previewCsv(formData: FormData): Promise<PreviewResult> {
         errors: parsed.errors,
       },
     };
+  } catch (error) {
+    return { ok: false, error: userError(error) };
+  }
+}
+
+export async function countCsv(formData: FormData): Promise<CountResult> {
+  await verifySession();
+  try {
+    const { parsed } = await readUpload(formData);
+    if (parsed.needsMapping) {
+      throw new CsvFormatError("Choose the date and amount columns.");
+    }
+    const target = String(formData.get("account") ?? "");
+    if (target === "new") {
+      return { ok: true, counts: countNewAccountRows(parsed) };
+    }
+    if (!z.uuid().safeParse(target).success) {
+      throw new ImportAccountError("Choose an account.");
+    }
+    return { ok: true, counts: await countCsvMatches(target, parsed) };
   } catch (error) {
     return { ok: false, error: userError(error) };
   }

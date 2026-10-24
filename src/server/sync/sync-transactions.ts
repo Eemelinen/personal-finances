@@ -336,7 +336,7 @@ async function applyPlan(
       .values(
         plan.insert
           .slice(start, start + INSERT_BATCH)
-          .map((values) => ({ ...values, accountId })),
+          .map((values) => ({ ...values, accountId, source: "bank" as const })),
       )
       .returning({ id: transactions.id });
     ids.push(...rows.map((row) => row.id));
