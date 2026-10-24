@@ -576,7 +576,11 @@
         "2026-10-24 pnpm check → pass (commit 7b93480)",
         "2026-10-24 pnpm test:unit tests/unit/investments/performance.test.ts → pass (commit 7b93480)",
         "2026-10-24 pnpm test:integration tests/integration/net-worth-investments.int.test.ts → pass (commit 7b93480, Docker available)",
-        "2026-10-24 pnpm test:e2e tests/e2e/allocation.spec.ts → pass (commit 7b93480, Docker available)"
+        "2026-10-24 pnpm test:e2e tests/e2e/allocation.spec.ts → pass (commit 7b93480, Docker available)",
+        "2026-10-24 pnpm check → pass (commit 55301b0)",
+        "2026-10-24 pnpm test:unit tests/unit/investments/performance.test.ts → pass (commit 55301b0)",
+        "2026-10-24 pnpm test:integration tests/integration/net-worth-investments.int.test.ts → pass (commit 55301b0, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/allocation.spec.ts → pass (commit 55301b0, Docker available)"
       ],
       "attempts": 1,
       "notes": "Replaces old FIN-025. Attempt 1 failed 2026-10-24: evaluator: Revise"
