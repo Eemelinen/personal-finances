@@ -21,6 +21,17 @@ function lastSync(account: AccountSummary, timeZone: string): string {
   return `Synced ${formatDateTime(account.lastSyncedAt, timeZone)}`;
 }
 
+/**
+ * How an investment account's value is made up: holdings on top of a
+ * synced balance, or holdings and the cash its transactions imply.
+ */
+function holdingsText(account: AccountSummary): string {
+  const holdings = account.holdingsMinor;
+  if (account.balance) return `+ ${formatMoney(holdings ?? 0, "EUR")} holdings`;
+  if (account.derivedCashMinor === null) return "in holdings";
+  return `${formatMoney(holdings ?? 0, "EUR")} holdings + ${formatMoney(account.derivedCashMinor, "EUR")} cash`;
+}
+
 /** Accounts grouped by bank: balance, last sync and a balance sparkline. */
 export function AccountList({
   banks,
@@ -75,8 +86,13 @@ export function AccountList({
                           account.balance.amountMinor,
                           account.currency,
                         )
-                      : account.holdingsMinor !== null
-                        ? formatMoney(account.holdingsMinor, "EUR")
+                      : account.holdingsMinor !== null ||
+                          account.derivedCashMinor !== null
+                        ? formatMoney(
+                            (account.holdingsMinor ?? 0) +
+                              (account.derivedCashMinor ?? 0),
+                            "EUR",
+                          )
                         : "No balance yet"}
                   </span>
                   {account.balance && (
@@ -84,14 +100,13 @@ export function AccountList({
                       on {formatDay(account.balance.date)}
                     </span>
                   )}
-                  {account.holdingsMinor !== null && (
+                  {(account.holdingsMinor !== null ||
+                    account.derivedCashMinor !== null) && (
                     <span
                       data-testid="account-holdings"
                       className="text-muted-foreground text-xs tabular-nums"
                     >
-                      {account.balance
-                        ? `+ ${formatMoney(account.holdingsMinor, "EUR")} holdings`
-                        : "in holdings"}
+                      {holdingsText(account)}
                     </span>
                   )}
                 </div>

@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeftRight, ChartPie, TrendingUp } from "lucide-react";
+import { ArrowLeftRight, ChartPie, Layers, TrendingUp } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
-import { BALANCES_PATH, CASH_FLOW_PATH, SPENDING_PATH } from "@/lib/reports";
+import {
+  ALLOCATION_PATH,
+  BALANCES_PATH,
+  CASH_FLOW_PATH,
+  SPENDING_PATH,
+} from "@/lib/reports";
 
 export const metadata: Metadata = { title: "Reports" };
 
@@ -28,6 +33,13 @@ const REPORTS = [
       "Net worth and each account's balance over 3 months, 6 months, a year or all history.",
     icon: TrendingUp,
   },
+  {
+    href: ALLOCATION_PATH,
+    title: "Allocation",
+    description:
+      "Net worth by asset class and by account, and how much of the investments' value was contributed and how much the market added.",
+    icon: Layers,
+  },
 ] as const;
 
 export default function ReportsPage() {
@@ -35,7 +47,7 @@ export default function ReportsPage() {
     <>
       <PageHeader
         title="Reports"
-        description="Spending by category, income versus expenses, cash flow and balance history."
+        description="Spending by category, income versus expenses, cash flow, balance history and allocation."
       />
       <ul className="grid gap-4 sm:grid-cols-2">
         {REPORTS.map(({ href, title, description, icon: Icon }) => (

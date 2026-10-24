@@ -17,3 +17,4 @@ Net-worth history and the dashboard tiles include brokerage and crypto accounts 
 ## Notes
 
 - Replaces old FIN-025.
+- Implemented choices (F-022, D-019; nothing in the goal changed): the allocation and the performance are on `/reports/allocation` (a Reports tab); a Nordnet account's cash is the running sum of its EUR cash effects (the export's `Saldo` is not imported); stocks and ETFs are one class; shares are of the positive values; contributions are the value at the range's start plus transfers in and out (units at the day's price; a manual wallet's quantity changes) plus an account's value on the day it first has one (its units without a price yet then count on their first priced day, whether transferred or bought), and the market gain is the rest; the performance can be shown per investment account (`?account=`).

@@ -36,6 +36,8 @@ Optional: a free [Twelve Data](https://twelvedata.com/) key as `PRICE_API_KEY` g
 
 Optional: a **read-only** Kraken API key as `KRAKEN_API_KEY` / `KRAKEN_API_SECRET` lets the worker sync Kraken balances and ledger every six hours (it stores the key encrypted with `ENCRYPTION_KEY`). Create it under Kraken → Settings → API with only _Query Funds_, _Query Open Orders & Trades_, _Query Closed Orders & Trades_ and _Query Ledger Entries_; never enable trading, deposit or withdrawal permissions, and restrict it to your IP. To stop the sync, revoke the key on Kraken: the stored copy keeps being used after the variables are removed. Wallets without an API are added by hand on `/investments`. Crypto prices come from CoinGecko daily without a key; a free demo key as `COINGECKO_API_KEY` raises its rate limit.
 
+Net worth on the dashboard and under Reports → Balances counts the investments at each day's prices; Reports → Allocation breaks it down by asset class and by account and splits the investments' value into contributions and market gain. A Nordnet account's cash is worked out from its imported transactions, so import the export from the account's opening.
+
 Notes:
 
 - Postgres is published on host port **5434** (not 5432) to avoid clashing with other local projects. Change `POSTGRES_PORT` and `DATABASE_URL` in `.env` if needed.

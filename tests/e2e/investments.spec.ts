@@ -147,17 +147,19 @@ test("imports a Nordnet export and lists the holdings", async ({ page }) => {
     page.getByTestId("holding").filter({ visible: true }),
   ).toHaveCount(3);
 
-  // The dashboard counts the holdings in net worth.
+  // The dashboard counts the holdings and the cash in net worth.
   await page.goto("/");
   const account = page
     .getByRole("region", { name: "Nordnet" })
     .getByTestId("account")
     .filter({ hasText: "Nordnet 99990001" });
+  // With the cash the transactions imply (F-022): 5 000,00 deposited,
+  // 500,00 withdrawn, trades, the dividend, its tax and the fee.
   await expect(account.getByTestId("account-balance")).toHaveText(
-    /^2\s094,58\s€$/,
+    /^4\s719,05\s€$/,
   );
   await expect(account.getByTestId("account-holdings")).toHaveText(
-    "in holdings",
+    /^2\s094,58\s€ holdings \+ 2\s624,47\s€ cash$/,
   );
 });
 

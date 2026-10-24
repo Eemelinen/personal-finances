@@ -20,7 +20,7 @@ export default function CashFlowPage() {
     <>
       <PageHeader
         title="Reports"
-        description="Spending by category, income versus expenses, cash flow and balance history."
+        description="Spending by category, income versus expenses, cash flow, balance history and allocation."
       />
       <ReportTabs active={CASH_FLOW_PATH} />
       <Suspense

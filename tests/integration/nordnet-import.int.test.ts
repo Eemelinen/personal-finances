@@ -629,17 +629,29 @@ describe("valued holdings", () => {
       timeZone: "Europe/Helsinki",
     });
     const investments = await getInvestmentsOverview(TODAY, { db: testDb.db });
-    expect(overview.totals.netWorth.amountMinor).toBe(investments.valueMinor);
     // Three accounts hold the full fixture (2 144,58 € each) and one only
     // the two AAA1 lots of 7.4. (20 × 15,00).
     expect(investments.valueMinor).toBe(3 * 214_458 + 30_000);
+    // Their cash is what the transactions imply (F-022): 2 624,47 € for the
+    // full fixture, −278,00 € for the two lots alone.
+    const cash = overview.banks
+      .flatMap((bank) => bank.accounts)
+      .reduce((sum, a) => sum + (a.derivedCashMinor ?? 0), 0);
+    expect(cash).toBe(3 * 262_447 - 27_800);
+    expect(overview.totals.netWorth.amountMinor).toBe(
+      investments.valueMinor + cash,
+    );
     const nordnet = overview.banks.find((b) => b.name === "Nordnet");
     const summary = nordnet?.accounts.find((a) => a.id === account.id);
-    expect(summary).toMatchObject({ balance: null, holdingsMinor: 214_458 });
+    expect(summary).toMatchObject({
+      balance: null,
+      holdingsMinor: 214_458,
+      derivedCashMinor: 262_447,
+    });
     // 30 days ago (24.9.) the same units were valued with the prices known
     // then: AAA1 at its 7.4. trade price 13,00, the fund at 136,023 and USX
     // unvalued (no USD rate before 23.10.): 80 × 13,00 + 440,03 = 1 480,03 €
-    // per full account, 20 × 13,00 for the other.
+    // per full account, 20 × 13,00 for the other. The cash was the same.
     expect(overview.totals.netWorth.changeMinor).toBe(
       3 * (214_458 - 148_003) + (30_000 - 26_000),
     );
