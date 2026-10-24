@@ -620,11 +620,55 @@ describe("valued holdings", () => {
     });
     const investments = await getInvestmentsOverview(TODAY, { db: testDb.db });
     expect(overview.totals.netWorth.amountMinor).toBe(investments.valueMinor);
+    // Three accounts hold the full fixture (2 144,58 € each) and one only
+    // the two AAA1 lots of 7.4. (20 × 15,00).
+    expect(investments.valueMinor).toBe(3 * 214_458 + 30_000);
     const nordnet = overview.banks.find((b) => b.name === "Nordnet");
     const summary = nordnet?.accounts.find((a) => a.id === account.id);
     expect(summary).toMatchObject({ balance: null, holdingsMinor: 214_458 });
-    // 30 days ago the same units were valued with the prices known then
-    // (the trade prices and no USD rate yet): 80 × 13,00 + 440,03.
-    expect(overview.totals.netWorth.changeMinor).not.toBeNull();
+    // 30 days ago (24.9.) the same units were valued with the prices known
+    // then: AAA1 at its 7.4. trade price 13,00, the fund at 136,023 and USX
+    // unvalued (no USD rate before 23.10.): 80 × 13,00 + 440,03 = 1 480,03 €
+    // per full account, 20 × 13,00 for the other.
+    expect(overview.totals.netWorth.changeMinor).toBe(
+      3 * (214_458 - 148_003) + (30_000 - 26_000),
+    );
+  });
+});
+
+describe("asset currency", () => {
+  const HEADER =
+    "Id;Kauppapäivä;Salkku;Tapahtumatyyppi;Arvopaperi;ISIN;Määrä;Kurssi;Kokonaiskulut;Valuutta;Summa;Valuutta";
+  const TAX =
+    "22;2026-05-15;99990006;LÄHDEVERO;USY;US0000000026;10;;;;-1,50;EUR";
+  const BUY =
+    "21;2026-02-10;99990006;OSTO;USY;US0000000026;10;20,00;1,00;USD;-190,00;EUR";
+  const csv = (...lines: string[]) =>
+    new TextEncoder().encode([HEADER, ...lines].join("\n"));
+  const usy = async () => {
+    const [asset] = await testDb.db
+      .select({ currency: assets.currency })
+      .from(assets)
+      .where(eq(assets.isin, "US0000000026"));
+    return asset?.currency;
+  };
+
+  it("takes the quote currency from the buy even when a tax row comes first", async () => {
+    // Nordnet lists newest first: the EUR tax row precedes the USD buy.
+    await importFile(csv(TAX, BUY));
+    expect(await usy()).toBe("USD");
+  });
+
+  it("corrects a currency guessed from a tax row once the buy is imported", async () => {
+    await testDb.db
+      .update(assets)
+      .set({ currency: "EUR" })
+      .where(eq(assets.isin, "US0000000026"));
+    // A newer export with only the tax row keeps the guess…
+    await importFile(csv(TAX.replace("22;2026-05-15", "23;2026-08-15")));
+    expect(await usy()).toBe("EUR");
+    // …and an export with the buy corrects it.
+    await importFile(csv(BUY));
+    expect(await usy()).toBe("USD");
   });
 });

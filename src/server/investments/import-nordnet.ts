@@ -167,11 +167,20 @@ async function portfolioAccount(
   return { ...created, created: true };
 }
 
-/** Finds the asset by ISIN, else by symbol and currency; adds it if new. */
+/** One asset per ISIN, else per symbol, within a file. */
+function securityKey(security: NordnetSecurity): string {
+  return security.isin ?? `symbol:${security.symbol}`;
+}
+
+/**
+ * Finds the asset by ISIN, else by symbol and currency; adds it if new. A
+ * trade's currency is the quote currency and corrects the guess an earlier
+ * import made from a dividend or tax row (D-017).
+ */
 async function assetId(tx: Tx, security: NordnetSecurity): Promise<string> {
   const find = async () => {
     const [found] = await tx
-      .select({ id: assets.id })
+      .select({ id: assets.id, currency: assets.currency })
       .from(assets)
       .where(
         security.isin !== null
@@ -183,10 +192,18 @@ async function assetId(tx: Tx, security: NordnetSecurity): Promise<string> {
             ),
       )
       .limit(1);
-    return found?.id;
+    return found;
   };
   const found = await find();
-  if (found) return found;
+  if (found) {
+    if (security.quoted && found.currency !== security.currency) {
+      await tx
+        .update(assets)
+        .set({ currency: security.currency, updatedAt: new Date() })
+        .where(eq(assets.id, found.id));
+    }
+    return found.id;
+  }
   const [created] = await tx
     .insert(assets)
     .values({
@@ -198,7 +215,7 @@ async function assetId(tx: Tx, security: NordnetSecurity): Promise<string> {
     })
     .onConflictDoNothing()
     .returning({ id: assets.id });
-  return created?.id ?? (await find())!;
+  return created?.id ?? (await find())!.id;
 }
 
 /** Re-derives the account's holding snapshots from all its transactions. */
@@ -243,12 +260,23 @@ export async function importNordnetCsv(
     const summaries: NordnetImportAccount[] = [];
     const oversold = new Set<string>();
     const identified = identify(rows);
+    // Each asset from a trade row when the file has one: Nordnet lists
+    // newest first, so a dividend or tax row in the cash currency often
+    // comes before the buy that shows the quote currency.
+    const securities = new Map<string, NordnetSecurity>();
+    for (const { security } of rows) {
+      if (!security) continue;
+      const known = securities.get(securityKey(security));
+      if (!known || (!known.quoted && security.quoted)) {
+        securities.set(securityKey(security), security);
+      }
+    }
     const assetIds = new Map<string, string>();
     const assetOf = async (security: NordnetSecurity) => {
-      const key = `${security.isin ?? ""}|${security.symbol}|${security.currency}`;
+      const key = securityKey(security);
       let id = assetIds.get(key);
       if (!id) {
-        id = await assetId(tx, security);
+        id = await assetId(tx, securities.get(key)!);
         assetIds.set(key, id);
       }
       return id;

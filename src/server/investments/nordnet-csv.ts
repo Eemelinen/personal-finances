@@ -128,8 +128,14 @@ export interface NordnetSecurity {
   name: string | null;
   isin: string | null;
   assetClass: ProviderAssetClass;
-  /** The price's currency, which the asset is quoted in. */
+  /**
+   * The currency the asset is quoted in: a trade's price (or fee) currency.
+   * Other rows (dividends, taxes) are often in the cash currency, so theirs
+   * is only a guess, marked `quoted: false`.
+   */
   currency: CurrencyCode;
+  /** `currency` comes from a buy or sell, so it is the quote currency. */
+  quoted: boolean;
 }
 
 export interface NordnetRow {
@@ -180,13 +186,17 @@ function headerKey(value: string): string {
 }
 
 /**
- * A Nordnet number cell as a canonical decimal string. The comma is the
- * decimal separator (`3,235` is 3.235); spaces group thousands; a point
- * alone is a decimal point, beside a comma a thousands separator.
+ * A Nordnet number cell as a canonical decimal string. A lone comma or
+ * point is the decimal separator (`3,235` is 3.235); spaces group
+ * thousands; with both, the last one is the decimal separator and the
+ * other groups thousands (`1.234,56`, `1,234.56`).
  */
 export function parseNordnetDecimal(value: string): string {
   let compact = value.replace(/[\s  ']/g, "").replace("−", "-");
-  if (compact.includes(",")) compact = compact.replace(/\./g, "");
+  const decimalPoint = compact.lastIndexOf(".") > compact.lastIndexOf(",");
+  if (compact.includes(",") && compact.includes(".")) {
+    compact = compact.replace(decimalPoint ? /,/g : /\./g, "");
+  }
   compact = compact.replace(",", ".");
   if (!/^[+-]?(\d+(\.\d*)?|\.\d+)$/.test(compact)) {
     throw new Error(`Not a number: ${JSON.stringify(value)}`);
@@ -352,6 +362,7 @@ function readRecord(cells: readonly string[], layout: Layout): Read {
           isin,
           assetClass: assetClass(cell("instrumentType")),
           currency: priceCurrency,
+          quoted: trade,
         }
       : null;
 

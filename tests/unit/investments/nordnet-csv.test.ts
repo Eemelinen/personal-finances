@@ -47,6 +47,7 @@ describe("parseNordnetDecimal", () => {
     ["1 234,5", "1234.5"],
     ["136,023", "136.023"],
     ["1.234,56", "1234.56"],
+    ["1,234.56", "1234.56"],
     ["12.5", "12.5"],
     ["+30", "30"],
     ["−7,50", "-7.5"],
@@ -55,9 +56,12 @@ describe("parseNordnetDecimal", () => {
     expect(parseNordnetDecimal(value)).toBe(expected);
   });
 
-  it.each(["", "abc", "1,2,3", "12e3", "1 234,56 €"])("rejects %j", (value) => {
-    expect(() => parseNordnetDecimal(value)).toThrow(/Not a number/);
-  });
+  it.each(["", "abc", "1,2,3", "1.234,567.89", "12e3", "1 234,56 €"])(
+    "rejects %j",
+    (value) => {
+      expect(() => parseNordnetDecimal(value)).toThrow(/Not a number/);
+    },
+  );
 });
 
 describe("decodeCsv", () => {
@@ -102,6 +106,7 @@ describe("readNordnetCsv: the synthetic export", () => {
         isin: "FI4000000011",
         assetClass: "stock",
         currency: "EUR",
+        quoted: true,
       },
       quantity: "100",
       priceMinor: "1250",
@@ -137,6 +142,18 @@ describe("readNordnetCsv: the synthetic export", () => {
     expect(usx.priceMinor).toBe("5000");
     expect(usx.currency).toBe("EUR");
     expect(usx.amountMinor).toBe(-47_000);
+  });
+
+  it("marks only a trade's currency as the quote currency", () => {
+    expect(byRef(parsed.rows, "1004").security).toMatchObject({
+      currency: "USD",
+      quoted: true,
+    });
+    // The tax row has no price or fee currency: the cash currency, a guess.
+    expect(byRef(parsed.rows, "1007").security).toMatchObject({
+      currency: "EUR",
+      quoted: false,
+    });
   });
 
   it("maps dividends, withholding tax, fees, deposits and withdrawals", () => {
