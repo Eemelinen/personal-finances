@@ -1,9 +1,10 @@
 import { getEnv, type Env } from "@/server/env";
 import { createFakeProvider } from "./fake";
+import { createKrakenProvider } from "./kraken";
 import { isProviderId, type FinancialProvider, type ProviderId } from "./types";
 
 // Maps the provider id stored in `provider` columns to its implementation.
-// F-006 registers Enable Banking, F-012 the CSV importer.
+// F-006 registers Enable Banking, F-021 Kraken.
 
 export class UnknownProviderError extends Error {
   override readonly name = "UnknownProviderError";
@@ -42,15 +43,19 @@ export function createProviderRegistry(
   };
 }
 
-type ProviderEnv = Pick<Env, "BANK_PROVIDER">;
+type ProviderEnv = Pick<Env, "BANK_PROVIDER" | "APP_TIMEZONE">;
 
 /**
- * The providers of a running app or worker. The fake is registered only
- * when `BANK_PROVIDER=fake` (tests and e2e), so a real installation never
+ * The providers of a running app or worker. Kraken is always registered
+ * (its key comes with each connection). The fake is registered only when
+ * `BANK_PROVIDER=fake` (tests and e2e), so a real installation never
  * serves fake data, even for a stray `provider = 'fake'` row.
  */
 export function defaultProviders(env: ProviderEnv): FinancialProvider[] {
-  return env.BANK_PROVIDER === "fake" ? [createFakeProvider()] : [];
+  return [
+    createKrakenProvider({ timeZone: env.APP_TIMEZONE }),
+    ...(env.BANK_PROVIDER === "fake" ? [createFakeProvider()] : []),
+  ];
 }
 
 let registry: ProviderRegistry | undefined;

@@ -89,8 +89,11 @@ export interface CostBasis {
 /**
  * The average-cost basis per asset on `date`: a buy adds the cash it took
  * (price plus fees), a sell removes the average cost of the units sold;
- * dividends, taxes and fees do not change it. Null for an asset whose buys
- * were paid in more than one currency (there is no one basis to show).
+ * dividends, taxes and fees do not change it. Units received for nothing
+ * (staking rewards, F-021) cost 0. Null for an asset whose buys were paid
+ * in more than one currency (there is no one basis to show) or that units
+ * of unknown cost came into (a Kraken deposit, or a coin-to-coin trade,
+ * which has no cash amount).
  */
 export function costBasis(
   transactions: readonly TransactionInput[],
@@ -102,6 +105,7 @@ export function costBasis(
       units: bigint;
       cost: bigint;
       currency: CurrencyCode | null;
+      /** Several currencies, or units of unknown cost. */
       mixed: boolean;
     }
   >();
@@ -116,7 +120,11 @@ export function costBasis(
       mixed: false,
     };
     if (quantity > ZERO) {
-      if (asset.currency !== null && asset.currency !== tx.currency) {
+      if (
+        (asset.currency !== null && asset.currency !== tx.currency) ||
+        tx.type === "transfer" ||
+        (tx.type === "buy" && tx.amountMinor === 0)
+      ) {
         asset.mixed = true;
       }
       asset.currency ??= tx.currency;

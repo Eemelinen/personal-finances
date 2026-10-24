@@ -337,7 +337,9 @@ const ECB = async () => ({
 
 describe("updatePrices", () => {
   it("stores the ECB rates and a close per held security, reporting unknown symbols", async () => {
-    // A security nobody holds any more, and crypto (F-021), are not priced.
+    // A security nobody holds any more is not priced, and crypto is not
+    // asked of the stock price API (CoinGecko prices it, F-021; see
+    // crypto-holdings.int.test.ts).
     const [account] = await testDb.db
       .select({ id: accounts.id })
       .from(accounts)
@@ -383,6 +385,7 @@ describe("updatePrices", () => {
     const calls: PriceQuery[] = [];
     const result = await updatePrices({
       db: testDb.db,
+      cryptoClient: null,
       fetchRates: ECB,
       client: mockClient(
         {
@@ -405,7 +408,6 @@ describe("updatePrices", () => {
       "USX",
     ]);
     expect(calls[0]).toEqual({
-      id: expect.any(String),
       symbol: "AAA1",
       isin: "FI4000000011",
       currency: "EUR",
@@ -445,6 +447,7 @@ describe("updatePrices", () => {
     });
     const result = await updatePrices({
       db: testDb.db,
+      cryptoClient: null,
       fetchRates: async () => ({
         date: "2026-10-23",
         rates: [{ currency: "USD", rate: "1.2" }],
@@ -482,7 +485,12 @@ describe("updatePrices", () => {
       .where(and(eq(fxRates.currency, "USD"), eq(fxRates.date, "2026-10-23")));
     expect(rate.rate).toBe("1.200000000000000000");
     // Back to 1.1 for the valuation below.
-    await updatePrices({ db: testDb.db, fetchRates: ECB, client: null });
+    await updatePrices({
+      db: testDb.db,
+      fetchRates: ECB,
+      client: null,
+      cryptoClient: null,
+    });
   });
 
   it("stops at an API that refuses and still stores the rates; skips prices without a key", async () => {
@@ -496,6 +504,7 @@ describe("updatePrices", () => {
     };
     const stopped = await updatePrices({
       db: testDb.db,
+      cryptoClient: null,
       fetchRates: ECB,
       client: refusing,
     });
@@ -506,6 +515,7 @@ describe("updatePrices", () => {
 
     const noKey = await updatePrices({
       db: testDb.db,
+      cryptoClient: null,
       fetchRates: async () => {
         throw new PriceApiError(
           "unavailable",

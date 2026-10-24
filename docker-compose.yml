@@ -60,6 +60,12 @@ services:
       APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Helsinki}
       # Optional: closing prices (FIN-020); without it only FX rates update.
       PRICE_API_KEY: ${PRICE_API_KEY:-}
+      # Optional: the Kraken sync and crypto prices (FIN-021). The worker
+      # stores the Kraken key encrypted, so it then needs ENCRYPTION_KEY.
+      KRAKEN_API_KEY: ${KRAKEN_API_KEY:-}
+      KRAKEN_API_SECRET: ${KRAKEN_API_SECRET:-}
+      COINGECKO_API_KEY: ${COINGECKO_API_KEY:-}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
     depends_on:
       migrate:
         condition: service_completed_successfully

@@ -1,0 +1,41 @@
+{
+  "error": [],
+  "result": {
+    "ZEUR": {
+      "balance": "76.4600",
+      "hold_trade": "0.0000"
+    },
+    "EUR.HOLD": {
+      "balance": "1.0000",
+      "hold_trade": "0.0000"
+    },
+    "ZUSD": {
+      "balance": "108.5000",
+      "hold_trade": "0.0000"
+    },
+    "XXBT": {
+      "balance": "0.0080000100",
+      "hold_trade": "0.0010000000"
+    },
+    "XETH": {
+      "balance": "0.0000000000",
+      "hold_trade": "0.0000000000"
+    },
+    "ETH2.S": {
+      "balance": "0.0200490000",
+      "hold_trade": "0.0000000000"
+    },
+    "DOT": {
+      "balance": "9.9400000000",
+      "hold_trade": "0.0000000000"
+    },
+    "DOT.S": {
+      "balance": "3.0000000000",
+      "hold_trade": "0.0000000000"
+    },
+    "XYZQ": {
+      "balance": "3.5",
+      "hold_trade": "0"
+    }
+  }
+}
