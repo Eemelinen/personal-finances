@@ -62,20 +62,33 @@ export async function lockConnectionSync(
  */
 export type BankSyncErrorKind = SyncErrorKind | "internal";
 
-export interface BankSyncResult {
+interface BankSyncFields {
   connectionId: string;
-  /**
-   * `skipped`: another sync of the connection was running, or the
-   * connection was removed before its sync started.
-   */
-  status: "succeeded" | "failed" | "skipped";
   error: string | null;
   errorKind: BankSyncErrorKind | null;
-  /** Null when skipped, or when the sync failed on a bug before it. */
-  balances: SyncBalancesResult | null;
-  /** Null unless the balances succeeded and the transactions ran. */
-  transactions: SyncTransactionsResult | null;
 }
+
+/**
+ * One connection's sync, by `status`: a succeeded sync ran both steps; a
+ * `skipped` one ran neither, because another sync of the connection was
+ * running or the connection was removed before its sync started.
+ */
+export type BankSyncResult = BankSyncFields &
+  (
+    | {
+        status: "succeeded";
+        balances: SyncBalancesResult;
+        transactions: SyncTransactionsResult;
+      }
+    | {
+        status: "failed";
+        /** Null when the sync failed on a bug before it. */
+        balances: SyncBalancesResult | null;
+        /** Null unless the balances succeeded and the transactions ran. */
+        transactions: SyncTransactionsResult | null;
+      }
+    | { status: "skipped"; balances: null; transactions: null }
+  );
 
 export type BankSyncOptions = SyncTransactionsOptions;
 
@@ -130,22 +143,24 @@ export async function syncBankConnection(
     }
 
     const transactions = await syncTransactions(connectionId, syncOptions);
-    return {
+    const fields = {
       connectionId,
-      status: transactions.status,
       error: transactions.error,
       errorKind: transactions.errorKind,
       balances,
       transactions,
     };
+    return transactions.status === "succeeded"
+      ? { ...fields, status: "succeeded" }
+      : { ...fields, status: "failed" };
   });
 }
 
-export interface BankConnectionSyncResult extends BankSyncResult {
+export type BankConnectionSyncResult = BankSyncResult & {
   institution: string;
   /** The error a failed `internal` sync threw, for the log. */
   cause?: unknown;
-}
+};
 
 export interface SyncBankConnectionsOptions extends BankSyncOptions {
   /** Only these connections (Sync now on one); default every one. */
@@ -207,7 +222,7 @@ export function describeBankSync(result: BankConnectionSyncResult): string {
   if (result.status === "failed") {
     return `${result.institution}: failed (${result.errorKind}): ${result.error}`;
   }
-  const balances = result.balances!.counts;
-  const transactions = result.transactions!.counts;
+  const balances = result.balances.counts;
+  const transactions = result.transactions.counts;
   return `${result.institution}: ${balances.accounts} accounts, ${balances.inserted} new and ${balances.updated} changed balances, ${transactions.inserted} new, ${transactions.updated} changed and ${transactions.removed} removed of ${transactions.fetched} transactions`;
 }

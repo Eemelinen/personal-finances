@@ -30,7 +30,7 @@ function describe(result: BankSyncResult & { institution: string }): string {
   if (result.status === "failed") {
     return `${result.institution}: ${FAILURES[result.errorKind ?? "internal"]}.`;
   }
-  const inserted = result.transactions?.counts.inserted ?? 0;
+  const { inserted } = result.transactions.counts;
   return `${result.institution} synced, ${plural(inserted, "new transaction", "new transactions")}.`;
 }
 

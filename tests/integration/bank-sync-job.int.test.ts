@@ -312,9 +312,11 @@ describe("syncBankConnection", () => {
 
 describe("syncBankConnections", () => {
   it("syncs every active bank connection; a failing one does not stop the others and is retried next time", async () => {
-    // Its own database state: only these connections exist.
-    await testDb.db.delete(connections);
+    // The file shares one database: connections earlier tests left behind
+    // sync too, so only this test's own results are compared, and the gate
+    // starts open so a leftover gated connection cannot hang the run.
     const { state, options } = testProvider();
+    state.gate.open();
     const flaky = await createConnection(SESSIONS.flaky);
     const buggy = await createConnection(SESSIONS.bug);
     const healthy = await createConnection(SESSIONS.valid);
@@ -329,7 +331,12 @@ describe("syncBankConnections", () => {
       provider: "kraken",
     });
 
-    const results = await syncBankConnections(options);
+    const own = new Set(
+      [flaky, buggy, healthy, expired, archived, kraken].map(({ id }) => id),
+    );
+    const results = (await syncBankConnections(options)).filter((result) =>
+      own.has(result.connectionId),
+    );
 
     expect(
       results.map(({ connectionId, institution, status, errorKind }) => ({
@@ -440,14 +447,17 @@ describe("sync log", () => {
   });
 
   it("gives the last successful bank sync, not Kraken's", async () => {
+    // Later than any sync the other tests run (their clock is `NOW`), so
+    // the result does not depend on which of them ran before.
+    const earlier = new Date("2029-06-01T10:00:00Z");
     const at = new Date("2030-01-01T10:00:00Z");
-    expect(
-      (await getLastSuccessfulSync({ db: testDb.db }))?.getTime(),
-    ).toBeLessThan(at.getTime());
+    await createConnection(SESSIONS.valid, { lastSyncedAt: earlier });
+    expect(await getLastSuccessfulSync({ db: testDb.db })).toEqual(earlier);
     await createConnection("kraken-credentials", {
       provider: "kraken",
       lastSyncedAt: new Date("2031-01-01T00:00:00Z"),
     });
+    expect(await getLastSuccessfulSync({ db: testDb.db })).toEqual(earlier);
     await createConnection(SESSIONS.valid, { lastSyncedAt: at });
     expect(await getLastSuccessfulSync({ db: testDb.db })).toEqual(at);
   });

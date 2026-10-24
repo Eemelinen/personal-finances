@@ -11,10 +11,8 @@ import type { SyncNowResult } from "@/lib/sync/summary";
  */
 export function SyncNowButton({
   sync,
-  label = "Sync now",
 }: {
   sync: () => Promise<SyncNowResult>;
-  label?: string;
 }) {
   const [result, setResult] = useState<SyncNowResult | null>(null);
   const [pending, startTransition] = useTransition();
@@ -36,7 +34,7 @@ export function SyncNowButton({
           aria-hidden="true"
           className={pending ? "animate-spin" : undefined}
         />
-        {pending ? "Syncing…" : label}
+        {pending ? "Syncing…" : "Sync now"}
       </Button>
       {result && (
         <p

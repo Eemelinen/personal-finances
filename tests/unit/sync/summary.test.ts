@@ -7,6 +7,7 @@ import type { BankConnectionSyncResult } from "@/server/sync/bank-sync";
 function result(
   values: Partial<BankConnectionSyncResult>,
 ): BankConnectionSyncResult {
+  // Only the fields the summary reads; a succeeded result names its counts.
   return {
     connectionId: "c1",
     institution: "Nordea",
@@ -16,7 +17,7 @@ function result(
     balances: null,
     transactions: null,
     ...values,
-  };
+  } as BankConnectionSyncResult;
 }
 
 const transactions = (inserted: number) =>
