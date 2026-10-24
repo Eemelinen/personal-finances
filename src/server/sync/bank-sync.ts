@@ -16,7 +16,11 @@ import {
 } from "./sync-transactions";
 
 // The bank sync (F-010): the worker's `bank-sync` job, Sync now and the first
-// sync after connecting all run `syncBankConnection()`. One connection's sync
+// sync after connecting all run `syncBankConnection()`. A connection whose
+// consent has ended (F-011: `consent_expires_at` passed, or the status is
+// already `expired`) is skipped without calling the bank, marked `expired`,
+// and the skip is in the result and so in the worker's log; renewing it
+// makes it `active` again. Otherwise one connection's sync
 // is `syncBalances()` (accounts and balances) and then, if that succeeded,
 // `syncTransactions()`, under a Postgres advisory lock per connection, so two
 // syncs of one connection never run at once: the second finds the lock taken
@@ -69,9 +73,14 @@ interface BankSyncFields {
 }
 
 /**
+ * Why a sync was skipped: another sync of the connection was running, the
+ * connection was removed before its sync started, or its consent has ended.
+ */
+export type BankSyncSkipReason = "running" | "removed" | "consent_expired";
+
+/**
  * One connection's sync, by `status`: a succeeded sync ran both steps; a
- * `skipped` one ran neither, because another sync of the connection was
- * running or the connection was removed before its sync started.
+ * `skipped` one ran neither (`skipReason` says why).
  */
 export type BankSyncResult = BankSyncFields &
   (
@@ -87,16 +96,31 @@ export type BankSyncResult = BankSyncFields &
         /** Null unless the balances succeeded and the transactions ran. */
         transactions: SyncTransactionsResult | null;
       }
-    | { status: "skipped"; balances: null; transactions: null }
+    | {
+        status: "skipped";
+        skipReason: BankSyncSkipReason;
+        balances: null;
+        transactions: null;
+      }
   );
 
 export type BankSyncOptions = SyncTransactionsOptions;
 
-function skipped(connectionId: string, error: string): BankSyncResult {
+const SKIP_MESSAGES: Record<BankSyncSkipReason, string> = {
+  running: "A sync of this connection is running",
+  removed: "The connection was removed",
+  consent_expired: "The consent has expired; renew the connection",
+};
+
+function skipped(
+  connectionId: string,
+  skipReason: BankSyncSkipReason,
+): BankSyncResult {
   return {
     connectionId,
     status: "skipped",
-    error,
+    skipReason,
+    error: SKIP_MESSAGES[skipReason],
     errorKind: null,
     balances: null,
     transactions: null,
@@ -105,21 +129,49 @@ function skipped(connectionId: string, error: string): BankSyncResult {
 
 /**
  * Syncs one connection's balances, then its transactions; skipped while
- * another sync of it runs. Provider failures are results; anything else is
- * recorded in the run and rethrown.
+ * another sync of it runs or when its consent has ended (which marks it
+ * `expired`). Provider failures are results; anything else is recorded in
+ * the run and rethrown.
  */
 export async function syncBankConnection(
   connectionId: string,
   options: BankSyncOptions = {},
 ): Promise<BankSyncResult> {
   const db = options.db ?? getDb();
+  const now = options.now ?? (() => new Date());
   const syncOptions = { ...options, db };
   return db.transaction(async (lock) => {
     const [row] = await lock.execute<{ locked: boolean }>(
       sql`select pg_try_advisory_xact_lock(${CONNECTION_LOCK_NAMESPACE}, ${connectionLockKey(connectionId)}) as locked`,
     );
-    if (!row?.locked) {
-      return skipped(connectionId, "A sync of this connection is running");
+    if (!row?.locked) return skipped(connectionId, "running");
+
+    const [connection] = await db
+      .select({
+        status: connections.status,
+        consentExpiresAt: connections.consentExpiresAt,
+      })
+      .from(connections)
+      .where(eq(connections.id, connectionId));
+    if (!connection) return skipped(connectionId, "removed");
+    if (connection.status === "expired") {
+      return skipped(connectionId, "consent_expired");
+    }
+    if (
+      connection.status === "active" &&
+      connection.consentExpiresAt !== null &&
+      connection.consentExpiresAt.getTime() <= now().getTime()
+    ) {
+      await db
+        .update(connections)
+        .set({ status: "expired" })
+        .where(
+          and(
+            eq(connections.id, connectionId),
+            eq(connections.status, "active"),
+          ),
+        );
+      return skipped(connectionId, "consent_expired");
     }
 
     let balances: SyncBalancesResult;
@@ -127,7 +179,7 @@ export async function syncBankConnection(
       balances = await syncBalances(connectionId, syncOptions);
     } catch (error) {
       if (error instanceof ConnectionNotFoundError) {
-        return skipped(connectionId, "The connection was removed");
+        return skipped(connectionId, "removed");
       }
       throw error;
     }
@@ -169,8 +221,9 @@ export interface SyncBankConnectionsOptions extends BankSyncOptions {
 
 /**
  * Syncs every `active` bank connection (not Kraken's, which has its own
- * job), oldest first, one at a time. One connection's failure, a bug
- * included, never stops the others.
+ * job), oldest first, one at a time. `expired` ones are included so that
+ * their skip is logged on every run until they are renewed. One
+ * connection's failure, a bug included, never stops the others.
  */
 export async function syncBankConnections(
   options: SyncBankConnectionsOptions = {},
@@ -185,7 +238,7 @@ export async function syncBankConnections(
     .where(
       and(
         inArray(connections.provider, [...BANK_PROVIDER_IDS]),
-        eq(connections.status, "active"),
+        inArray(connections.status, ["active", "expired"]),
         connectionIds ? inArray(connections.id, connectionIds) : undefined,
       ),
     )

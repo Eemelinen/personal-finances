@@ -86,7 +86,18 @@ describe("jobs", () => {
         connectionId: "c4",
         institution: "S-Pankki",
         status: "skipped",
+        skipReason: "running",
         error: "A sync of this connection is running",
+        errorKind: null,
+        balances: null,
+        transactions: null,
+      },
+      {
+        connectionId: "c5",
+        institution: "Nordea",
+        status: "skipped",
+        skipReason: "consent_expired",
+        error: "The consent has expired; renew the connection",
         errorKind: null,
         balances: null,
         transactions: null,
@@ -105,6 +116,9 @@ describe("jobs", () => {
     );
     expect(warn).toHaveBeenCalledWith(
       "[bank-sync] S-Pankki: failed (unavailable): fake bank unavailable",
+    );
+    expect(warn).toHaveBeenCalledWith(
+      "[bank-sync] Nordea: skipped (The consent has expired; renew the connection)",
     );
     expect(error).toHaveBeenCalledWith(
       "[bank-sync] Nordea: failed (internal): relation does not exist",

@@ -139,6 +139,14 @@ export const bankAuthorizations = pgTable(
     /** The bank's name at the provider (the ASPSP name, e.g. `Nordea`). */
     aspspName: text().notNull(),
     aspspCountry: char({ length: 2 }).notNull(),
+    /**
+     * The connection a renewal (F-011) attaches the new session to; null
+     * when connecting a bank anew. Removing the connection drops its
+     * pending renewals.
+     */
+    connectionId: uuid().references(() => connections.id, {
+      onDelete: "cascade",
+    }),
     expiresAt: timestamptz().notNull(),
     ...timestamps,
   },

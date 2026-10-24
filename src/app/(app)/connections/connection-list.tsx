@@ -2,6 +2,7 @@
 
 import { useId, useState, useTransition } from "react";
 import { NativeSelect } from "@/components/form-controls";
+import { RenewButton } from "@/components/connections/renew-button";
 import { SyncNowButton } from "@/components/sync/sync-now-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,14 +19,17 @@ import {
   type ActionResult,
 } from "./actions";
 
-// The bank connections on /connections: status, consent expiry, last sync,
-// Sync now and the sync log (F-010), the accounts (rename, checking or
+// The bank connections on /connections: status, consent expiry, Renew when
+// it ends within 14 days or has ended (F-011), last sync, Sync now and the
+// sync log (F-010), the accounts (rename, checking or
 // savings) and Archive / Remove, each confirmed in place.
 
 export interface ConnectionView {
   id: string;
   institutionName: string;
   status: "active" | "expired" | "revoked" | "archived";
+  /** The consent ends within 14 days or has ended (F-011). */
+  renewable: boolean;
   /** Already formatted for display. */
   consentExpires: string | null;
   lastSynced: string | null;
@@ -158,8 +162,18 @@ function ConnectionCard({ connection }: { connection: ConnectionView }) {
         <dt>Last sync</dt>
         <dd>{connection.lastSynced ?? "Not synced yet"}</dd>
       </dl>
-      {connection.status === "active" && (
-        <SyncNowButton sync={() => syncConnectionAction(connection.id)} />
+      {(connection.status === "active" || connection.renewable) && (
+        <div className="flex flex-wrap items-start gap-2">
+          {connection.renewable && (
+            <RenewButton
+              connectionId={connection.id}
+              institution={connection.institutionName}
+            />
+          )}
+          {connection.status === "active" && (
+            <SyncNowButton sync={() => syncConnectionAction(connection.id)} />
+          )}
+        </div>
       )}
 
       {connection.accounts.length === 0 ? (

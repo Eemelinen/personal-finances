@@ -57,12 +57,29 @@ describe("summarizeSync", () => {
           error: "EXPIRED_SESSION",
         }),
         result({ status: "failed", errorKind: "internal", error: "boom" }),
-        result({ status: "skipped", error: "running" }),
+        result({ status: "skipped", skipReason: "running" }),
       ]),
     ).toEqual({
       ok: false,
       message:
-        "Nordea synced, 0 new transactions. S-Pankki: the consent has ended; connect the bank again. Nordea: the sync failed; see the sync log on Connections. Nordea: a sync was already running.",
+        "Nordea synced, 0 new transactions. S-Pankki: the consent has ended; renew it on Connections. Nordea: the sync failed; see the sync log on Connections. Nordea: a sync was already running.",
+    });
+  });
+
+  it("names an ended consent as a skip, not a failure (F-011)", () => {
+    expect(
+      summarizeSync([
+        result({ transactions: transactions(2) }),
+        result({
+          institution: "S-Pankki",
+          status: "skipped",
+          skipReason: "consent_expired",
+        }),
+      ]),
+    ).toEqual({
+      ok: true,
+      message:
+        "Nordea synced, 2 new transactions. S-Pankki: the consent has ended; renew it on Connections.",
     });
   });
 });
