@@ -17,13 +17,30 @@ export const DEFAULT_BALANCE_TYPE_PREFERENCE: readonly string[] = [
 ];
 
 /**
+ * Booked before available: for Nordea `ITAV` differs from `ITBD` on a
+ * normal day, and an S-Pankki card's `ITAV` includes its credit limit
+ * (FIN-001 Findings). To be checked against the netbank in F-013.
+ */
+const BOOKED_FIRST: readonly string[] = [
+  "ITBD",
+  "CLBD",
+  "ITAV",
+  "CLAV",
+  "XPCD",
+  "OPBD",
+  "OPAV",
+];
+
+/**
  * Per-bank overrides, keyed by `institutions.provider_ref` (the ASPSP name
- * at Enable Banking). Empty until the F-001 findings record which type each
- * bank fills reliably; every bank uses the default until then.
+ * at Enable Banking); other banks use the default.
  */
 export const BALANCE_TYPE_PREFERENCE_BY_INSTITUTION: Readonly<
   Record<string, readonly string[]>
-> = {};
+> = {
+  Nordea: BOOKED_FIRST,
+  "S-Pankki": BOOKED_FIRST,
+};
 
 export function balanceTypePreference(
   institutionRef: string | null | undefined,

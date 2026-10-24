@@ -32,6 +32,8 @@ openssl rand -base64 32     # a second one as ENCRYPTION_KEY (keep it: it decryp
 
 Every page asks for that password at `/login` (one user, no accounts); the session lasts 30 days from the last visit.
 
+Bank sync (Nordea, S-Pankki) goes through an [Enable Banking](https://enablebanking.com/) application: put its RSA private key in `secrets/enable-banking.pem` and set `ENABLE_BANKING_APP_ID`, `ENABLE_BANKING_REDIRECT_URL` (as registered for the application) and `ENABLE_BANKING_ENV` (`sandbox` or `production`) in `.env`. Compose mounts `secrets/` read-only into the app and the worker. Without them the app runs, but bank connections fail. The connect flow itself comes with FIN-007.
+
 Optional: a free [Twelve Data](https://twelvedata.com/) key as `PRICE_API_KEY` gives the worker daily closing prices for the holdings imported from Nordnet on `/investments`; without it holdings are valued at their last trade price (exchange rates come from the ECB either way).
 
 Optional: a **read-only** Kraken API key as `KRAKEN_API_KEY` / `KRAKEN_API_SECRET` lets the worker sync Kraken balances and ledger every six hours (it stores the key encrypted with `ENCRYPTION_KEY`). Create it under Kraken → Settings → API with only _Query Funds_, _Query Open Orders & Trades_, _Query Closed Orders & Trades_ and _Query Ledger Entries_; never enable trading, deposit or withdrawal permissions, and restrict it to your IP. To stop the sync, revoke the key on Kraken: the stored copy keeps being used after the variables are removed. Wallets without an API are added by hand on `/investments`. Crypto prices come from CoinGecko daily without a key; a free demo key as `COINGECKO_API_KEY` raises its rate limit.

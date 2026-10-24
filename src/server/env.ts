@@ -29,6 +29,16 @@ const envSchema = z
     // only. The worker stores it encrypted as the Kraken connection.
     KRAKEN_API_KEY: optionalSecret,
     KRAKEN_API_SECRET: optionalSecret,
+    // Enable Banking (F-006): the application id (the JWT's `kid`), the path
+    // of its RSA private key (in `secrets/`, mounted read-only into the
+    // containers), where the bank sends the user back, and which
+    // environment the application was registered in. Optional so the app
+    // runs before a bank is set up; the provider fails on first use without
+    // the id and the key.
+    ENABLE_BANKING_APP_ID: optionalSecret,
+    ENABLE_BANKING_PRIVATE_KEY_PATH: optionalSecret,
+    ENABLE_BANKING_REDIRECT_URL: optionalSecret.pipe(z.url().optional()),
+    ENABLE_BANKING_ENV: z.enum(["sandbox", "production"]).default("sandbox"),
   })
   .superRefine((env, ctx) => {
     if (Boolean(env.KRAKEN_API_KEY) !== Boolean(env.KRAKEN_API_SECRET)) {

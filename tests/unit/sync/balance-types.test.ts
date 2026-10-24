@@ -52,9 +52,20 @@ describe("pickDisplayBalance", () => {
 
 describe("balanceTypePreference", () => {
   it("uses the default for banks without an override", () => {
-    expect(balanceTypePreference("Nordea")).toBe(
+    expect(balanceTypePreference("Mock ASPSP")).toBe(
       DEFAULT_BALANCE_TYPE_PREFERENCE,
     );
     expect(balanceTypePreference(null)).toBe(DEFAULT_BALANCE_TYPE_PREFERENCE);
+  });
+
+  it("prefers the booked balance for Nordea and S-Pankki", () => {
+    // The S-Pankki card's ITAV includes its credit limit (FIN-001).
+    const card = [balance("ITBD", "2026-10-24"), balance("ITAV", "2026-10-24")];
+    for (const bank of ["Nordea", "S-Pankki"]) {
+      expect(pickDisplayBalance(card, balanceTypePreference(bank))).toEqual(
+        balance("ITBD", "2026-10-24"),
+      );
+    }
+    expect(pickDisplayBalance(card)).toEqual(balance("ITAV", "2026-10-24"));
   });
 });

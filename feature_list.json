@@ -161,7 +161,7 @@
       "area": "banking",
       "title": "Enable Banking client and provider",
       "user_visible_behavior": "`EnableBankingProvider` implements `FinancialProvider` over a typed Enable Banking client: RS256 application JWT, authorisation start, session creation, account details, balances and paginated transactions, zod-validated responses, retries on 429 and 5xx, and mapping to normalised DTOs (amount sign, booking and value date, counterparty, remittance info, pending vs booked). Tests run only against the fixtures recorded in F-001; no network.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-001", "F-005"],
       "ticket": "FIN-006",
       "spec": "docs/tickets/FIN-006-enable-banking-client.md",
@@ -169,7 +169,10 @@
         "L1: pnpm check",
         "L1: pnpm test:unit tests/unit/providers/enable-banking.test.ts (JWT claims, continuation_key pagination, error mapping and DTO mapping against recorded fixtures)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (commit 3ef0af5)",
+        "2026-10-24 pnpm test:unit tests/unit/providers/enable-banking.test.ts → pass (commit 3ef0af5)"
+      ],
       "attempts": 0,
       "notes": "Replaces old FIN-006. JWT signing with `jose`."
     },
