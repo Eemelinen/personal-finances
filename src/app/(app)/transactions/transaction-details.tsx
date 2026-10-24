@@ -236,6 +236,13 @@ function ExcludeSection({ row }: { row: TransactionRow }) {
           </div>
         </>
       )}
+      {row.household && (
+        <p className="text-muted-foreground text-sm">
+          The counterparty is a household member: while “Ignore transfers with
+          household members” is on (Settings → Household), this transaction is
+          left out of the reports.
+        </p>
+      )}
       {feedback}
     </section>
   );

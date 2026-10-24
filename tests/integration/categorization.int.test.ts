@@ -576,6 +576,7 @@ describe("re-apply rules", () => {
     expect(await reapplyRules({ db: testDb.db })).toEqual({
       recategorized: 0,
       transfers: 0,
+      household: 0,
     });
   });
 });

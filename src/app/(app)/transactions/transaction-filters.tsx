@@ -140,6 +140,18 @@ export function TransactionFilters({
             <option value="only">Excluded only</option>
           </NativeSelect>
         </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor={`${ids}-household`}>Household</Label>
+          <NativeSelect
+            id={`${ids}-household`}
+            name="household"
+            defaultValue={filter.household ?? ""}
+          >
+            <option value="">With and without household members</option>
+            <option value="exclude">Without household members</option>
+            <option value="only">Household only</option>
+          </NativeSelect>
+        </div>
       </div>
       {accounts.length > 0 && (
         <fieldset className="flex flex-col gap-2">

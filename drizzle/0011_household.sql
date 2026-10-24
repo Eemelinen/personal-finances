@@ -1,0 +1,1 @@
+ALTER TABLE "transactions" ADD COLUMN "household" boolean DEFAULT false NOT NULL;

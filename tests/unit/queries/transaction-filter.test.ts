@@ -24,6 +24,7 @@ describe("parseTransactionQuery", () => {
         type: "expense",
         transfers: "exclude",
         excluded: "only",
+        household: "exclude",
         page: "3",
       }),
     ).toEqual({
@@ -36,6 +37,7 @@ describe("parseTransactionQuery", () => {
         direction: "expense",
         transfers: "exclude",
         excluded: "only",
+        household: "exclude",
       },
       page: 3,
     });
@@ -58,6 +60,7 @@ describe("parseTransactionQuery", () => {
         type: "both",
         transfers: "yes",
         excluded: "no",
+        household: "yes",
         page: "-2",
       }),
     ).toEqual({
@@ -117,6 +120,7 @@ describe("transactionSearchParams", () => {
       direction: "expense" as const,
       transfers: "only" as const,
       excluded: "exclude" as const,
+      household: "only" as const,
     };
     const params = Object.fromEntries(transactionSearchParams(filter, 4));
     expect(parseTransactionQuery(params)).toEqual({ filter, page: 4 });
@@ -126,6 +130,7 @@ describe("transactionSearchParams", () => {
     expect(isFiltered(EMPTY_FILTER)).toBe(false);
     expect(isFiltered({ ...EMPTY_FILTER, transfers: "exclude" })).toBe(true);
     expect(isFiltered({ ...EMPTY_FILTER, excluded: "only" })).toBe(true);
+    expect(isFiltered({ ...EMPTY_FILTER, household: "only" })).toBe(true);
   });
 });
 

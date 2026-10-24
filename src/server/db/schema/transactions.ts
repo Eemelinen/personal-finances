@@ -1,4 +1,5 @@
 import {
+  boolean,
   date,
   index,
   pgEnum,
@@ -51,6 +52,11 @@ export const transactions = pgTable(
     note: text(),
     /** Shared by the two legs of a transfer between own accounts (F-014). */
     transferGroupId: uuid(),
+    /**
+     * The counterparty is a household member (F-030): left out of the
+     * reports while `ignoreHouseholdTransfers` is on. Categorisation sets it.
+     */
+    household: boolean().notNull().default(false),
     ...timestamps,
   },
   // Idempotency: a re-sync or re-import of the same transaction is rejected

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ChartPie, ChevronRight, Landmark, Tags } from "lucide-react";
+import { ChartPie, ChevronRight, Landmark, Tags, Users } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { REPORT_SETTINGS_PATH } from "@/lib/reports";
@@ -27,6 +27,13 @@ const SECTIONS = [
       "Your own accounts that no bank connection shows, so transfers to them are not income or spending.",
     icon: Landmark,
   },
+  {
+    href: "/settings/household",
+    title: "Household",
+    description:
+      "Your own names and the people you share costs with, and whether transfers with them count as income and spending.",
+    icon: Users,
+  },
 ] as const;
 
 export default function SettingsPage() {
@@ -34,7 +41,7 @@ export default function SettingsPage() {
     <>
       <PageHeader
         title="Settings"
-        description="Categories, rules, own accounts and app preferences."
+        description="Categories, rules, own accounts, household and app preferences."
       />
       <ul className="flex flex-col gap-3">
         {SECTIONS.map(({ href, title, description, icon: Icon }) => (

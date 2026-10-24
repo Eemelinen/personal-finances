@@ -20,12 +20,14 @@ import {
   categoryRules,
   transactions,
 } from "@/server/db/schema";
+import { getAppSettings } from "@/server/settings";
 import type { Tx } from "@/server/sync/runs";
 import {
   DEFAULT_CATEGORIES,
   EXCLUDED_CATEGORY,
   TRANSFERS_CATEGORY,
 } from "./defaults";
+import { householdMatcher, type HouseholdMatcher } from "./names";
 import { compileRules, ruleOutcome, type CompiledRule } from "./rules";
 import {
   findTransfers,
@@ -49,6 +51,12 @@ import {
 //   Pending ones wait until they are booked: the sync passes the booked
 //   version to the hook again. An excluded leg (category kind `excluded`,
 //   F-027) never pairs.
+// - Then own names and household members (F-030, `names.ts`): a free leg
+//   still in no group whose counterparty is one of the user's own names
+//   (and not a household member's name or IBAN) becomes a one-sided
+//   transfer. Every transaction in scope, manual ones too, gets
+//   `household` set when its counterparty name or IBAN is a household
+//   member's, and cleared otherwise; its category stays as it is.
 
 /** Values per `IN (…)` list, well below Postgres' parameter limit. */
 const BATCH = 1_000;
@@ -64,8 +72,13 @@ function batches<T>(values: readonly T[]): T[][] {
 export interface CategorizeSummary {
   /** Transactions whose category the rules changed. */
   recategorized: number;
-  /** Transactions newly linked as transfers (both legs of a pair count). */
+  /**
+   * Transactions newly linked as transfers (both legs of a pair count),
+   * own-name legs included.
+   */
   transfers: number;
+  /** Transactions whose `household` mark changed (F-030). */
+  household: number;
 }
 
 /** The `categorize` hook of `syncTransactions()` and the CSV import. */
@@ -103,6 +116,7 @@ const CANDIDATE_COLUMNS = {
   categoryId: transactions.categoryId,
   categorySource: transactions.categorySource,
   transferGroupId: transactions.transferGroupId,
+  household: transactions.household,
 };
 
 function selectRows(tx: Tx, where: SQL | undefined) {
@@ -149,8 +163,15 @@ export async function lockCategorization(tx: Tx): Promise<void> {
 async function categorize(tx: Tx, scope: Scope): Promise<CategorizeSummary> {
   await lockCategorization(tx);
   const recategorized = await applyRules(tx, scope);
-  const transfers = await linkTransfers(tx, scope);
-  return { recategorized, transfers };
+  const paired = await linkTransfers(tx, scope);
+  const settings = await getAppSettings(tx);
+  const matcher = householdMatcher({
+    ownNames: settings.ownNames,
+    members: settings.householdMembers,
+  });
+  const ownNames = await linkOwnNames(tx, scope, matcher);
+  const household = await markHousehold(tx, scope, matcher);
+  return { recategorized, transfers: paired + ownNames, household };
 }
 
 async function loadRules(tx: Tx): Promise<CompiledRule[]> {
@@ -334,6 +355,69 @@ async function linkTransfers(tx: Tx, scope: Scope): Promise<number> {
     linked++;
   }
   return linked;
+}
+
+/**
+ * Links free legs in no group whose counterparty is an own name as
+ * one-sided transfers (F-030); returns how many.
+ */
+async function linkOwnNames(
+  tx: Tx,
+  scope: Scope,
+  matcher: HouseholdMatcher,
+): Promise<number> {
+  if (matcher.empty) return 0;
+  const legs = await loadScope(
+    tx,
+    scope,
+    and(FREE_LEG, isNull(transactions.transferGroupId)),
+  );
+  const ids = legs.filter((leg) => matcher.isOwnName(leg)).map((leg) => leg.id);
+  if (ids.length === 0) return 0;
+  const categoryId = await transfersCategoryId(tx);
+  for (const id of ids) {
+    await tx
+      .update(transactions)
+      .set({
+        categoryId,
+        categorySource: "rule",
+        transferGroupId: randomUUID(),
+      })
+      .where(
+        and(eq(transactions.id, id), ne(transactions.categorySource, "manual")),
+      );
+  }
+  return ids.length;
+}
+
+/**
+ * Sets `household` on the scope's transactions with a household member and
+ * clears it on the rest (F-030); returns how many changed.
+ */
+async function markHousehold(
+  tx: Tx,
+  scope: Scope,
+  matcher: HouseholdMatcher,
+): Promise<number> {
+  const rows = await loadScope(
+    tx,
+    scope,
+    matcher.empty ? eq(transactions.household, true) : undefined,
+  );
+  const changes: Record<"true" | "false", string[]> = { true: [], false: [] };
+  for (const row of rows) {
+    const household = matcher.isHousehold(row);
+    if (household !== row.household) changes[`${household}`].push(row.id);
+  }
+  for (const household of [true, false]) {
+    for (const batch of batches(changes[`${household}`])) {
+      await tx
+        .update(transactions)
+        .set({ household })
+        .where(inArray(transactions.id, batch));
+    }
+  }
+  return changes.true.length + changes.false.length;
 }
 
 /** A top-level category by name, if it exists. */
