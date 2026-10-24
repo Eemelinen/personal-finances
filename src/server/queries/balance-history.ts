@@ -1,12 +1,8 @@
 import { and, asc, eq, gte, inArray, lte, min, sql } from "drizzle-orm";
 import { getDb, type Db } from "@/server/db/client";
-import {
-  accounts,
-  balanceSnapshots,
-  institutions,
-  transactions,
-} from "@/server/db/schema";
+import { accounts, institutions, transactions } from "@/server/db/schema";
 import { localDate } from "@/server/dates";
+import { withHoldings } from "@/server/investments/valuation-series";
 import { getEnv } from "@/server/env";
 import type { IsoDate } from "@/server/providers/types";
 import {
@@ -21,7 +17,12 @@ import {
   type NetWorthPoint,
 } from "@/server/reports/balance-series";
 import { balanceTypePreference } from "@/server/sync/balance-types";
-import { loadSnapshots, TOTALS_CURRENCY } from "./dashboard";
+import {
+  isInvestmentAccount,
+  loadSnapshots,
+  TOTALS_CURRENCY,
+} from "./dashboard";
+import { firstDates, loadInvestmentHistory } from "./investment-history";
 
 // Read model of the balance history (F-018): each account's daily balance
 // over the chosen range and their sum, the net worth. Like the dashboard's
@@ -31,6 +32,10 @@ import { loadSnapshots, TOTALS_CURRENCY } from "./dashboard";
 // moved money) and marked estimated. An account without any snapshot (only
 // CSV imports) has no balance to start from and is left out. A day on which
 // some account has no balance yet sums the others and is marked partial.
+// Brokerage and crypto accounts (F-022) count their holdings, valued with
+// each day's prices, on top of their cash: the synced balance, else the cash
+// their transactions imply (Nordnet). They count from their first snapshot,
+// holding or transaction.
 
 type AccountType = (typeof accounts.$inferSelect)["type"];
 
@@ -56,7 +61,7 @@ export interface BalanceHistory {
    * had a balance on both; null when none had.
    */
   netWorthChange: number | null;
-  /** Non-archived accounts not drawn: no snapshot yet, or not in EUR. */
+  /** Non-archived accounts not drawn: no balance yet, or not in EUR. */
   omitted: { withoutBalance: number; otherCurrency: number };
   /** No account has a balance yet. */
   empty: boolean;
@@ -96,44 +101,52 @@ export async function getBalanceHistory(
   const eur = accountRows.filter((row) => row.currency === TOTALS_CURRENCY);
   const eurIds = eur.map((row) => row.id);
 
-  const [firstSnapshots, firstTransactions] = eurIds.length
-    ? await Promise.all([
-        db
-          .select({
-            accountId: balanceSnapshots.accountId,
-            date: min(balanceSnapshots.date),
-          })
-          .from(balanceSnapshots)
-          .where(inArray(balanceSnapshots.accountId, eurIds))
-          .groupBy(balanceSnapshots.accountId),
-        db
-          .select({
-            accountId: transactions.accountId,
-            date: min(transactions.bookingDate),
-          })
-          .from(transactions)
-          .where(
-            and(
-              inArray(transactions.accountId, eurIds),
-              eq(transactions.currency, TOTALS_CURRENCY),
-            ),
-          )
-          .groupBy(transactions.accountId),
-      ])
-    : [[], []];
-  const firstSnapshot = new Map(
-    firstSnapshots.map((row) => [row.accountId, row.date]),
-  );
+  const investmentIds = eur
+    .filter((row) => isInvestmentAccount(row.type))
+    .map((row) => row.id);
+  const [firstSnapshot, firstTransactions, firstHolding, firstTrade] =
+    await Promise.all([
+      firstDates(db, "snapshot", eurIds),
+      eurIds.length
+        ? db
+            .select({
+              accountId: transactions.accountId,
+              date: min(transactions.bookingDate),
+            })
+            .from(transactions)
+            .where(
+              and(
+                inArray(transactions.accountId, eurIds),
+                eq(transactions.currency, TOTALS_CURRENCY),
+              ),
+            )
+            .groupBy(transactions.accountId)
+        : [],
+      firstDates(db, "holding", investmentIds),
+      firstDates(db, "trade", investmentIds),
+    ]);
   const firstTransaction = new Map(
     firstTransactions.map((row) => [row.accountId, row.date]),
   );
-  const included = eur.filter((row) => firstSnapshot.get(row.id) != null);
+  // An investment account's history starts with its first holding or trade.
+  const firstInvestment = new Map(firstHolding);
+  for (const [id, date] of firstTrade) {
+    const known = firstInvestment.get(id);
+    if (known === undefined || date < known) firstInvestment.set(id, date);
+  }
+  const included = eur.filter(
+    (row) => firstSnapshot.get(row.id) != null || firstInvestment.has(row.id),
+  );
   const ids = included.map((row) => row.id);
 
   // The oldest day with data: a first snapshot, or a transaction before one.
   let earliest: IsoDate | null = null;
   for (const id of ids) {
-    for (const date of [firstSnapshot.get(id), firstTransaction.get(id)]) {
+    for (const date of [
+      firstSnapshot.get(id),
+      firstTransaction.get(id),
+      firstInvestment.get(id),
+    ]) {
       if (date != null && (earliest === null || date < earliest)) {
         earliest = date;
       }
@@ -141,7 +154,7 @@ export async function getBalanceHistory(
   }
   const days = daysBetween(rangeStart(options.range, today, earliest), today);
 
-  const [snapshots, flowRows] = await Promise.all([
+  const [snapshots, flowRows, investments] = await Promise.all([
     loadSnapshots(db, ids, days[0]),
     ids.length
       ? db
@@ -163,6 +176,16 @@ export async function getBalanceHistory(
           )
           .groupBy(transactions.accountId, transactions.bookingDate)
       : [],
+    loadInvestmentHistory(
+      db,
+      included
+        .filter((row) => isInvestmentAccount(row.type))
+        .map((row) => ({
+          id: row.id,
+          syncedCash: firstSnapshot.get(row.id) != null,
+        })),
+      days,
+    ),
   ]);
   const flows = new Map<string, DayFlow[]>();
   for (const { accountId, ...flow } of flowRows) {
@@ -171,12 +194,8 @@ export async function getBalanceHistory(
     else flows.set(accountId, [flow]);
   }
 
-  const series = included.map((row) => ({
-    id: row.id,
-    name: row.name,
-    institution: row.institution,
-    type: row.type,
-    points: accountSeries(
+  const series = included.map((row) => {
+    const cash = accountSeries(
       {
         snapshots: snapshots.get(row.id) ?? [],
         flows: flows.get(row.id) ?? [],
@@ -184,8 +203,16 @@ export async function getBalanceHistory(
         preference: balanceTypePreference(row.institutionRef),
       },
       days,
-    ),
-  }));
+    );
+    const investment = investments.get(row.id);
+    return {
+      id: row.id,
+      name: row.name,
+      institution: row.institution,
+      type: row.type,
+      points: investment ? withHoldings(cash, investment) : cash,
+    };
+  });
 
   const points = series.map((account) => account.points);
   return {

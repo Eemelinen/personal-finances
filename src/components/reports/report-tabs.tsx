@@ -1,11 +1,17 @@
 import Link from "next/link";
 import { cn } from "cn";
-import { BALANCES_PATH, CASH_FLOW_PATH, SPENDING_PATH } from "@/lib/reports";
+import {
+  ALLOCATION_PATH,
+  BALANCES_PATH,
+  CASH_FLOW_PATH,
+  SPENDING_PATH,
+} from "@/lib/reports";
 
 const TABS = [
   { href: SPENDING_PATH, label: "Spending" },
   { href: CASH_FLOW_PATH, label: "Cash flow" },
   { href: BALANCES_PATH, label: "Balances" },
+  { href: ALLOCATION_PATH, label: "Allocation" },
 ] as const;
 
 /** Switches between the reports. */

@@ -10,7 +10,8 @@ import { getEnv } from "@/server/env";
 import type { IsoDate } from "@/server/providers/types";
 import { balanceTypePreference } from "@/server/sync/balance-types";
 import { addDays, localDate } from "@/server/dates";
-import { getAccountValuation } from "./investments";
+import { withHoldings } from "@/server/investments/valuation-series";
+import { loadInvestmentHistory } from "./investment-history";
 import {
   balanceOn,
   dailyBalances,
@@ -74,6 +75,11 @@ export interface AccountSummary {
    * nothing is held.
    */
   holdingsMinor: number | null;
+  /**
+   * Brokerage accounts without a synced balance: the cash their
+   * transactions imply today (F-022, a Nordnet import); null otherwise.
+   */
+  derivedCashMinor: number | null;
   /** No bank connection: filled by CSV imports only. */
   manual: boolean;
   /** The connection's last successful sync; null for manual accounts. */
@@ -105,6 +111,11 @@ export interface DashboardOverview {
   connections: ConnectionSummary[];
   /** No accounts yet: the page guides to connect a bank or import a CSV. */
   empty: boolean;
+}
+
+/** Brokerage and crypto accounts hold investments (F-019). */
+export function isInvestmentAccount(type: AccountType): boolean {
+  return type === "brokerage" || type === "crypto";
 }
 
 /**
@@ -217,25 +228,43 @@ export async function getDashboardOverview(
     windowStart,
   );
 
+  // Investment accounts: holdings valued with each day's prices plus the
+  // cash, synced or derived from the transactions (F-022), over the
+  // sparkline's days, which include the change's day.
+  const investments = await loadInvestmentHistory(
+    db,
+    accountRows
+      .filter((row) => isInvestmentAccount(row.type))
+      .map((row) => ({
+        id: row.id,
+        syncedCash: (snapshots.get(row.id) ?? []).length > 0,
+      })),
+    days,
+  );
+  const beforeIndex = days.length - 1 - CHANGE_DAYS;
+
   const balances: AccountBalances[] = [];
   const groups = new Map<string, AccountSummary[]>();
   for (const row of accountRows) {
     const own = snapshots.get(row.id) ?? [];
     const preference = balanceTypePreference(row.institutionRef);
     const current = balanceOn(own, today, preference);
-    const before = balanceOn(own, addDays(today, -CHANGE_DAYS), preference);
-    const investments =
-      row.type === "brokerage" || row.type === "crypto"
-        ? await Promise.all([
-            holdingsValue(db, row.id, today),
-            holdingsValue(db, row.id, addDays(today, -CHANGE_DAYS)),
-          ])
-        : [undefined, undefined];
+    const cash = dailyBalances(own, days, preference);
+    const investment = investments.get(row.id);
+    const daily = investment
+      ? withHoldings(
+          cash.map((point) => ({ ...point, estimated: false })),
+          investment,
+        ).map((point, index) => ({
+          date: days[index],
+          amountMinor: point.amountMinor,
+        }))
+      : cash;
     balances.push({
       type: row.type,
       currency: row.currency,
-      today: addKnown(current?.amountMinor, investments[0]),
-      before: addKnown(before?.amountMinor, investments[1]),
+      today: daily.at(-1)?.amountMinor ?? undefined,
+      before: daily[beforeIndex]?.amountMinor ?? undefined,
     });
     const summary: AccountSummary = {
       id: row.id,
@@ -250,10 +279,14 @@ export async function getDashboardOverview(
             balanceType: current.balanceType,
           }
         : null,
-      holdingsMinor: investments[0] ?? null,
+      holdingsMinor:
+        investment && investment.last.positions.length > 0
+          ? investment.last.valueMinor
+          : null,
+      derivedCashMinor: investment?.derivedCash?.at(-1) ?? null,
       manual: row.connectionId === null,
       lastSyncedAt: row.lastSyncedAt,
-      sparkline: dailyBalances(own, days, preference),
+      sparkline: daily,
     };
     const group = groups.get(row.institution);
     if (group) group.push(summary);
@@ -282,28 +315,6 @@ export async function getDashboardOverview(
     })),
     empty: accountRows.length === 0,
   };
-}
-
-/** Cash plus holdings, either of which may be unknown. */
-function addKnown(
-  cash: number | undefined,
-  holdings: number | undefined,
-): number | undefined {
-  if (cash === undefined) return holdings;
-  return cash + (holdings ?? 0);
-}
-
-/**
- * The EUR value of the account's holdings on `date`; undefined when it
- * holds nothing then. Unpriced holdings are left out (D-016).
- */
-async function holdingsValue(
-  db: Db,
-  accountId: string,
-  date: IsoDate,
-): Promise<number | undefined> {
-  const valuation = await getAccountValuation(accountId, date, { db });
-  return valuation.positions.length > 0 ? valuation.valueMinor : undefined;
 }
 
 /**

@@ -554,7 +554,7 @@
       "area": "investments",
       "title": "Net worth and allocation including investments",
       "user_visible_behavior": "Net-worth history and the dashboard tiles include brokerage and crypto accounts valued with historical prices; an allocation chart breaks wealth down by asset class (cash, stocks and ETFs, funds, crypto) and by account; portfolio performance over time separates contributions from market gains.",
-      "status": "not_started",
+      "status": "in_progress",
       "depends_on": ["F-018", "F-020", "F-021"],
       "ticket": "FIN-022",
       "spec": "docs/tickets/FIN-022-net-worth-with-investments.md",
