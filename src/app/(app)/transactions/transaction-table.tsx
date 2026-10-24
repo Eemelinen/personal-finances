@@ -154,7 +154,9 @@ function CategoryCell({
   const change = (choice: string) => {
     onError(null);
     startTransition(async () => {
-      setOptimistic(choice);
+      // "Automatic (rules)" is not a category: the select keeps the current
+      // one until the rules' result replaces it, rather than showing "auto".
+      if (choice !== "auto") setOptimistic(choice);
       const result = await changeCategory(row.id, choice);
       if (!result.ok) onError(result.error);
     });

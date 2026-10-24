@@ -10,6 +10,7 @@ import type {
   CategoryUsage,
   RuleListItem,
 } from "@/server/categorization/manage";
+import { MAX_CATEGORY_NAME_LENGTH } from "@/server/categorization/rule-input";
 import type { ActionResult } from "./action-result";
 import {
   addCategory,
@@ -30,8 +31,6 @@ const KIND_LABELS = {
   income: "Income",
   transfer: "Transfer",
 } as const;
-
-const MAX_NAME_LENGTH = 60;
 
 interface CategoriesManagerProps {
   categories: CategoryUsage[];
@@ -307,7 +306,7 @@ function NewCategoryForm({ categories }: { categories: CategoryUsage[] }) {
           <Input
             id={`${ids}-name`}
             value={name}
-            maxLength={MAX_NAME_LENGTH}
+            maxLength={MAX_CATEGORY_NAME_LENGTH}
             onChange={(event) => setName(event.target.value)}
           />
         </div>
@@ -424,7 +423,7 @@ function CategoryRow({
             <Input
               aria-label="Category name"
               value={name}
-              maxLength={MAX_NAME_LENGTH}
+              maxLength={MAX_CATEGORY_NAME_LENGTH}
               onChange={(event) => setName(event.target.value)}
             />
             <Button type="submit" size="sm" disabled={pending}>

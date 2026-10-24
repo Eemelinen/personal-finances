@@ -13,7 +13,12 @@ import { categories, categoryRules, transactions } from "@/server/db/schema";
 import type { Tx } from "@/server/sync/runs";
 import { lockCategorization, transfersCategoryId } from "./categorize";
 import { TRANSFERS_CATEGORY, type CategoryKind } from "./defaults";
-import { moveRuleIds, type MovePlace, type RuleInput } from "./rule-input";
+import {
+  MAX_CATEGORY_NAME_LENGTH,
+  moveRuleIds,
+  type MovePlace,
+  type RuleInput,
+} from "./rule-input";
 import { compareRules } from "./rules";
 
 // Categories and rules as /settings/categories manages them (F-015).
@@ -33,8 +38,6 @@ import { compareRules } from "./rules";
 export class CategoryManageError extends Error {
   override readonly name = "CategoryManageError";
 }
-
-export const MAX_CATEGORY_NAME_LENGTH = 60;
 
 /** Any constant; serialises rule numbering. */
 const RULE_ORDER_LOCK = 0x46_15;

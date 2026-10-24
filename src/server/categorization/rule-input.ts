@@ -5,8 +5,11 @@ import { regexError, type RuleAmountSign } from "./rules";
 // Checks a rule the user enters (F-015), pure: the settings page and
 // "create a rule from a transaction" send the same fields. Amount bounds
 // are euros as typed (`12,50`, `12.50`, `12`) and become minor units.
+// The length limits are shared with the client forms' `maxLength`.
 
 export const MAX_PATTERN_LENGTH = 200;
+/** Checked by `manage.ts` when a category is created or renamed. */
+export const MAX_CATEGORY_NAME_LENGTH = 60;
 
 export interface RuleInput {
   categoryId: string;
