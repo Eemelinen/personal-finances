@@ -10,6 +10,7 @@ import { getEnv } from "@/server/env";
 import type { IsoDate } from "@/server/providers/types";
 import { balanceTypePreference } from "@/server/sync/balance-types";
 import { addDays, localDate } from "@/server/dates";
+import { getAccountValuation } from "./investments";
 import {
   balanceOn,
   dailyBalances,
@@ -67,6 +68,12 @@ export interface AccountSummary {
   currency: string;
   /** The display balance today; null before the first snapshot. */
   balance: { amountMinor: number; date: IsoDate; balanceType: string } | null;
+  /**
+   * Brokerage and crypto accounts: today's EUR value of the holdings
+   * (F-020), counted in net worth on top of the cash balance; null when
+   * nothing is held.
+   */
+  holdingsMinor: number | null;
   /** No bank connection: filled by CSV imports only. */
   manual: boolean;
   /** The connection's last successful sync; null for manual accounts. */
@@ -216,12 +223,19 @@ export async function getDashboardOverview(
     const own = snapshots.get(row.id) ?? [];
     const preference = balanceTypePreference(row.institutionRef);
     const current = balanceOn(own, today, preference);
+    const before = balanceOn(own, addDays(today, -CHANGE_DAYS), preference);
+    const investments =
+      row.type === "brokerage" || row.type === "crypto"
+        ? await Promise.all([
+            holdingsValue(db, row.id, today),
+            holdingsValue(db, row.id, addDays(today, -CHANGE_DAYS)),
+          ])
+        : [undefined, undefined];
     balances.push({
       type: row.type,
       currency: row.currency,
-      today: current?.amountMinor,
-      before: balanceOn(own, addDays(today, -CHANGE_DAYS), preference)
-        ?.amountMinor,
+      today: addKnown(current?.amountMinor, investments[0]),
+      before: addKnown(before?.amountMinor, investments[1]),
     });
     const summary: AccountSummary = {
       id: row.id,
@@ -236,6 +250,7 @@ export async function getDashboardOverview(
             balanceType: current.balanceType,
           }
         : null,
+      holdingsMinor: investments[0] ?? null,
       manual: row.connectionId === null,
       lastSyncedAt: row.lastSyncedAt,
       sparkline: dailyBalances(own, days, preference),
@@ -267,6 +282,28 @@ export async function getDashboardOverview(
     })),
     empty: accountRows.length === 0,
   };
+}
+
+/** Cash plus holdings, either of which may be unknown. */
+function addKnown(
+  cash: number | undefined,
+  holdings: number | undefined,
+): number | undefined {
+  if (cash === undefined) return holdings;
+  return cash + (holdings ?? 0);
+}
+
+/**
+ * The EUR value of the account's holdings on `date`; undefined when it
+ * holds nothing then. Unpriced holdings are left out (D-016).
+ */
+async function holdingsValue(
+  db: Db,
+  accountId: string,
+  date: IsoDate,
+): Promise<number | undefined> {
+  const valuation = await getAccountValuation(accountId, date, { db });
+  return valuation.positions.length > 0 ? valuation.valueMinor : undefined;
 }
 
 /**

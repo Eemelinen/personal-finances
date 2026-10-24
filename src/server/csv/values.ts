@@ -2,19 +2,31 @@ import { normaliseDate } from "@/server/dedupe-hash";
 import type { IsoDate } from "@/server/providers/types";
 
 // Decoding an uploaded file and reading Finnish-formatted cells (F-012):
-// UTF-8 or Windows-1252 text, `-1 234,56` amounts, `dd.mm.yyyy` dates.
+// UTF-8, UTF-16 or Windows-1252 text, `-1 234,56` amounts, `dd.mm.yyyy`
+// dates.
 
-export type CsvEncoding = "utf-8" | "windows-1252";
+export type CsvEncoding = "utf-8" | "utf-16le" | "utf-16be" | "windows-1252";
 
 /**
- * Decodes an upload. UTF-8 (with or without a byte order mark) when the
- * bytes are valid UTF-8, otherwise Windows-1252, which older netbank exports
- * use (and which covers ISO-8859-1 for every letter Finnish needs).
+ * Decodes an upload. UTF-16 when it starts with a UTF-16 byte order mark
+ * (Nordnet exports, F-020); UTF-8 (with or without a byte order mark) when
+ * the bytes are valid UTF-8, otherwise Windows-1252, which older netbank
+ * exports use (and which covers ISO-8859-1 for every letter Finnish needs).
  */
 export function decodeCsv(bytes: Uint8Array): {
   text: string;
   encoding: CsvEncoding;
 } {
+  const utf16: CsvEncoding | null =
+    bytes[0] === 0xff && bytes[1] === 0xfe
+      ? "utf-16le"
+      : bytes[0] === 0xfe && bytes[1] === 0xff
+        ? "utf-16be"
+        : null;
+  if (utf16) {
+    // The decoder drops the byte order mark.
+    return { text: new TextDecoder(utf16).decode(bytes), encoding: utf16 };
+  }
   try {
     // `ignoreBOM: false` (the default) drops a leading UTF-8 BOM.
     const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);

@@ -32,6 +32,8 @@ openssl rand -base64 32     # a second one as ENCRYPTION_KEY (keep it: it decryp
 
 Every page asks for that password at `/login` (one user, no accounts); the session lasts 30 days from the last visit.
 
+Optional: a free [Twelve Data](https://twelvedata.com/) key as `PRICE_API_KEY` gives the worker daily closing prices for the holdings imported from Nordnet on `/investments`; without it holdings are valued at their last trade price (exchange rates come from the ECB either way).
+
 Notes:
 
 - Postgres is published on host port **5434** (not 5432) to avoid clashing with other local projects. Change `POSTGRES_PORT` and `DATABASE_URL` in `.env` if needed.
@@ -93,7 +95,7 @@ src/app/        Next.js pages and route handlers; (app)/ holds the pages inside 
 src/proxy.ts    Redirects requests without a session to /login
 src/lib/        App helpers; lib/auth is the server-only session data access layer
 src/components/ App shell, dashboard widgets, report charts, shared components and shadcn/ui primitives (components/ui)
-src/server/     Domain code shared by the app and the worker (env, db, providers, sync, CSV import, dashboard and report queries)
+src/server/     Domain code shared by the app and the worker (env, db, providers, sync, CSV import, investments and prices, dashboard and report queries)
 src/worker/     Background worker entrypoint and job registry
 drizzle/        Generated SQL migrations
 secrets/        Private keys, gitignored

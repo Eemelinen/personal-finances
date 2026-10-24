@@ -58,6 +58,8 @@ services:
     environment:
       DATABASE_URL: *database-url
       APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Helsinki}
+      # Optional: closing prices (FIN-020); without it only FX rates update.
+      PRICE_API_KEY: ${PRICE_API_KEY:-}
     depends_on:
       migrate:
         condition: service_completed_successfully
