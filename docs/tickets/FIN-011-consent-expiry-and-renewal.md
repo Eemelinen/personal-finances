@@ -21,3 +21,4 @@ Connections store `consent_expires_at`; a warning banner appears on every page 1
 ## Notes
 
 - Replaces old FIN-011.
+- Choices made without a human (D-026): the skip is a `skipped` result with `skipReason: "consent_expired"` logged by the worker on every run, not a `sync_runs` row; the banner sits above `<main>` on every app page and treats `revoked` like expired; Renew is in the banner and on the `/connections` card within the 14-day window; a renewal is marked by `bank_authorizations.connection_id`; an id match is refused when both IBANs are known and differ; the old session is revoked after a renewal; archived connections and connections of another provider cannot be renewed.

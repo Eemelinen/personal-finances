@@ -13,6 +13,7 @@ import {
 } from "@/server/connections/authorization";
 import { listConnections } from "@/server/connections/manage";
 import { getEnv } from "@/server/env";
+import { connectionHealth } from "@/server/queries/dashboard";
 import { getSyncLog } from "@/server/queries/sync-log";
 import { ConnectForm } from "./connect-form";
 import { ConnectionList, type ConnectionView } from "./connection-list";
@@ -68,11 +69,19 @@ async function ConnectionsSection({
   const connected = connections.find(
     (connection) => connection.id === single(query.connected),
   );
+  const renewed = connections.find(
+    (connection) => connection.id === single(query.renewed),
+  );
   // The callback synced it: its latest run is the transactions', unless the
   // balances already failed.
-  const latestRun = connected && syncLog.get(connected.id)?.[0];
-  const firstSyncSucceeded =
-    latestRun?.kind === "transactions" && latestRun.status === "succeeded";
+  const syncSucceeded = (id: string | undefined) => {
+    const latestRun = id === undefined ? undefined : syncLog.get(id)?.[0];
+    return (
+      latestRun?.kind === "transactions" && latestRun.status === "succeeded"
+    );
+  };
+  const firstSyncSucceeded = syncSucceeded(connected?.id);
+  const now = new Date();
 
   const views: ConnectionView[] = connections.map((connection) => ({
     id: connection.id,
@@ -81,6 +90,9 @@ async function ConnectionsSection({
       connection.status === "active" && connection.consentExpired
         ? "expired"
         : connection.status,
+    renewable:
+      connection.status !== "archived" &&
+      connectionHealth(connection, now) !== "ok",
     consentExpires: connection.consentExpiresAt
       ? formatLocalDay(connection.consentExpiresAt, timeZone)
       : null,
@@ -120,6 +132,18 @@ async function ConnectionsSection({
             ? "Its balances and transactions are synced."
             : "The first sync did not finish (see the sync log below); it is retried with the next scheduled sync, or use Sync now."}{" "}
           Name the accounts and choose checking or savings below.
+        </p>
+      )}
+      {renewed && (
+        <p role="status" className="rounded-lg border px-4 py-3 text-sm">
+          Renewed {renewed.institutionName}
+          {renewed.consentExpiresAt
+            ? ` until ${formatLocalDay(renewed.consentExpiresAt, timeZone)}`
+            : ""}
+          . Its accounts and their history continue.{" "}
+          {syncSucceeded(renewed.id)
+            ? "Its balances and transactions are synced."
+            : "The sync did not finish (see the sync log below); it is retried with the next scheduled sync, or use Sync now."}
         </p>
       )}
       <ConnectForm banks={SUPPORTED_BANKS.map((bank) => bank.name)} />

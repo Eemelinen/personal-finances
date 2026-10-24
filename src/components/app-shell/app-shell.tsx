@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { Wallet } from "lucide-react";
+import { ConsentBanner } from "./consent-banner";
 import { LastSync } from "./last-sync";
 import { LogoutButton } from "./logout-button";
 import { MobileNav } from "./mobile-nav";
@@ -8,7 +9,8 @@ import { ActiveNavList, NavList } from "./nav-list";
 
 /**
  * Header plus main navigation shared by every page: a sidebar from the `md`
- * breakpoint up, a menu button that opens a sheet below it.
+ * breakpoint up, a menu button that opens a sheet below it. The consent
+ * banner (F-011) sits above every page's content.
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -39,9 +41,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </Suspense>
           </nav>
         </aside>
-        <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
-          {children}
-        </main>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <Suspense fallback={null}>
+            <ConsentBanner />
+          </Suspense>
+          <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
+            {children}
+          </main>
+        </div>
       </div>
     </div>
   );

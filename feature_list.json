@@ -280,7 +280,7 @@
       "area": "banking",
       "title": "Consent expiry and renewal",
       "user_visible_behavior": "Connections store `consent_expires_at`; a warning banner appears on every page 14 days before expiry and an error banner after it; syncs skip expired connections and log the skip. Renew runs the authorisation again and attaches the new session to the existing connection and accounts (matched by IBAN, then provider account id), so history continues.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-007"],
       "ticket": "FIN-011",
       "spec": "docs/tickets/FIN-011-consent-expiry-and-renewal.md",
@@ -290,7 +290,12 @@
         "L2: pnpm test:integration tests/integration/consent-renewal.int.test.ts (renewal keeps account ids and history; expired connections are skipped)",
         "L3: pnpm test:e2e tests/e2e/consent-banner.spec.ts (expiring and expired banners, renew through the fake provider)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (commit 969185b)",
+        "2026-10-24 pnpm test:unit tests/unit/connections/account-matching.test.ts → pass (commit 969185b)",
+        "2026-10-24 pnpm test:integration tests/integration/consent-renewal.int.test.ts → pass (commit 969185b, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/consent-banner.spec.ts → pass (commit 969185b, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Replaces old FIN-011."
     },

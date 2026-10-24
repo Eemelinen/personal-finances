@@ -364,7 +364,15 @@ describe("syncBankConnections", () => {
         status: "succeeded",
         errorKind: null,
       },
+      // An expired one is skipped and logged until it is renewed (F-011).
+      {
+        connectionId: expired.id,
+        institution: `Bank ${SESSIONS.valid}`,
+        status: "skipped",
+        errorKind: null,
+      },
     ]);
+    expect(results[3]).toMatchObject({ skipReason: "consent_expired" });
     expect(results[1].error).toBe("a bug in the sync");
     expect(results[1].cause).toBeInstanceOf(Error);
     expect(await transactionCount(healthy.id)).toBeGreaterThan(0);
@@ -402,7 +410,12 @@ describe("syncBankConnections", () => {
       connectionIds: [asked.id, expired.id],
     });
 
-    expect(results.map((result) => result.connectionId)).toEqual([asked.id]);
+    expect(
+      results.map((result) => [result.connectionId, result.status]),
+    ).toEqual([
+      [asked.id, "succeeded"],
+      [expired.id, "skipped"],
+    ]);
     expect(await runsOf(notAsked.id)).toEqual([]);
     expect(
       await syncBankConnections({ ...options, connectionIds: [] }),

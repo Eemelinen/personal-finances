@@ -37,7 +37,12 @@ export function createJobs(env: Pick<Env, "SYNC_CRON">): Job[] {
           const line = `[bank-sync] ${describeBankSync(result)}`;
           if (result.errorKind === "internal") {
             console.error(line, result.cause);
-          } else if (result.status === "failed") {
+          } else if (
+            result.status === "failed" ||
+            (result.status === "skipped" &&
+              result.skipReason === "consent_expired")
+          ) {
+            // An ended consent needs the user (F-011): renew on /connections.
             console.warn(line);
           } else {
             console.info(line);

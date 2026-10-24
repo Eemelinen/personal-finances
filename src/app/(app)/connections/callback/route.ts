@@ -7,7 +7,9 @@ import { syncBankConnections } from "@/server/sync/bank-sync";
 // `?state=…&code=…`, or `?state=…&error=…` when the authorisation did not
 // finish. A new connection is synced right away (F-010), so /connections
 // shows its balances and sync log; a failed first sync is in the log and is
-// retried by the worker. The outcome is shown on /connections.
+// retried by the worker. A renewal (F-011) attaches the new session to its
+// connection and is synced the same way. The outcome is shown on
+// /connections.
 
 export async function GET(request: NextRequest) {
   await verifySession();
@@ -26,7 +28,9 @@ export async function GET(request: NextRequest) {
     }
   }
   const outcome = new URLSearchParams(
-    result.ok ? { connected: result.connectionId } : { error: result.error },
+    result.ok
+      ? { [result.renewed ? "renewed" : "connected"]: result.connectionId }
+      : { error: result.error },
   );
   // 303: the follow-up is a plain GET, and the callback URL (with its spent
   // code) does not stay in the address bar. A relative Location does not

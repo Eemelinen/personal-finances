@@ -43,6 +43,13 @@
       "when": 1792828857678,
       "tag": "0005_sync_log",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792831337840,
+      "tag": "0006_consent_renewal",
+      "breakpoints": true
     }
   ]
 }
