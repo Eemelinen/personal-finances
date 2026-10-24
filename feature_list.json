@@ -383,7 +383,7 @@
       "area": "dashboard",
       "title": "Dashboard overview",
       "user_visible_behavior": "The dashboard shows net worth, totals in checking and in savings and the change vs 30 days ago, accounts grouped by bank with current balance, last sync and a 90-day sparkline, and connection status (OK, expiring, expired) linking to `/connections`; with no data it guides to Connect bank or Import CSV. Amounts are formatted fi-FI in EUR.",
-      "status": "in_progress",
+      "status": "passing",
       "depends_on": ["F-004", "F-008"],
       "ticket": "FIN-016",
       "spec": "docs/tickets/FIN-016-dashboard-overview.md",
@@ -393,7 +393,12 @@
         "L2: pnpm test:integration tests/integration/dashboard-queries.int.test.ts (net worth, per-type totals and 30-day change from snapshots)",
         "L3: pnpm test:e2e tests/e2e/dashboard.spec.ts (seeded data renders the tiles and account list; empty state)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (commit 0aef46e)",
+        "2026-10-24 pnpm test:unit tests/unit/format/money.test.ts → pass (commit 0aef46e)",
+        "2026-10-24 pnpm test:integration tests/integration/dashboard-queries.int.test.ts → pass (commit 0aef46e, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/dashboard.spec.ts → pass (commit 0aef46e, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Replaces old FIN-016 minus the app shell (now F-003). Month income/expense tiles come with F-017, which can exclude transfers."
     },
