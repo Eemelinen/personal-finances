@@ -21,3 +21,4 @@ A nightly job writes an encrypted `pg_dump` (age) to `BACKUP_DIR` with 7 daily, 
 ## Notes
 
 - Replaces old FIN-026 and FIN-027.
+- Implemented in F-024 (D-027); operator guide: [docs/operations.md](../operations.md). Choices the ticket left open: age runs in-process (`age-encryption`, X25519 `age1…` recipients only, `BACKUP_AGE_RECIPIENTS`; `BACKUP_DIR` and the recipients go together, so there is no unencrypted mode); retention counts days/weeks/months that have a backup (borg/restic semantics) in `APP_TIMEZONE`; N is `NOTIFY_FAILED_SYNCS` (default 3); the checks run hourly 08:30–22:30 as their own `notifications` job, so an overnight failure is reported at 08:30; the once-a-day memory is the `notifications` table, so restarts do not resend.

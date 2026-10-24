@@ -15,6 +15,12 @@ RUN pnpm install --frozen-lockfile
 # one-shot migrate service.
 FROM base AS tools
 ENV NODE_ENV=production
+# pg_dump for the worker's nightly backup (FIN-024): the same major version
+# as the db service (Postgres 18; Alpine 3.23 or later). /backups is the
+# backup volume's mount point, owned by the user the worker runs as.
+RUN apk add --no-cache postgresql18-client \
+    && mkdir -p /backups \
+    && chown node:node /backups
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 USER node

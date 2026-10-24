@@ -649,7 +649,7 @@
       "area": "ops",
       "title": "Backups and notifications",
       "user_visible_behavior": "A nightly job writes an encrypted `pg_dump` (age) to `BACKUP_DIR` with 7 daily, 4 weekly and 12 monthly backups kept, and `docs/operations.md` documents backup and restore. A notifier (ntfy; disabled when `NTFY_URL` is unset) sends at most one message per issue per day when a connection fails N syncs in a row, when a consent expires within 7 days and when it has expired.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-010", "F-011"],
       "ticket": "FIN-024",
       "spec": "docs/tickets/FIN-024-backups-and-notifications.md",
@@ -659,7 +659,12 @@
         "L1: pnpm test:unit tests/unit/ops/notifier.test.ts (one message per issue per day; disabled without config)",
         "L2: pnpm test:integration tests/integration/backup-restore.int.test.ts (a dump of a Testcontainers database restores into a fresh one with the same rows)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (working tree on 31aa058)",
+        "2026-10-24 pnpm test:unit tests/unit/ops/retention.test.ts → pass (working tree on 31aa058)",
+        "2026-10-24 pnpm test:unit tests/unit/ops/notifier.test.ts → pass (working tree on 31aa058)",
+        "2026-10-24 pnpm test:integration tests/integration/backup-restore.int.test.ts → pass (working tree on 31aa058, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Replaces old FIN-026 and FIN-027."
     }

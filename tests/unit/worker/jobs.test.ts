@@ -2,13 +2,22 @@ import cron from "node-cron";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // The worker's job registry: the bank sync (F-010), the daily price update
-// (F-020) and the Kraken sync (F-021) are registered with valid schedules and
-// log their outcome.
+// (F-020), the Kraken sync (F-021), the backup and the notifications
+// (F-024) are registered with valid schedules and log their outcome.
 
 const updatePrices = vi.hoisted(() => vi.fn());
 vi.mock("@/server/investments/update-prices", () => ({ updatePrices }));
 const syncKraken = vi.hoisted(() => vi.fn());
 vi.mock("@/server/investments/sync-kraken", () => ({ syncKraken }));
+const writeBackup = vi.hoisted(() => vi.fn());
+const pruneBackups = vi.hoisted(() => vi.fn());
+vi.mock("@/server/ops/backup", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/server/ops/backup")>()),
+  writeBackup,
+  pruneBackups,
+}));
+const sendNotifications = vi.hoisted(() => vi.fn());
+vi.mock("@/server/ops/notifications", () => ({ sendNotifications }));
 const syncBankConnections = vi.hoisted(() => vi.fn());
 vi.mock("@/server/sync/bank-sync", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/server/sync/bank-sync")>()),
@@ -18,16 +27,21 @@ vi.mock("@/server/sync/bank-sync", async (importOriginal) => ({
 const { createJobs } = await import("@/worker/jobs");
 const { parseEnv } = await import("@/server/env");
 
-const DEFAULT_SYNC_CRON = parseEnv({
-  DATABASE_URL: "postgres://user:pass@localhost:5432/finances",
-}).SYNC_CRON;
-const jobs = createJobs({ SYNC_CRON: DEFAULT_SYNC_CRON });
+const DATABASE_URL = "postgres://user:pass@localhost:5432/finances";
+const ENV = parseEnv({ DATABASE_URL });
+const DEFAULT_SYNC_CRON = ENV.SYNC_CRON;
+const jobs = createJobs(ENV);
+const RECIPIENT =
+  "age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p";
 
 afterEach(() => {
   vi.restoreAllMocks();
   updatePrices.mockReset();
   syncKraken.mockReset();
   syncBankConnections.mockReset();
+  writeBackup.mockReset();
+  pruneBackups.mockReset();
+  sendNotifications.mockReset();
 });
 
 describe("jobs", () => {
@@ -41,7 +55,7 @@ describe("jobs", () => {
     const job = jobs.find((j) => j.name === "bank-sync");
     expect(job?.schedule).toBe(DEFAULT_SYNC_CRON);
     expect(
-      createJobs({ SYNC_CRON: "30 5 * * *" }).find(
+      createJobs({ ...ENV, SYNC_CRON: "30 5 * * *" }).find(
         (j) => j.name === "bank-sync",
       )?.schedule,
     ).toBe("30 5 * * *");
@@ -197,6 +211,96 @@ describe("jobs", () => {
     await jobs.find((j) => j.name === "kraken-sync")!.run();
     expect(info).toHaveBeenCalledWith(
       "[kraken-sync] no active Kraken connection",
+    );
+  });
+
+  it("back up and notify only when configured", () => {
+    const names = jobs.map((job) => job.name);
+    expect(names).not.toContain("backup");
+    expect(names).not.toContain("notifications");
+
+    const configured = createJobs(
+      parseEnv({
+        DATABASE_URL,
+        BACKUP_DIR: "/backups",
+        BACKUP_AGE_RECIPIENTS: RECIPIENT,
+        NTFY_URL: "https://ntfy.example/finances",
+      }),
+    );
+    for (const job of configured)
+      expect(cron.validate(job.schedule)).toBe(true);
+    expect(configured.find((j) => j.name === "backup")?.schedule).toBe(
+      "30 3 * * *",
+    );
+    expect(configured.find((j) => j.name === "notifications")?.schedule).toBe(
+      "30 8-22 * * *",
+    );
+  });
+
+  it("write an encrypted backup of the database, then prune the old ones", async () => {
+    const env = parseEnv({
+      DATABASE_URL,
+      BACKUP_DIR: "/backups",
+      BACKUP_AGE_RECIPIENTS: RECIPIENT,
+    });
+    const job = createJobs(env).find((j) => j.name === "backup")!;
+    writeBackup.mockResolvedValue({
+      path: "/backups/finances-20261024T003000Z.dump.age",
+      bytes: 2048,
+    });
+    pruneBackups.mockResolvedValue(["a", "b"]);
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    await job.run();
+
+    expect(writeBackup).toHaveBeenCalledWith({
+      dir: "/backups",
+      recipients: [RECIPIENT],
+      dump: {
+        command: "pg_dump",
+        args: expect.arrayContaining([
+          "--format=custom",
+          `--dbname=${DATABASE_URL}`,
+        ]),
+      },
+    });
+    expect(pruneBackups).toHaveBeenCalledWith("/backups", {
+      timeZone: "Europe/Helsinki",
+    });
+    expect(info).toHaveBeenCalledWith(
+      "[backup] wrote /backups/finances-20261024T003000Z.dump.age (2048 bytes), removed 2 old backup(s)",
+    );
+  });
+
+  it("do not prune when the backup fails", async () => {
+    const env = parseEnv({
+      DATABASE_URL,
+      BACKUP_DIR: "/backups",
+      BACKUP_AGE_RECIPIENTS: RECIPIENT,
+    });
+    const job = createJobs(env).find((j) => j.name === "backup")!;
+    writeBackup.mockRejectedValue(new Error("pg_dump exited with 1"));
+    await expect(job.run()).rejects.toThrow("pg_dump exited with 1");
+    expect(pruneBackups).not.toHaveBeenCalled();
+  });
+
+  it("log the notifications sent and the ones that failed", async () => {
+    const env = parseEnv({ DATABASE_URL, NTFY_URL: "https://ntfy.example/x" });
+    const job = createJobs(env).find((j) => j.name === "notifications")!;
+    sendNotifications.mockResolvedValue({
+      sent: ["consent-expiring:c1"],
+      skipped: ["sync-failing:c2"],
+      failed: [{ key: "consent-expired:c3", error: "ntfy answered 500" }],
+    });
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await job.run();
+
+    expect(sendNotifications).toHaveBeenCalledWith(env);
+    expect(info).toHaveBeenCalledWith(
+      "[notifications] sent consent-expiring:c1",
+    );
+    expect(warn).toHaveBeenCalledWith(
+      "[notifications] consent-expired:c3 not sent: ntfy answered 500",
     );
   });
 });

@@ -45,6 +45,11 @@ next-env.d.ts
 /secrets/*
 !/secrets/.gitkeep
 
+# backups and dumps (FIN-024): financial data, encrypted or not
+/backups/
+*.dump
+*.dump.age
+
 # harness — driver traces, run log and stop-hook counters (phase 2)
 .harness/
 

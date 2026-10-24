@@ -28,12 +28,12 @@ flowchart LR
   U((Me, in a browser)) --> APP
 ```
 
-| Service   | Role                                                                                                                    |
-| --------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `db`      | PostgreSQL 18. Data lives in the `pgdata` volume. The port is bound to `127.0.0.1` only.                                |
-| `migrate` | Applies Drizzle migrations, then exits. `app` and `worker` start only after it succeeds.                                |
-| `app`     | Next.js server: dashboard UI, the bank-connection flow (OAuth-style redirect), CSV upload, "sync now".                  |
-| `worker`  | Long-running Node process. It runs scheduled jobs with node-cron: bank sync, Kraken sync, price updates; later backups. |
+| Service   | Role                                                                                                                                        |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `db`      | PostgreSQL 18. Data lives in the `pgdata` volume. The port is bound to `127.0.0.1` only.                                                    |
+| `migrate` | Applies Drizzle migrations, then exits. `app` and `worker` start only after it succeeds.                                                    |
+| `app`     | Next.js server: dashboard UI, the bank-connection flow (OAuth-style redirect), CSV upload, "sync now".                                      |
+| `worker`  | Long-running Node process. It runs scheduled jobs with node-cron: bank sync, Kraken sync, price updates, nightly backups and notifications. |
 
 The app and the worker share the same code in `src/server`. The worker is not a separate codebase.
 
@@ -155,6 +155,12 @@ src/
                        F-022: valuation-series.ts (daily holdings values, derived
                        cash, external flows), performance.ts (contributions vs
                        market gain)
+    ops/               Operations (F-024): backup.ts (pg_dump through age into
+                       BACKUP_DIR, pruning, decryption), retention.ts (which backups
+                       are kept, pure), notifier.ts (ntfy, once per issue per day),
+                       notifications.ts (the issues, the `notifications` table
+                       store, the job's entry), run-backup.ts / decrypt-backup.ts
+                       (`pnpm backup`, `pnpm backup:decrypt`)
     reports/           Pure report helpers (F-017): period.ts (presets, custom ranges,
                        previous period, average window), merchant-name.ts (normalised
                        merchant names), balance-series.ts (balance ranges, carried and
@@ -163,7 +169,9 @@ src/
     index.ts           Worker entrypoint: registers jobs, graceful shutdown
     jobs.ts            Job registry (name, cron schedule, run function): heartbeat,
                        bank-sync (SYNC_CRON, every 6 h by default, F-010),
-                       price-update (daily 07:30, F-020), kraken-sync (every 6 h, F-021)
+                       price-update (daily 07:30, F-020), kraken-sync (every 6 h, F-021),
+                       backup (03:30, with BACKUP_DIR) and notifications (hourly
+                       08:30–22:30, with NTFY_URL; F-024)
 tests/
   unit/                Vitest unit project (L1)
   integration/         Vitest + Testcontainers Postgres 18 (L2); helpers/postgres.ts
@@ -223,7 +231,7 @@ sequenceDiagram
 
 ## Data model
 
-The core tables (F-002, `src/server/db/schema/`, first migration `drizzle/0000_init.sql`; F-009 added `accounts.transactions_synced_at` and `transactions.note` in `0001_sync_transactions.sql`; F-014 the rule amount conditions in `0002_categorization_rules.sql`; F-019 the investment tables in `0003_investments.sql`; F-007 `bank_authorizations` in `0004_connect_bank.sql`). Amounts are stored as **integer minor units** (cents, `bigint`, read as a JS `number`) together with an ISO-4217 `char(3)` currency code. Floats are never used for money. Every id is a `uuid`; every point in time is `timestamptz`; calendar days (`booking_date`, `value_date`, snapshot `date`) are `date`. Every table has `created_at` / `updated_at`.
+The core tables (F-002, `src/server/db/schema/`, first migration `drizzle/0000_init.sql`; F-009 added `accounts.transactions_synced_at` and `transactions.note` in `0001_sync_transactions.sql`; F-014 the rule amount conditions in `0002_categorization_rules.sql`; F-019 the investment tables in `0003_investments.sql`; F-007 `bank_authorizations` in `0004_connect_bank.sql`; F-024 `notifications` in `0007_notifications.sql`). Amounts are stored as **integer minor units** (cents, `bigint`, read as a JS `number`) together with an ISO-4217 `char(3)` currency code. Floats are never used for money. Every id is a `uuid`; every point in time is `timestamptz`; calendar days (`booking_date`, `value_date`, snapshot `date`) are `date`. Every table has `created_at` / `updated_at`.
 
 | Table                 | Purpose                                   | Key columns                                                                                                                                                                                                                 |
 | --------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -235,6 +243,7 @@ The core tables (F-002, `src/server/db/schema/`, first migration `drizzle/0000_i
 | `categories`          | Spending/income categories (hierarchical) | `id`, `name`, `parent_id?`, `kind` (`expense`, `income`, `transfer`), `color`                                                                                                                                               |
 | `category_rules`      | Auto-categorization rules                 | `id`, `category_id`, `match_field`, `match_type`, `pattern`, `priority`, `amount_sign?`, `amount_min_minor?`, `amount_max_minor?`                                                                                           |
 | `sync_runs`           | Sync log                                  | `id`, `connection_id`, `kind` (`balances`, `transactions`, `holdings`; null before F-010), `started_at`, `finished_at`, `status`, `error`, counts                                                                           |
+| `notifications`       | Notifications sent (F-024)                | `issue` (e.g. `consent-expiring:<connection id>`), `day` (`APP_TIMEZONE`); primary key `(issue, day)`, rows older than 30 days pruned                                                                                       |
 | `bank_authorizations` | Started, unfinished bank authorisations   | `state_hash` (SHA-256 of the `state`, unique), `provider`, `aspsp_name`, `aspsp_country`, `connection_id?` (a renewal's connection, F-011), `expires_at`                                                                    |
 
 Enums: `account_type` (`checking`, `savings`, `brokerage`, `crypto`), `connection_status` (`active`, `expired`, `revoked`, `archived`), `transaction_status` (`booked`, `pending`), `category_source` (`none`, `rule`, `manual`), `category_kind` (`expense`, `income`, `transfer`), `rule_match_field` (`counterparty`, `description`), `rule_match_type` (`contains`, `equals`, `regex`), `rule_amount_sign` (`debit`, `credit`), `sync_status` (`running`, `succeeded`, `failed`). `provider` columns are open text so a new provider needs no migration; `balance_type` holds the provider's ISO 20022 code (`CLBD`, `ITAV`, …).
@@ -436,6 +445,16 @@ F-022 (D-019) values brokerage and crypto accounts per day and adds `/reports/al
 - **Allocation** (`getAllocation()`): today's value of every non-archived EUR account that has one, by asset class — Cash (bank balances and investment cash), Stocks and ETFs (`stock` + `etf`), Funds, Crypto, Other — and by account (cash and holdings parts, largest first). Shares are of the positive values' sum, so an overdrawn account is listed without a share. The page draws the classes as one bar split by share (fixed colours per class, `--series-1…4`) with a table, the accounts as a table with bars, and lists unpriced holdings and omitted accounts.
 - **Performance** (`getPortfolioPerformance()`, `?range=3m|6m|1y|all` as the balance history, `?account=<id>` for one investment account, else all): the investment accounts' daily value against what was contributed (`portfolioPerformance()`, pure): the value on the range's first day, plus external flows — `transfer` rows (EUR cash, and units at the day's price), or for an account without transactions or synced cash (a manual wallet) the quantity changes between its snapshots at the day's price; units that move while unpriced count on the first day their asset has a price — plus an account's whole value on the day it first has one (the range's first day for one known before it); units it holds unpriced on that day are left out of that value and count likewise on their first priced day, however they came in (for a synced account `cashFrom`, its first balance day, marks the entry). The market gain is value − contributed, so prices, dividends, fees and trading above or below the close are gains; start + net contributions + gain = value today. The page shows the four figures and a line chart of value and contributed (one axis) with a tooltip of the gain.
 
+## Backups and notifications
+
+F-024 (D-027); how to run them: [operations.md](operations.md).
+
+- **Backup** (`writeBackup()`, worker job `backup`, 03:30 `APP_TIMEZONE`, only when `BACKUP_DIR` and `BACKUP_AGE_RECIPIENTS` are set; env validation requires both or neither). `pg_dump --format=custom --no-owner --no-privileges --dbname=$DATABASE_URL` is spawned and its stdout streamed through `age-encryption`'s `Encrypter` (X25519 `age1…` recipients) into `finances-<UTC yyyymmddThhmmssZ>.dump.age.partial` (mode `0600`, never over an existing file), renamed when pg_dump exited 0; any failure deletes the partial file and is thrown, so the job logs it and prunes nothing. The worker image (`tools` stage) installs `postgresql18-client`; Compose mounts the `backups` volume at `/backups` and sets `BACKUP_DIR` from `BACKUP_AGE_RECIPIENTS` (`${BACKUP_AGE_RECIPIENTS:+/backups}`).
+- **Retention** (`backupsToKeep()`, pure, then `pruneBackups()`): the newest backup of each of the last 7 days, 4 weeks (Monday–Sunday) and 12 months that have one, by the backup time's day in `APP_TIMEZONE` (borg/restic `--keep-*` semantics: buckets with a backup, not calendar windows, so a gap does not empty the directory). Files whose names do not parse as a backup are never deleted.
+- **Restore**: `decryptBackup()` (and `pnpm backup:decrypt`, for a machine without the age CLI) decrypts to a pg_dump stream for `pg_restore`; the dump includes the `drizzle` migration history, so `migrate` after a restore applies only newer migrations.
+- **Issues** (`findIssues()`): `sync-failing:<id>` when an `active` connection (any provider) has at least `NOTIFY_FAILED_SYNCS` (default 3) failed `sync_runs` since its last succeeded `transactions` / `holdings` run (a failed sync is exactly one failed run: balances, or the step after them); `consent-expiring:<id>` when a bank connection's consent ends within `CONSENT_NOTICE_DAYS` = 7; `consent-expired:<id>` when it has ended or the connection is `expired` / `revoked`. Archived connections never notify.
+- **Notifier** (`createNotifier()`, worker job `notifications`, `30 8-22 * * *`, only with `NTFY_URL`): per issue, `claim(key, day)` inserts into `notifications` (`ON CONFLICT DO NOTHING`); only a new row is sent, as an ntfy `POST` of the message to `NTFY_URL` with `title`, `priority` and `tags` in the query string (header values must be ASCII; bank names need not be) and `Authorization: Bearer $NTFY_TOKEN` when set, 10 s timeout. A failed send deletes the claim, so the next hourly run retries. Messages carry the bank name, a date and the provider's error text, never amounts, IBANs or account names.
+
 ## Conventions
 
 - **Server code boundary.** Everything under `src/server` must run in plain Node, because the worker imports it. Don't import Next-only modules there (`next/headers`, `server-only`, and so on). Next-specific data access belongs in `src/app` or in `src/server/queries` files that only the app imports.
@@ -452,5 +471,6 @@ F-022 (D-019) values brokerage and crypto accounts per day and adds `/reports/al
 - The Enable Banking private key lives in `./secrets/` (gitignored) and is mounted read-only into `app` and `worker` (`./secrets:/app/secrets:ro`). The client never logs; its errors carry no JWT, session id or IBAN.
 - Session and consent identifiers are encrypted at rest with AES-256-GCM, using `ENCRYPTION_KEY` (32 random bytes, base64): `encryptSecret()` / `decryptSecret()` in `src/server/crypto.ts` write `v1:<iv>:<ciphertext>:<tag>` (base64url, fresh 12-byte IV, 16-byte tag, the version authenticated as additional data) and reject tampered values, the wrong key and non-canonical encodings with `DecryptionError`. Losing the key means reconnecting the banks; rotating it needs a re-encryption step (a future `v2` or key id, not built yet).
 - The connect flow's `state` is 32 random bytes, stored only as its SHA-256, valid for one hour and deleted on first use (`bank_authorizations`, F-007); the callback needs the login session too (`sameSite=lax` lets the bank's top-level redirect carry it).
+- Backups are always encrypted with age to `BACKUP_AGE_RECIPIENTS` (public keys only on the server; the identity that decrypts them is kept elsewhere), streamed so no plaintext dump is written, and the files are `0600` (F-024). Notifications go to a third-party ntfy server and carry no amounts or account details.
 - The database and app ports are bound to `127.0.0.1`.
 - The integration is read-only (account information only). The app never initiates payments.
