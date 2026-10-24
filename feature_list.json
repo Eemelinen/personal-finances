@@ -397,7 +397,11 @@
         "2026-10-24 pnpm check → pass (commit 0aef46e)",
         "2026-10-24 pnpm test:unit tests/unit/format/money.test.ts → pass (commit 0aef46e)",
         "2026-10-24 pnpm test:integration tests/integration/dashboard-queries.int.test.ts → pass (commit 0aef46e, Docker available)",
-        "2026-10-24 pnpm test:e2e tests/e2e/dashboard.spec.ts → pass (commit 0aef46e, Docker available)"
+        "2026-10-24 pnpm test:e2e tests/e2e/dashboard.spec.ts → pass (commit 0aef46e, Docker available)",
+        "2026-10-24 pnpm check → pass (commit fcb9135)",
+        "2026-10-24 pnpm test:unit tests/unit/format/money.test.ts → pass (commit fcb9135)",
+        "2026-10-24 pnpm test:integration tests/integration/dashboard-queries.int.test.ts → pass (commit fcb9135, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/dashboard.spec.ts → pass (commit fcb9135, Docker available)"
       ],
       "attempts": 0,
       "notes": "Replaces old FIN-016 minus the app shell (now F-003). Month income/expense tiles come with F-017, which can exclude transfers."
