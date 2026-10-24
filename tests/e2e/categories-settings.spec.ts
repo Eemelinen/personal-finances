@@ -199,16 +199,25 @@ test("adds, renames and deletes a subcategory", async ({ page }) => {
   await expect(categoryRow(page, `Renamed ${tag}`)).toHaveCount(0);
 });
 
-test("offers no rename or delete for Transfers", async ({ page }) => {
+test("offers no rename or delete for Transfers and Excluded", async ({
+  page,
+}) => {
   await openSettings(page);
-  const transfers = page
-    .getByRole("table", { name: "Categories" })
-    .getByRole("row")
-    .filter({
-      has: page.getByRole("cell", { name: "Transfers", exact: true }),
-    });
-  await expect(transfers).toContainText("Used by transfer detection");
-  await expect(transfers.getByRole("button")).toHaveCount(0);
+  const row = (name: string) =>
+    page
+      .getByRole("table", { name: "Categories" })
+      .getByRole("row")
+      .filter({ has: page.getByRole("cell", { name, exact: true }) });
+  await expect(row("Transfers")).toContainText("Used by transfer detection");
+  await expect(row("Transfers").getByRole("button")).toHaveCount(0);
+  await expect(row("Excluded")).toContainText(
+    "Leaves transactions out of reports",
+  );
+  await expect(row("Excluded").getByRole("button")).toHaveCount(0);
+  // Excluded gets no subcategories.
+  await expect(
+    page.getByLabel("Parent").locator("option", { hasText: "Excluded" }),
+  ).toHaveCount(0);
 });
 
 async function addCategoryExpectingError(

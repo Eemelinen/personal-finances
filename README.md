@@ -43,6 +43,8 @@ Net worth on the dashboard and under Reports → Balances counts the investments
 
 Income on the dashboard and under Reports → Cash flow includes every incoming payment without a category by default. If loan drawdowns or transfers from your own accounts inflate it, turn off **Count credits without a category as income** under Settings → Reports: then only credits in an income category (for example Income › Salary through a rule) are income, and the rest are shown as "Other money in (not income)".
 
+To leave a single transaction out of every report without deleting it (a loan drawdown, a home purchase, a bank correction), open its **Details** on the Transactions page and choose **Exclude from reports**. It moves to the Excluded category, stays in the list with an "Excluded" badge (the Excluded filter shows or hides such rows), and no longer counts in spending, cash flow, the dashboard tiles, top merchants, averages or transfer detection; balances do not change. **Include again** hands it back to the rules. A rule can also target the Excluded category.
+
 Notes:
 
 - Postgres is published on host port **5434** (not 5432) to avoid clashing with other local projects. Change `POSTGRES_PORT` and `DATABASE_URL` in `.env` if needed.

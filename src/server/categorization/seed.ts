@@ -1,14 +1,20 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
 import type { Db } from "@/server/db/client";
 import { categories, categoryRules } from "@/server/db/schema";
-import { DEFAULT_CATEGORIES, DEFAULT_RULES } from "./defaults";
+import {
+  DEFAULT_CATEGORIES,
+  DEFAULT_RULES,
+  EXCLUDED_CATEGORY,
+} from "./defaults";
 
 // Writes the default categories and rules (`defaults.ts`) into an empty
 // `categories` table, in one transaction; `src/server/db/migrate.ts` runs it
 // after the migrations. A table with any category is left alone, so
 // categories and rules the user deleted or changed (F-015) do not come
-// back. A transaction-scoped advisory lock keeps two runs from seeding
-// twice.
+// back. The one exception is the top-level Excluded category (F-027),
+// which cannot be deleted: an installation seeded before it existed gets it
+// on the next run, so rules can target it. A transaction-scoped advisory
+// lock keeps two runs from seeding twice.
 
 /** Seeded rule priorities: 100, 110, 120, … in `DEFAULT_RULES` order. */
 const FIRST_PRIORITY = 100;
@@ -30,7 +36,17 @@ export async function seedDefaults(db: Db): Promise<SeedResult> {
       .select({ id: categories.id })
       .from(categories)
       .limit(1);
-    if (any) return { seeded: false, categories: 0, rules: 0 };
+    if (any) {
+      const { name, kind, color } = DEFAULT_CATEGORIES.find(
+        (category) => category.name === EXCLUDED_CATEGORY,
+      )!;
+      const added = await tx
+        .insert(categories)
+        .values({ name, kind, color })
+        .onConflictDoNothing()
+        .returning({ id: categories.id });
+      return { seeded: false, categories: added.length, rules: 0 };
+    }
 
     const ids = new Map<string, string>();
     for (const parent of DEFAULT_CATEGORIES) {

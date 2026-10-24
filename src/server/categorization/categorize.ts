@@ -8,6 +8,7 @@ import {
   isNull,
   lte,
   ne,
+  not,
   or,
   sql,
   type SQL,
@@ -20,7 +21,11 @@ import {
   transactions,
 } from "@/server/db/schema";
 import type { Tx } from "@/server/sync/runs";
-import { TRANSFERS_CATEGORY } from "./defaults";
+import {
+  DEFAULT_CATEGORIES,
+  EXCLUDED_CATEGORY,
+  TRANSFERS_CATEGORY,
+} from "./defaults";
 import { compileRules, ruleOutcome, type CompiledRule } from "./rules";
 import {
   findTransfers,
@@ -42,7 +47,8 @@ import {
 //   member of one) are paired as transfers (`transfers.ts`); both legs get
 //   one `transfer_group_id` and the Transfers category with source `rule`.
 //   Pending ones wait until they are booked: the sync passes the booked
-//   version to the hook again.
+//   version to the hook again. An excluded leg (category kind `excluded`,
+//   F-027) never pairs.
 
 /** Values per `IN (…)` list, well below Postgres' parameter limit. */
 const BATCH = 1_000;
@@ -212,13 +218,23 @@ async function applyRules(tx: Tx, scope: Scope): Promise<number> {
 }
 
 /**
- * Booked, not manual, and in no group or the only member of one. The
- * subquery's `other` alias hides the outer table, so
+ * The transaction is in a category of kind `excluded` (F-027): it counts
+ * in no report and is never a transfer leg.
+ */
+export const IS_EXCLUDED = sql`exists (select 1 from ${categories}
+  where ${categories.id} = ${transactions.categoryId}
+    and ${categories.kind} = 'excluded')`;
+
+/**
+ * Booked, not manual, not excluded (a rule may exclude a leg; an IBAN in
+ * its texts does not bring it back), and in no group or the only member of
+ * one. The subquery's `other` alias hides the outer table, so
  * `"transactions"."transfer_group_id"` is the outer row's group.
  */
 const FREE_LEG = and(
   eq(transactions.status, "booked"),
   ne(transactions.categorySource, "manual"),
+  not(IS_EXCLUDED),
   or(
     isNull(transactions.transferGroupId),
     sql`(select count(*) from ${transactions} as other
@@ -318,18 +334,38 @@ async function linkTransfers(tx: Tx, scope: Scope): Promise<number> {
   return linked;
 }
 
-const TRANSFERS_WHERE = and(
-  isNull(categories.parentId),
-  eq(categories.name, TRANSFERS_CATEGORY),
-);
-
-/** The top-level Transfers category, if it exists. */
-async function findTransfersCategory(tx: Tx): Promise<string | null> {
+/** A top-level category by name, if it exists. */
+async function findTopLevelCategory(
+  tx: Tx,
+  name: string,
+): Promise<string | null> {
   const [row] = await tx
     .select({ id: categories.id })
     .from(categories)
-    .where(TRANSFERS_WHERE);
+    .where(and(isNull(categories.parentId), eq(categories.name, name)));
   return row?.id ?? null;
+}
+
+/** Creates a default top-level category (unseeded databases); its id. */
+async function createTopLevelCategory(tx: Tx, name: string): Promise<string> {
+  const { kind, color } = DEFAULT_CATEGORIES.find(
+    (category) => category.name === name,
+  )!;
+  await tx
+    .insert(categories)
+    .values({ name, kind, color })
+    .onConflictDoNothing();
+  return (await findTopLevelCategory(tx, name))!;
+}
+
+/** The top-level Transfers category, if it exists. */
+function findTransfersCategory(tx: Tx): Promise<string | null> {
+  return findTopLevelCategory(tx, TRANSFERS_CATEGORY);
+}
+
+/** Creates the top-level Transfers category (unseeded databases). */
+function createTransfersCategory(tx: Tx): Promise<string> {
+  return createTopLevelCategory(tx, TRANSFERS_CATEGORY);
 }
 
 /** The top-level Transfers category's id; created when it is missing. */
@@ -339,11 +375,13 @@ export async function transfersCategoryId(tx: Tx): Promise<string> {
   );
 }
 
-/** Creates the top-level Transfers category (unseeded databases). */
-async function createTransfersCategory(tx: Tx): Promise<string> {
-  await tx
-    .insert(categories)
-    .values({ name: TRANSFERS_CATEGORY, kind: "transfer", color: "#64748b" })
-    .onConflictDoNothing();
-  return (await findTransfersCategory(tx))!;
+/**
+ * The top-level Excluded category's id (F-027); created when it is
+ * missing, as in installations seeded before it existed.
+ */
+export async function excludedCategoryId(tx: Tx): Promise<string> {
+  return (
+    (await findTopLevelCategory(tx, EXCLUDED_CATEGORY)) ??
+    (await createTopLevelCategory(tx, EXCLUDED_CATEGORY))
+  );
 }

@@ -12,7 +12,11 @@ import { getDb, type Db } from "@/server/db/client";
 import { categories, categoryRules, transactions } from "@/server/db/schema";
 import type { Tx } from "@/server/sync/runs";
 import { lockCategorization, transfersCategoryId } from "./categorize";
-import { TRANSFERS_CATEGORY, type CategoryKind } from "./defaults";
+import {
+  EXCLUDED_CATEGORY,
+  TRANSFERS_CATEGORY,
+  type CategoryKind,
+} from "./defaults";
 import {
   MAX_CATEGORY_NAME_LENGTH,
   moveRuleIds,
@@ -27,8 +31,10 @@ import { compareRules } from "./rules";
 //   subcategory takes its kind. Deleting a category deletes its
 //   subcategories and their rules; their transactions lose the category and
 //   go back to the rules (`none`), manual ones too; transfer legs get
-//   Transfers. The top-level Transfers
-//   category, which transfer detection assigns, cannot be deleted.
+//   Transfers. The top-level Transfers category, which transfer detection
+//   assigns, and the top-level Excluded category (F-027), which takes
+//   transactions out of the reports, cannot be renamed or deleted, and
+//   Excluded gets no subcategories.
 // - A new rule runs first (priority below every other rule): it is usually
 //   more specific than the ones before it. Moving a rule renumbers every
 //   rule in steps of 10 in the new order. Both take an advisory lock, so two
@@ -85,7 +91,7 @@ export async function listCategoryOptions(
 export interface CategoryUsage extends CategoryOption {
   rules: number;
   transactions: number;
-  /** The top-level Transfers category: no rename or delete. */
+  /** The top-level Transfers or Excluded category: no rename or delete. */
   protected: boolean;
 }
 
@@ -94,6 +100,26 @@ function isTransfersCategory(
   category: Pick<CategoryOption, "name" | "parentId">,
 ): boolean {
   return category.parentId === null && category.name === TRANSFERS_CATEGORY;
+}
+
+/** Excluding a transaction needs the top-level Excluded category. */
+function isExcludedCategory(
+  category: Pick<CategoryOption, "name" | "parentId">,
+): boolean {
+  return category.parentId === null && category.name === EXCLUDED_CATEGORY;
+}
+
+/** Why the category cannot be renamed or deleted, or null. */
+function protectedReason(
+  category: Pick<CategoryOption, "name" | "parentId">,
+): string | null {
+  if (isTransfersCategory(category)) {
+    return `${TRANSFERS_CATEGORY} is used by transfer detection`;
+  }
+  if (isExcludedCategory(category)) {
+    return `${EXCLUDED_CATEGORY} leaves transactions out of the reports`;
+  }
+  return null;
 }
 
 /** The categories with how many rules and transactions use each one. */
@@ -118,7 +144,7 @@ export async function listCategoryUsage(
     ...category,
     rules: rules.get(category.id) ?? 0,
     transactions: used.get(category.id) ?? 0,
-    protected: isTransfersCategory(category),
+    protected: protectedReason(category) !== null,
   }));
 }
 
@@ -162,6 +188,7 @@ export async function createCategory(
   if (input.parentId !== null) {
     const [parent] = await db
       .select({
+        name: categories.name,
         parentId: categories.parentId,
         kind: categories.kind,
         color: categories.color,
@@ -171,6 +198,11 @@ export async function createCategory(
     if (!parent) throw new CategoryManageError("The parent category is gone.");
     if (parent.parentId !== null) {
       throw new CategoryManageError("A subcategory cannot have subcategories.");
+    }
+    if (isExcludedCategory(parent)) {
+      throw new CategoryManageError(
+        `${EXCLUDED_CATEGORY} cannot have subcategories.`,
+      );
     }
     kind = parent.kind;
     color ??= parent.color;
@@ -201,11 +233,8 @@ export async function renameCategory(
     .from(categories)
     .where(eq(categories.id, id));
   if (!current) throw new CategoryManageError("The category is gone.");
-  if (isTransfersCategory(current)) {
-    throw new CategoryManageError(
-      `${TRANSFERS_CATEGORY} is used by transfer detection and keeps its name.`,
-    );
-  }
+  const reason = protectedReason(current);
+  if (reason) throw new CategoryManageError(`${reason} and keeps its name.`);
   try {
     await db.update(categories).set({ name }).where(eq(categories.id, id));
   } catch (error) {
@@ -230,10 +259,9 @@ export async function deleteCategory(
       .from(categories)
       .where(eq(categories.id, id));
     if (!current) throw new CategoryManageError("The category is gone.");
-    if (isTransfersCategory(current)) {
-      throw new CategoryManageError(
-        `${TRANSFERS_CATEGORY} is used by transfer detection and cannot be deleted.`,
-      );
+    const reason = protectedReason(current);
+    if (reason) {
+      throw new CategoryManageError(`${reason} and cannot be deleted.`);
     }
     const ids = [
       id,

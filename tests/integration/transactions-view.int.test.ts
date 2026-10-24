@@ -18,6 +18,8 @@ import {
 } from "@/server/categorization/manage";
 import { categoryIdByPath, seedDefaults } from "@/server/categorization/seed";
 import {
+  excludeTransaction,
+  includeTransaction,
   markTransfer,
   setTransactionCategory,
   setTransactionNote,
@@ -219,6 +221,41 @@ describe("listTransactions", () => {
       db(),
     );
     expect(excluded.rows.map((row) => row.id)).toEqual([kept]);
+  });
+
+  it("marks excluded transactions and filters them in or out (F-027)", async () => {
+    const id = await account();
+    const [kept, loan] = await insert(id, [
+      { date: "2024-05-01", amount: -100 },
+      { date: "2024-05-02", amount: 18_000_000, counterparty: "Laina" },
+    ]);
+    await excludeTransaction(loan, db());
+    const all = await listTransactions(forAccounts([id]), 1, db());
+    expect(
+      all.rows.map((row) => ({ id: row.id, excluded: row.excluded })),
+    ).toEqual([
+      { id: loan, excluded: true },
+      { id: kept, excluded: false },
+    ]);
+    const only = await listTransactions(
+      forAccounts([id], { excluded: "only" }),
+      1,
+      db(),
+    );
+    expect(only.rows.map((row) => row.id)).toEqual([loan]);
+    const without = await listTransactions(
+      forAccounts([id], { excluded: "exclude" }),
+      1,
+      db(),
+    );
+    expect(without.rows.map((row) => row.id)).toEqual([kept]);
+    expect(without.totals[0]).toMatchObject({ count: 1, income: 0 });
+
+    await includeTransaction(loan, db());
+    expect(await stored(loan)).toMatchObject({
+      categoryId: null,
+      categorySource: "none",
+    });
   });
 
   it("pages through more than 10 000 transactions", async () => {
@@ -435,18 +472,30 @@ describe("categories and rules", () => {
     ).toMatch(/ › Bouldering$/);
   });
 
-  it("protects the Transfers category", async () => {
+  it("protects the Transfers and Excluded categories", async () => {
     const transfers = await categoryId("Transfers");
-    await expect(deleteCategory(transfers, db())).rejects.toThrow(
-      CategoryManageError,
-    );
-    await expect(renameCategory(transfers, "Moves", db())).rejects.toThrow(
-      CategoryManageError,
-    );
+    const excluded = await categoryId("Excluded");
+    for (const id of [transfers, excluded]) {
+      await expect(deleteCategory(id, db())).rejects.toThrow(
+        CategoryManageError,
+      );
+      await expect(renameCategory(id, "Moves", db())).rejects.toThrow(
+        CategoryManageError,
+      );
+    }
+    await expect(
+      createCategory(
+        { name: "Loans", parentId: excluded, kind: "expense" },
+        db(),
+      ),
+    ).rejects.toThrow("Excluded cannot have subcategories.");
     const usage = await listCategoryUsage(db());
     expect(
-      usage.filter((category) => category.protected).map((c) => c.id),
-    ).toEqual([transfers]);
+      usage
+        .filter((category) => category.protected)
+        .map((c) => c.id)
+        .sort(),
+    ).toEqual([transfers, excluded].sort());
   });
 
   it("deleting a category deletes its subcategories and rules and frees its transactions", async () => {

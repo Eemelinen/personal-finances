@@ -18,6 +18,8 @@ async function main() {
       console.info(
         `Seeded ${seed.categories} default categories and ${seed.rules} rules.`,
       );
+    } else if (seed.categories > 0) {
+      console.info(`Added ${seed.categories} new default category.`);
     }
   } finally {
     await closeDb();

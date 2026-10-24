@@ -5,6 +5,7 @@ import { categoryRules, transactions } from "@/server/db/schema";
 import type { Tx } from "@/server/sync/runs";
 import {
   categorizeTransactions,
+  excludedCategoryId,
   lockCategorization,
   transfersCategoryId,
 } from "./categorize";
@@ -23,6 +24,9 @@ import { compileRules, matchRule } from "./rules";
 // - unlink: every leg of the group leaves it and gets the category its first
 //   matching rule gives (or none), `manual`, so detection does not pair it
 //   again.
+// - exclude from reports: the top-level Excluded category, `manual`
+//   (F-027); "include again" is `auto`, so the rules run on it again (and a
+//   rule that targets Excluded excludes it again).
 
 export const MAX_NOTE_LENGTH = 1_000;
 
@@ -81,6 +85,33 @@ export async function setTransactionCategory(
       .where(eq(transactions.id, id));
     await categorizeTransactions(tx, [id]);
   });
+}
+
+/** Takes the transaction out of every report: manual category Excluded. */
+export async function excludeTransaction(
+  id: string,
+  options: { db?: Db } = {},
+): Promise<void> {
+  const db = options.db ?? getDb();
+  await db.transaction(async (tx) => {
+    await lockCategorization(tx);
+    await load(tx, id);
+    await tx
+      .update(transactions)
+      .set({
+        categoryId: await excludedCategoryId(tx),
+        categorySource: "manual",
+      })
+      .where(eq(transactions.id, id));
+  });
+}
+
+/** Undoes `excludeTransaction()`: back to the rules. */
+export async function includeTransaction(
+  id: string,
+  options: { db?: Db } = {},
+): Promise<void> {
+  await setTransactionCategory(id, "auto", options);
 }
 
 export async function setTransactionNote(

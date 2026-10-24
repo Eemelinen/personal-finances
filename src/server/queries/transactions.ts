@@ -12,6 +12,7 @@ import {
   isNull,
   lt,
   lte,
+  not,
   or,
   sql,
   type SQL,
@@ -23,6 +24,7 @@ import {
   institutions,
   transactions,
 } from "@/server/db/schema";
+import { IS_EXCLUDED } from "@/server/categorization/categorize";
 import { NO_CATEGORY, type TransactionFilter } from "./transaction-filter";
 
 // Read model of /transactions (F-015): one page of the filtered
@@ -47,6 +49,8 @@ export interface TransactionRow {
   categoryId: string | null;
   categorySource: "none" | "rule" | "manual";
   transferGroupId: string | null;
+  /** In a category of kind `excluded`: left out of every report (F-027). */
+  excluded: boolean;
 }
 
 /** Sums of the filtered transactions in one currency (minor units). */
@@ -111,6 +115,11 @@ export function filterConditions(filter: TransactionFilter): SQL | undefined {
   } else if (filter.transfers === "only") {
     conditions.push(isNotNull(transactions.transferGroupId));
   }
+  if (filter.excluded === "exclude") {
+    conditions.push(not(IS_EXCLUDED));
+  } else if (filter.excluded === "only") {
+    conditions.push(IS_EXCLUDED);
+  }
   return and(...conditions);
 }
 
@@ -167,6 +176,7 @@ export async function listTransactions(
             categoryId: transactions.categoryId,
             categorySource: transactions.categorySource,
             transferGroupId: transactions.transferGroupId,
+            excluded: sql<boolean>`${IS_EXCLUDED}`,
           })
           .from(transactions)
           .innerJoin(accounts, eq(accounts.id, transactions.accountId))

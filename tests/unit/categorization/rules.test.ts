@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_CATEGORIES,
   DEFAULT_RULES,
+  EXCLUDED_CATEGORY,
   TRANSFERS_CATEGORY,
   UNCATEGORIZED_CATEGORY,
 } from "@/server/categorization/defaults";
@@ -259,6 +260,57 @@ describe("manual always wins", () => {
   });
 });
 
+describe("a rule targeting Excluded (F-027)", () => {
+  // The engine does not know kinds: Excluded is a category like any other.
+  const excluded = rule({
+    categoryId: "excluded",
+    matchField: "description",
+    pattern: "nostolaina",
+    amountSign: "credit",
+    priority: 10,
+  });
+  const income = rule({ categoryId: "income", matchField: "description" });
+  const rules = compileRules([income, excluded]);
+  const drawdown: CategorizedSubject = {
+    amountMinor: 18_000_000,
+    counterparty: "Oma Pankki",
+    description: "Nostolaina x",
+    categoryId: null,
+    categorySource: "none",
+    transferGroupId: null,
+  };
+
+  it("applies by priority, like any other rule", () => {
+    expect(ruleOutcome(rules, drawdown)).toEqual({
+      change: true,
+      categoryId: "excluded",
+      categorySource: "rule",
+    });
+    // Only in its direction: the debit falls to the next rule.
+    expect(
+      ruleOutcome(rules, { ...drawdown, amountMinor: -18_000_000 }),
+    ).toEqual({ change: true, categoryId: "income", categorySource: "rule" });
+  });
+
+  it("never overrides a manual choice, and an excluded row can lose it", () => {
+    expect(
+      ruleOutcome(rules, {
+        ...drawdown,
+        categoryId: "income",
+        categorySource: "manual",
+      }),
+    ).toEqual({ change: false });
+    expect(
+      ruleOutcome(rules, {
+        ...drawdown,
+        description: "Palkka",
+        categoryId: "excluded",
+        categorySource: "rule",
+      }),
+    ).toEqual({ change: true, categoryId: null, categorySource: "none" });
+  });
+});
+
 describe("normalizeText", () => {
   it("lower-cases, trims and collapses whitespace", () => {
     expect(normalizeText("  K-MARKET  Töölö\n")).toBe("k-market töölö");
@@ -303,6 +355,7 @@ describe("seeded defaults", () => {
       "Income",
       "Savings & investments",
       TRANSFERS_CATEGORY,
+      EXCLUDED_CATEGORY,
       UNCATEGORIZED_CATEGORY,
     ]);
     expect(
@@ -313,6 +366,10 @@ describe("seeded defaults", () => {
       (c) => c.name === TRANSFERS_CATEGORY,
     );
     expect(transfers?.kind).toBe("transfer");
+    const excluded = DEFAULT_CATEGORIES.find(
+      (c) => c.name === EXCLUDED_CATEGORY,
+    );
+    expect(excluded).toMatchObject({ kind: "excluded", children: [] });
   });
 
   it("every rule names a seeded category and compiles", () => {

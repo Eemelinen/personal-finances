@@ -15,10 +15,17 @@ import { formatDay, formatMoney } from "@/lib/format";
 import type { CategoryOption } from "@/server/categorization/manage";
 import type { TransactionRow } from "@/server/queries/transactions";
 import { RuleForm, type RuleDraft } from "../settings/categories/rule-form";
-import { markAsTransfer, saveNote, unlinkTransferAction } from "./actions";
+import {
+  excludeAction,
+  includeAction,
+  markAsTransfer,
+  saveNote,
+  unlinkTransferAction,
+} from "./actions";
 
-// The side sheet of one transaction: its note, marking it as a (one-sided)
-// transfer or unlinking its transfer, and creating a rule from it.
+// The side sheet of one transaction: its note, excluding it from reports or
+// including it again, marking it as a (one-sided) transfer or unlinking its
+// transfer, and creating a rule from it.
 
 /** As `MAX_NOTE_LENGTH` in transaction-edits.ts (server only). */
 const MAX_NOTE_LENGTH = 1_000;
@@ -84,6 +91,7 @@ function DetailsBody({
           <p className="text-sm">{row.description}</p>
         )}
         <NoteSection row={row} />
+        <ExcludeSection row={row} />
         <TransferSection row={row} />
         <section
           aria-labelledby={`${ids}-rule`}
@@ -164,6 +172,60 @@ function NoteSection({ row }: { row: TransactionRow }) {
           Save note
         </Button>
       </div>
+      {feedback}
+    </section>
+  );
+}
+
+function ExcludeSection({ row }: { row: TransactionRow }) {
+  const ids = useId();
+  const { run, pending, feedback } = useAction();
+  return (
+    <section aria-labelledby={`${ids}-exclude`} className="flex flex-col gap-2">
+      <h3 id={`${ids}-exclude`} className="font-medium">
+        Reports
+      </h3>
+      {row.excluded ? (
+        <>
+          <p className="text-muted-foreground text-sm">
+            This transaction is excluded: it is left out of spending, cash flow
+            and the dashboard, but still counts in balances. Including it again
+            hands it back to the rules.
+          </p>
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={pending}
+              onClick={() =>
+                run(() => includeAction(row.id), "Included in reports again.")
+              }
+            >
+              Include again
+            </Button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="text-muted-foreground text-sm">
+            Leave a transaction that is not everyday income or spending (a loan
+            drawdown, a home purchase, a bank correction) out of every report.
+            Balances do not change.
+          </p>
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={pending}
+              onClick={() =>
+                run(() => excludeAction(row.id), "Excluded from reports.")
+              }
+            >
+              Exclude from reports
+            </Button>
+          </div>
+        </>
+      )}
       {feedback}
     </section>
   );
