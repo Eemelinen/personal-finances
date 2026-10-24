@@ -1,0 +1,4512 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/accounts/00000000-0000-4000-8000-000000000152/transactions?continuation_key=continuation-key-4"
+  },
+  "status": 200,
+  "body": {
+    "transactions": [
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000255",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-06-29",
+        "value_date": "2026-06-29",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17827713041292",
+        "reference_number_schema": null,
+        "remittance_information": ["17827713041292"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000256",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-06-29",
+        "value_date": "2026-06-29",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17827713012263",
+        "reference_number_schema": null,
+        "remittance_information": ["17827713012263"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000257",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.00"
+        },
+        "creditor": {
+          "name": "Amarillo",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-06-26",
+        "value_date": "2026-06-26",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17825121010121",
+        "reference_number_schema": null,
+        "remittance_information": ["17825121010121"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000258",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-06-22",
+        "value_date": "2026-06-22",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17821665033545",
+        "reference_number_schema": null,
+        "remittance_information": ["17821665033545"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000259",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-06-22",
+        "value_date": "2026-06-22",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17821665010377",
+        "reference_number_schema": null,
+        "remittance_information": ["17821665010377"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000260",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-06-19",
+        "value_date": "2026-06-19",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17819073012542",
+        "reference_number_schema": null,
+        "remittance_information": ["17819073012542"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000261",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.00"
+        },
+        "creditor": {
+          "name": "Amarillo",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-06-16",
+        "value_date": "2026-06-16",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17816481017912",
+        "reference_number_schema": null,
+        "remittance_information": ["17816481017912"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000262",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-06-15",
+        "value_date": "2026-06-15",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17815617009290",
+        "reference_number_schema": null,
+        "remittance_information": ["17815617009290"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000263",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.00"
+        },
+        "creditor": {
+          "name": "Amarillo",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-06-11",
+        "value_date": "2026-06-11",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17812161017540",
+        "reference_number_schema": null,
+        "remittance_information": ["17812161017540"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000264",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "123.45"
+        },
+        "creditor": {
+          "name": "RK-Julkisivut Oy",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "ICDT",
+          "sub_code": "ESCT"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-06-11",
+        "value_date": "2026-06-11",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "12507000038",
+        "reference_number_schema": null,
+        "remittance_information": ["12507000038"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000265",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-06-09",
+        "value_date": "2026-06-09",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17810433024030",
+        "reference_number_schema": null,
+        "remittance_information": ["17810433024030"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000266",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-06-08",
+        "value_date": "2026-06-08",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17809569018552",
+        "reference_number_schema": null,
+        "remittance_information": ["17809569018552"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000267",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-06-02",
+        "value_date": "2026-06-02",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17804385029403",
+        "reference_number_schema": null,
+        "remittance_information": ["17804385029403"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000268",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.00"
+        },
+        "creditor": {
+          "name": "Amarillo",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-06-02",
+        "value_date": "2026-06-02",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17804385025753",
+        "reference_number_schema": null,
+        "remittance_information": ["17804385025753"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000269",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-06-01",
+        "value_date": "2026-06-01",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17803521016394",
+        "reference_number_schema": null,
+        "remittance_information": ["17803521016394"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000270",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "640.00"
+        },
+        "creditor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "S-Pankki",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "RCDT",
+          "sub_code": "SALA"
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2026-05-29",
+        "value_date": "2026-05-29",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": ["Hello world"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000271",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "9.99"
+        },
+        "creditor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "Music service",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2026-05-29",
+        "value_date": "2026-05-29",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": ["Music service payment"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000272",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-05-27",
+        "value_date": "2026-05-27",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17799201009573",
+        "reference_number_schema": null,
+        "remittance_information": ["17799201009573"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000273",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.00"
+        },
+        "creditor": {
+          "name": "Amarillo",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-05-26",
+        "value_date": "2026-05-26",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17798337026094",
+        "reference_number_schema": null,
+        "remittance_information": ["17798337026094"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000274",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-05-25",
+        "value_date": "2026-05-25",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17797473039205",
+        "reference_number_schema": null,
+        "remittance_information": ["17797473039205"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000275",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "10.00"
+        },
+        "creditor": {
+          "name": "Qred Bank AB",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "ICDT",
+          "sub_code": "ESCT"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-05-20",
+        "value_date": "2026-05-20",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": ["4143141414"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000276",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "10.00"
+        },
+        "creditor": {
+          "name": "Qred Bank AB",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "ICDT",
+          "sub_code": "ESCT"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-05-20",
+        "value_date": "2026-05-20",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": ["414314134"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000277",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.00"
+        },
+        "creditor": {
+          "name": "Amarillo",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-05-19",
+        "value_date": "2026-05-19",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17792289020429",
+        "reference_number_schema": null,
+        "remittance_information": ["17792289020429"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000278",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "10.00"
+        },
+        "creditor": {
+          "name": "Qred Bank AB",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "ICDT",
+          "sub_code": "ESCT"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-05-19",
+        "value_date": "2026-05-19",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": ["4143141414"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000279",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "10.00"
+        },
+        "creditor": {
+          "name": "Qred Bank AB",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "ICDT",
+          "sub_code": "ESCT"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-05-19",
+        "value_date": "2026-05-19",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": ["4143141414"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000280",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-05-18",
+        "value_date": "2026-05-18",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17791425034445",
+        "reference_number_schema": null,
+        "remittance_information": ["17791425034445"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000281",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-05-18",
+        "value_date": "2026-05-18",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17791425006800",
+        "reference_number_schema": null,
+        "remittance_information": ["17791425006800"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000282",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "2.00"
+        },
+        "creditor": {
+          "name": "Test",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "ICDT",
+          "sub_code": "ESCT"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-05-17",
+        "value_date": "2026-05-17",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": ["Test payment"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000283",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.00"
+        },
+        "creditor": {
+          "name": "Amarillo",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-05-13",
+        "value_date": "2026-05-13",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17787105020275",
+        "reference_number_schema": null,
+        "remittance_information": ["17787105020275"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000284",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-05-11",
+        "value_date": "2026-05-11",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17785377035883",
+        "reference_number_schema": null,
+        "remittance_information": ["17785377035883"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000285",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-05-11",
+        "value_date": "2026-05-11",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17785377006922",
+        "reference_number_schema": null,
+        "remittance_information": ["17785377006922"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000286",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "10.33"
+        },
+        "creditor": {
+          "name": "Qred Bank AB",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "ICDT",
+          "sub_code": "ESCT"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-05-08",
+        "value_date": "2026-05-08",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": [],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000287",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-05-06",
+        "value_date": "2026-05-06",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17781057002635",
+        "reference_number_schema": null,
+        "remittance_information": ["17781057002635"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000288",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.00"
+        },
+        "creditor": {
+          "name": "Amarillo",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-05-05",
+        "value_date": "2026-05-05",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17780193017103",
+        "reference_number_schema": null,
+        "remittance_information": ["17780193017103"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000289",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-05-04",
+        "value_date": "2026-05-04",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17779329032510",
+        "reference_number_schema": null,
+        "remittance_information": ["17779329032510"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000290",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-05-03",
+        "value_date": "2026-05-03",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17778465003802",
+        "reference_number_schema": null,
+        "remittance_information": ["17778465003802"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000291",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "640.00"
+        },
+        "creditor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "S-Pankki",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "RCDT",
+          "sub_code": "SALA"
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2026-04-30",
+        "value_date": "2026-04-30",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": ["Hello world"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000292",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "9.99"
+        },
+        "creditor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "Music service",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2026-04-30",
+        "value_date": "2026-04-30",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": ["Music service payment"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000293",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-04-29",
+        "value_date": "2026-04-29",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17775009019718",
+        "reference_number_schema": null,
+        "remittance_information": ["17775009019718"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000294",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.00"
+        },
+        "creditor": {
+          "name": "Amarillo",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-04-29",
+        "value_date": "2026-04-29",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17775009015903",
+        "reference_number_schema": null,
+        "remittance_information": ["17775009015903"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000295",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-04-24",
+        "value_date": "2026-04-24",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17770689003097",
+        "reference_number_schema": null,
+        "remittance_information": ["17770689003097"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000296",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "10.33"
+        },
+        "creditor": {
+          "name": "Qred Bank AB",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "ICDT",
+          "sub_code": "ESCT"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-04-24",
+        "value_date": "2026-04-24",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": [],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000297",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "10.33"
+        },
+        "creditor": {
+          "name": "Qred Bank AB",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "ICDT",
+          "sub_code": "ESCT"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-04-24",
+        "value_date": "2026-04-24",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": [],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000298",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "10.33"
+        },
+        "creditor": {
+          "name": "Organisation/Person Name",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "ICDT",
+          "sub_code": "ESCT"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-04-23",
+        "value_date": "2026-04-23",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": [],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000299",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "0.10"
+        },
+        "creditor": {
+          "name": "Teemu Testaaja",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "ICDT",
+          "sub_code": "ESCT"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-04-23",
+        "value_date": "2026-04-23",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": ["Test from S-Pankki"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000300",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-04-21",
+        "value_date": "2026-04-21",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17768097023846",
+        "reference_number_schema": null,
+        "remittance_information": ["17768097023846"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000301",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.00"
+        },
+        "creditor": {
+          "name": "Amarillo",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-04-21",
+        "value_date": "2026-04-21",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17768097017409",
+        "reference_number_schema": null,
+        "remittance_information": ["17768097017409"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000302",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.00"
+        },
+        "creditor": {
+          "name": "Amarillo",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-04-18",
+        "value_date": "2026-04-18",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17765505008233",
+        "reference_number_schema": null,
+        "remittance_information": ["17765505008233"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000303",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-04-17",
+        "value_date": "2026-04-17",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17764641003148",
+        "reference_number_schema": null,
+        "remittance_information": ["17764641003148"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000304",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-04-14",
+        "value_date": "2026-04-14",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17762049023308",
+        "reference_number_schema": null,
+        "remittance_information": ["17762049023308"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000305",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "7000.00"
+        },
+        "creditor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "Test Debtor",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "RCDT",
+          "sub_code": "ESCT"
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2026-04-14",
+        "value_date": "2026-04-14",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": ["Test message"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000306",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "640.00"
+        },
+        "creditor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "S-Pankki",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "RCDT",
+          "sub_code": "SALA"
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2026-03-31",
+        "value_date": "2026-03-31",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": ["Hello world"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000307",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "9.99"
+        },
+        "creditor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "Music service",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2026-03-31",
+        "value_date": "2026-03-31",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": ["Music service payment"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000308",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-03-09",
+        "value_date": "2026-03-09",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17730945029629",
+        "reference_number_schema": null,
+        "remittance_information": ["17730945029629"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000309",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-03-09",
+        "value_date": "2026-03-09",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17730945002743",
+        "reference_number_schema": null,
+        "remittance_information": ["17730945002743"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000310",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-03-04",
+        "value_date": "2026-03-04",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17726625003335",
+        "reference_number_schema": null,
+        "remittance_information": ["17726625003335"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000311",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-03-02",
+        "value_date": "2026-03-02",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17724897028535",
+        "reference_number_schema": null,
+        "remittance_information": ["17724897028535"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000312",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.00"
+        },
+        "creditor": {
+          "name": "Amarillo",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-03-02",
+        "value_date": "2026-03-02",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17724897021710",
+        "reference_number_schema": null,
+        "remittance_information": ["17724897021710"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000313",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "640.00"
+        },
+        "creditor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "S-Pankki",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "RCDT",
+          "sub_code": "SALA"
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2026-02-27",
+        "value_date": "2026-02-27",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": ["Hello world"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000314",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "9.99"
+        },
+        "creditor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "Music service",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2026-02-27",
+        "value_date": "2026-02-27",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": ["Music service payment"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000315",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-02-23",
+        "value_date": "2026-02-23",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17718849031227",
+        "reference_number_schema": null,
+        "remittance_information": ["17718849031227"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000316",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.00"
+        },
+        "creditor": {
+          "name": "Amarillo",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-02-23",
+        "value_date": "2026-02-23",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17718849026229",
+        "reference_number_schema": null,
+        "remittance_information": ["17718849026229"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000317",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-02-23",
+        "value_date": "2026-02-23",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17718849003514",
+        "reference_number_schema": null,
+        "remittance_information": ["17718849003514"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000318",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.00"
+        },
+        "creditor": {
+          "name": "Amarillo",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-02-22",
+        "value_date": "2026-02-22",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17717985008775",
+        "reference_number_schema": null,
+        "remittance_information": ["17717985008775"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000319",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-02-17",
+        "value_date": "2026-02-17",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17713665022596",
+        "reference_number_schema": null,
+        "remittance_information": ["17713665022596"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000320",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-02-16",
+        "value_date": "2026-02-16",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17712801003901",
+        "reference_number_schema": null,
+        "remittance_information": ["17712801003901"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000321",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.00"
+        },
+        "creditor": {
+          "name": "Amarillo",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-02-11",
+        "value_date": "2026-02-11",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17708481008738",
+        "reference_number_schema": null,
+        "remittance_information": ["17708481008738"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000322",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-02-09",
+        "value_date": "2026-02-09",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17706753028095",
+        "reference_number_schema": null,
+        "remittance_information": ["17706753028095"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000323",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-02-09",
+        "value_date": "2026-02-09",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17706753001326",
+        "reference_number_schema": null,
+        "remittance_information": ["17706753001326"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000324",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.00"
+        },
+        "creditor": {
+          "name": "Amarillo",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-02-04",
+        "value_date": "2026-02-04",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17702433007602",
+        "reference_number_schema": null,
+        "remittance_information": ["17702433007602"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000325",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-02-02",
+        "value_date": "2026-02-02",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17700705031832",
+        "reference_number_schema": null,
+        "remittance_information": ["17700705031832"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000326",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-02-02",
+        "value_date": "2026-02-02",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17700705003488",
+        "reference_number_schema": null,
+        "remittance_information": ["17700705003488"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000327",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "640.00"
+        },
+        "creditor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "S-Pankki",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "RCDT",
+          "sub_code": "SALA"
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2026-01-30",
+        "value_date": "2026-01-30",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": ["Hello world"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000328",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "9.99"
+        },
+        "creditor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "Music service",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2026-01-30",
+        "value_date": "2026-01-30",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": ["Music service payment"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000329",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-01-28",
+        "value_date": "2026-01-28",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17696385015984",
+        "reference_number_schema": null,
+        "remittance_information": ["17696385015984"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000330",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-01-28",
+        "value_date": "2026-01-28",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17696385004241",
+        "reference_number_schema": null,
+        "remittance_information": ["17696385004241"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000331",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.00"
+        },
+        "creditor": {
+          "name": "Amarillo",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-01-26",
+        "value_date": "2026-01-26",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17694657020748",
+        "reference_number_schema": null,
+        "remittance_information": ["17694657020748"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000332",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.00"
+        },
+        "creditor": {
+          "name": "Amarillo",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-01-21",
+        "value_date": "2026-01-21",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17690337013011",
+        "reference_number_schema": null,
+        "remittance_information": ["17690337013011"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000333",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-01-20",
+        "value_date": "2026-01-20",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17689473017351",
+        "reference_number_schema": null,
+        "remittance_information": ["17689473017351"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000334",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-01-20",
+        "value_date": "2026-01-20",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17689473001891",
+        "reference_number_schema": null,
+        "remittance_information": ["17689473001891"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000335",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-01-13",
+        "value_date": "2026-01-13",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17683425024932",
+        "reference_number_schema": null,
+        "remittance_information": ["17683425024932"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000336",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.00"
+        },
+        "creditor": {
+          "name": "Amarillo",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-01-12",
+        "value_date": "2026-01-12",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17682561022268",
+        "reference_number_schema": null,
+        "remittance_information": ["17682561022268"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000337",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-01-12",
+        "value_date": "2026-01-12",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17682561000442",
+        "reference_number_schema": null,
+        "remittance_information": ["17682561000442"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000338",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-01-08",
+        "value_date": "2026-01-08",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17679105012663",
+        "reference_number_schema": null,
+        "remittance_information": ["17679105012663"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000339",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.00"
+        },
+        "creditor": {
+          "name": "Amarillo",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-01-06",
+        "value_date": "2026-01-06",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17677377015966",
+        "reference_number_schema": null,
+        "remittance_information": ["17677377015966"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000340",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-01-05",
+        "value_date": "2026-01-05",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17676513029005",
+        "reference_number_schema": null,
+        "remittance_information": ["17676513029005"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000341",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-01-04",
+        "value_date": "2026-01-04",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17675649014011",
+        "reference_number_schema": null,
+        "remittance_information": ["17675649014011"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000342",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-01-01",
+        "value_date": "2026-01-01",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17673057034119",
+        "reference_number_schema": null,
+        "remittance_information": ["17673057034119"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000343",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.00"
+        },
+        "creditor": {
+          "name": "Amarillo",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-01-01",
+        "value_date": "2026-01-01",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17673057025005",
+        "reference_number_schema": null,
+        "remittance_information": ["17673057025005"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000344",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "640.00"
+        },
+        "creditor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "S-Pankki",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "RCDT",
+          "sub_code": "SALA"
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2025-12-31",
+        "value_date": "2025-12-31",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": ["Hello world"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000345",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "9.99"
+        },
+        "creditor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "Music service",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2025-12-31",
+        "value_date": "2025-12-31",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": ["Music service payment"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000346",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2025-12-29",
+        "value_date": "2025-12-29",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17670465028147",
+        "reference_number_schema": null,
+        "remittance_information": ["17670465028147"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000347",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.00"
+        },
+        "creditor": {
+          "name": "Amarillo",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2025-12-29",
+        "value_date": "2025-12-29",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17670465021542",
+        "reference_number_schema": null,
+        "remittance_information": ["17670465021542"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000348",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2025-12-27",
+        "value_date": "2025-12-27",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17668737010099",
+        "reference_number_schema": null,
+        "remittance_information": ["17668737010099"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000349",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2025-12-24",
+        "value_date": "2025-12-24",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17666145017288",
+        "reference_number_schema": null,
+        "remittance_information": ["17666145017288"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000350",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.00"
+        },
+        "creditor": {
+          "name": "Amarillo",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2025-12-22",
+        "value_date": "2025-12-22",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17664417028321",
+        "reference_number_schema": null,
+        "remittance_information": ["17664417028321"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000351",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "70.00"
+        },
+        "creditor": {
+          "name": "ABC",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2025-12-19",
+        "value_date": "2025-12-19",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": "17661825010050",
+        "reference_number_schema": null,
+        "remittance_information": ["17661825010050"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000352",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "2.00"
+        },
+        "creditor": {
+          "name": "Test",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "ICDT",
+          "sub_code": "ESCT"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2025-12-19",
+        "value_date": "2025-12-19",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": [],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000353",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "2.00"
+        },
+        "creditor": {
+          "name": "Test",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "ICDT",
+          "sub_code": "ESCT"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2025-12-19",
+        "value_date": "2025-12-19",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": [],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000354",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "0.01"
+        },
+        "creditor": {
+          "name": "Eino Esimerkki",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "ICDT",
+          "sub_code": "ESCT"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2025-12-19",
+        "value_date": "2025-12-19",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": ["test"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      }
+    ],
+    "continuation_key": "continuation-key-5"
+  }
+}

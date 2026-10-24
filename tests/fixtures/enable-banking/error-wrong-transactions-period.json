@@ -1,0 +1,16 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/accounts/00000000-0000-4000-8000-000000000005/transactions?date_from=2024-10-24"
+  },
+  "status": 422,
+  "body": {
+    "code": 422,
+    "message": "Wrong transactions period requested",
+    "detail": {
+      "message": "You can not request transactions more than 540 days in the past",
+      "date_from": "2025-05-02"
+    },
+    "error": "WRONG_TRANSACTIONS_PERIOD"
+  }
+}

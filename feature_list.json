@@ -37,7 +37,7 @@
       "area": "banking",
       "title": "Enable Banking access spike and sandbox fixtures",
       "user_visible_behavior": "Enable Banking sandbox access works for Nordea FI and S-Pankki: an application whose RSA private key lives in `secrets/` (gitignored) authorises against both mock banks and fetches accounts, balances and transactions. Anonymised responses are committed under `tests/fixtures/enable-banking/`, and the facts later features depend on (consent validity, history depth, fetch limits, pending support, restricted-production terms) are recorded in this ticket's Findings.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-000"],
       "ticket": "FIN-001",
       "spec": "docs/tickets/FIN-001-enable-banking-access-spike.md",
@@ -47,7 +47,12 @@
         "manual: anonymised fixtures under tests/fixtures/enable-banking/ contain no real names, IBANs, tokens or session ids",
         "manual: Findings in docs/tickets/FIN-001 filled in, docs/plan.md updated if the approach changed"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (commit f52accc)",
+        "2026-10-24 manual: sandbox authorisation, accounts, balances and transactions fetched for Nordea FI and S-Pankki (needs the Enable Banking account and private key) → observed by eemeli: sandbox: Nordea FI and S-Pankki authorised in the browser on 2026-10-24, sessions created, 6 accounts with details, balances and every transaction page fetched; fixtures built by scripts/enable-banking-fixtures.ts, whose leak check passed, and reviewed for names/IBANs/tokens; Findings in FIN-001 filled, docs/plan.md unchanged (approach confirmed) (commit f52accc)",
+        "2026-10-24 manual: anonymised fixtures under tests/fixtures/enable-banking/ contain no real names, IBANs, tokens or session ids → observed by eemeli: sandbox: Nordea FI and S-Pankki authorised in the browser on 2026-10-24, sessions created, 6 accounts with details, balances and every transaction page fetched; fixtures built by scripts/enable-banking-fixtures.ts, whose leak check passed, and reviewed for names/IBANs/tokens; Findings in FIN-001 filled, docs/plan.md unchanged (approach confirmed) (commit f52accc)",
+        "2026-10-24 manual: Findings in docs/tickets/FIN-001 filled in, docs/plan.md updated if the approach changed → observed by eemeli: sandbox: Nordea FI and S-Pankki authorised in the browser on 2026-10-24, sessions created, 6 accounts with details, balances and every transaction page fetched; fixtures built by scripts/enable-banking-fixtures.ts, whose leak check passed, and reviewed for names/IBANs/tokens; Findings in FIN-001 filled, docs/plan.md unchanged (approach confirmed) (commit f52accc)"
+      ],
       "attempts": 0,
       "notes": "Human-only: needs an Enable Banking account and network access. The fixtures are what makes F-006 verifiable unattended. Research so far: [API access research](../api-access-research.md#1-banks-nordea-and-s-pankki) — restricted production is free for own accounts, consent ~180 days, ~4 unattended fetches per day per bank (unverified). Enable Banking authenticates applications with an RS256 JWT signed with the application's private key; the application id is the `kid`."
     },

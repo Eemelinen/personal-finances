@@ -1,0 +1,1760 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/accounts/00000000-0000-4000-8000-000000000005/transactions?date_from=2025-05-02&continuation_key=continuation-key-1"
+  },
+  "status": 200,
+  "body": {
+    "transactions": [
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000050",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "0.04"
+        },
+        "creditor": null,
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "Virtanen Ville",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Pano",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-15",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "301127019500",
+        "reference_number_schema": null,
+        "remittance_information": ["301127019500", "Lotto"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000051",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "0.13"
+        },
+        "creditor": null,
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "Virtanen Ville",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Pano",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-15",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "301127019500",
+        "reference_number_schema": null,
+        "remittance_information": ["301127019500", "Lotto"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000052",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "93.27"
+        },
+        "creditor": null,
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "KELA/FPA",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Pano",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "LL4200K6790",
+        "reference_number_schema": null,
+        "remittance_information": ["LL4200K6790", "Lapsilisä"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000053",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "0.16"
+        },
+        "creditor": {
+          "name": "Virtanen Liisa",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Itsepalvelu",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "671232100994",
+        "reference_number_schema": null,
+        "remittance_information": ["671232100994", "Kino", "Kino "],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000054",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "7.50"
+        },
+        "creditor": {
+          "name": "Virtanen Liisa",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Itsepalvelu",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "447711118878060000",
+        "reference_number_schema": null,
+        "remittance_information": ["447711118878060000", "Mobile phone"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000055",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "10.80"
+        },
+        "creditor": null,
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "Virtanen Ville",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Oma siirto",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": ["Lahjat"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000056",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "14.40"
+        },
+        "creditor": {
+          "name": "Helsinkimissio ry",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Itsepalvelu",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "181120258878060000",
+        "reference_number_schema": null,
+        "remittance_information": ["181120258878060000", "18110005577211"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000057",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "1.52"
+        },
+        "creditor": {
+          "name": "Wallmart",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": {
+          "iban": null,
+          "other": {
+            "identification": "1234.0",
+            "scheme_name": "CPAN",
+            "issuer": null
+          }
+        },
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Korttiosto",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "678944335600",
+        "reference_number_schema": null,
+        "remittance_information": ["678944335600", "USD 9.39 Gotham City"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": {
+          "unit_currency": "USD",
+          "exchange_rate": "1.1729",
+          "rate_type": null,
+          "contract_identification": null,
+          "instructed_amount": {
+            "currency": "USD",
+            "amount": "9.39"
+          }
+        },
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000058",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "0.16"
+        },
+        "creditor": {
+          "name": "Virtanen Liisa",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Itsepalvelu",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "671232100994",
+        "reference_number_schema": null,
+        "remittance_information": ["671232100994", "Kino", "Kino "],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000059",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "2.15"
+        },
+        "creditor": {
+          "name": "Virtanen Ville",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Mibiilimaksu",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "221127000000",
+        "reference_number_schema": null,
+        "remittance_information": ["221127000000", "For present to Liisa"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000060",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "5.69"
+        },
+        "creditor": {
+          "name": "K market Helsinki",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": {
+          "iban": null,
+          "other": {
+            "identification": "1234",
+            "scheme_name": "CPAN",
+            "issuer": null
+          }
+        },
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Korttiosto",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "18110005577890",
+        "reference_number_schema": null,
+        "remittance_information": ["18110005577890", "Helsinki"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000061",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "9.02"
+        },
+        "creditor": null,
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "Erik Esimerkki",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Pano",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "111144419244",
+        "reference_number_schema": null,
+        "remittance_information": ["111144419244", "Kiitos"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000062",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "3.36"
+        },
+        "creditor": {
+          "name": "Wallmart",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": {
+          "iban": null,
+          "other": {
+            "identification": "1234.0",
+            "scheme_name": "CPAN",
+            "issuer": null
+          }
+        },
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Korttiosto",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "678944335600",
+        "reference_number_schema": null,
+        "remittance_information": ["678944335600", "USD 9.39 Gotham City"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": {
+          "unit_currency": "USD",
+          "exchange_rate": "1.1729",
+          "rate_type": null,
+          "contract_identification": null,
+          "instructed_amount": {
+            "currency": "USD",
+            "amount": "9.39"
+          }
+        },
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000063",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "0.67"
+        },
+        "creditor": {
+          "name": "Gebr Heinemann Retail",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": {
+          "iban": null,
+          "other": {
+            "identification": "1234",
+            "scheme_name": "CPAN",
+            "issuer": null
+          }
+        },
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Korttiosto",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "181114280444",
+        "reference_number_schema": null,
+        "remittance_information": ["181114280444", "DKK 49,00 Kastrup"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": {
+          "unit_currency": "DKK",
+          "exchange_rate": "7.2917",
+          "rate_type": null,
+          "contract_identification": null,
+          "instructed_amount": {
+            "currency": "DKK",
+            "amount": "49.00"
+          }
+        },
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000064",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "3.41"
+        },
+        "creditor": null,
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "Erik Esimerkki",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Pano",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "111144419244",
+        "reference_number_schema": null,
+        "remittance_information": ["111144419244", "Kiitos"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000065",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "24.58"
+        },
+        "creditor": {
+          "name": "Avis",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": {
+          "iban": null,
+          "other": {
+            "identification": "1234.0",
+            "scheme_name": "CPAN",
+            "issuer": null
+          }
+        },
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Korttiosto",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "795622333023",
+        "reference_number_schema": null,
+        "remittance_information": ["795622333023", "GBP 31.20 Heathrow"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": {
+          "unit_currency": "GBP",
+          "exchange_rate": "0.8756",
+          "rate_type": null,
+          "contract_identification": null,
+          "instructed_amount": {
+            "currency": "GBP",
+            "amount": "31.20"
+          }
+        },
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000066",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "24.50"
+        },
+        "creditor": {
+          "name": "ATM Nosto 1212",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": {
+          "iban": null,
+          "other": {
+            "identification": "1234",
+            "scheme_name": "CPAN",
+            "issuer": null
+          }
+        },
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Debet automaattiotto",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "550772345",
+        "reference_number_schema": null,
+        "remittance_information": ["550772345", "EUR 35.00 Helsinki"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000067",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "0.11"
+        },
+        "creditor": {
+          "name": "Virtanen Liisa",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Itsepalvelu",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "671232100994",
+        "reference_number_schema": null,
+        "remittance_information": ["671232100994", "Kino", "Kino "],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000068",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "5.31"
+        },
+        "creditor": {
+          "name": "Gebr Heinemann Retail",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": {
+          "iban": null,
+          "other": {
+            "identification": "1234",
+            "scheme_name": "CPAN",
+            "issuer": null
+          }
+        },
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Korttiosto",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "181114280444",
+        "reference_number_schema": null,
+        "remittance_information": ["181114280444", "DKK 49,00 Kastrup"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": {
+          "unit_currency": "DKK",
+          "exchange_rate": "7.2917",
+          "rate_type": null,
+          "contract_identification": null,
+          "instructed_amount": {
+            "currency": "DKK",
+            "amount": "49.00"
+          }
+        },
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000069",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "36.27"
+        },
+        "creditor": null,
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "KELA/FPA",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Pano",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "LL4200K6790",
+        "reference_number_schema": null,
+        "remittance_information": ["LL4200K6790", "Lapsilisä"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000070",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "46.50"
+        },
+        "creditor": {
+          "name": "Cross  Sports Club",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "e-maksu",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "660562087011",
+        "reference_number_schema": null,
+        "remittance_information": ["660562087011", "01012019"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000071",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "5.77"
+        },
+        "creditor": {
+          "name": "Wallmart",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": {
+          "iban": null,
+          "other": {
+            "identification": "1234.0",
+            "scheme_name": "CPAN",
+            "issuer": null
+          }
+        },
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Korttiosto",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "678944335600",
+        "reference_number_schema": null,
+        "remittance_information": ["678944335600", "USD 9.39 Gotham City"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": {
+          "unit_currency": "USD",
+          "exchange_rate": "1.1729",
+          "rate_type": null,
+          "contract_identification": null,
+          "instructed_amount": {
+            "currency": "USD",
+            "amount": "9.39"
+          }
+        },
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000072",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "19.00"
+        },
+        "creditor": null,
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "KELA/FPA",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Pano",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "LL4200K6790",
+        "reference_number_schema": null,
+        "remittance_information": ["LL4200K6790", "Lapsilisä"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000073",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "3.60"
+        },
+        "creditor": {
+          "name": "ATM 2312",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": {
+          "iban": null,
+          "other": {
+            "identification": "1234",
+            "scheme_name": "CPAN",
+            "issuer": null
+          }
+        },
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Debet automaattiotto",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "101015553332",
+        "reference_number_schema": null,
+        "remittance_information": ["101015553332", "EUR 20.00 Vasa"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000074",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.70"
+        },
+        "creditor": null,
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "SMM Appartments",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Pano",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "221127019888",
+        "reference_number_schema": null,
+        "remittance_information": ["221127019888", "Rent"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000075",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "14.25"
+        },
+        "creditor": {
+          "name": "Helsinkimissio ry",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Itsepalvelu",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "181120258878060000",
+        "reference_number_schema": null,
+        "remittance_information": ["181120258878060000", "18110005577211"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000076",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "10.80"
+        },
+        "creditor": {
+          "name": "Helsinkimissio ry",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Itsepalvelu",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "181120258878060000",
+        "reference_number_schema": null,
+        "remittance_information": ["181120258878060000", "18110005577211"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000077",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "11.40"
+        },
+        "creditor": {
+          "name": "Avis",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": {
+          "iban": null,
+          "other": {
+            "identification": "1234.0",
+            "scheme_name": "CPAN",
+            "issuer": null
+          }
+        },
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Korttiosto",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "795622333023",
+        "reference_number_schema": null,
+        "remittance_information": ["795622333023", "GBP 31.20 Heathrow"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": {
+          "unit_currency": "GBP",
+          "exchange_rate": "0.8756",
+          "rate_type": null,
+          "contract_identification": null,
+          "instructed_amount": {
+            "currency": "GBP",
+            "amount": "31.20"
+          }
+        },
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000078",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "97.50"
+        },
+        "creditor": {
+          "name": "Virtanen Liisa",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Itsepalvelu",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "447711118878060000",
+        "reference_number_schema": null,
+        "remittance_information": ["447711118878060000", "Mobile phone"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000079",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "6.25"
+        },
+        "creditor": {
+          "name": "Gebr Heinemann Retail",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": {
+          "iban": null,
+          "other": {
+            "identification": "1234",
+            "scheme_name": "CPAN",
+            "issuer": null
+          }
+        },
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Korttiosto",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "181114280444",
+        "reference_number_schema": null,
+        "remittance_information": ["181114280444", "DKK 49,00 Kastrup"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": {
+          "unit_currency": "DKK",
+          "exchange_rate": "7.2917",
+          "rate_type": null,
+          "contract_identification": null,
+          "instructed_amount": {
+            "currency": "DKK",
+            "amount": "49.00"
+          }
+        },
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000080",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "21.50"
+        },
+        "creditor": {
+          "name": "Cross  Sports Club",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "e-maksu",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "660562087011",
+        "reference_number_schema": null,
+        "remittance_information": ["660562087011", "01012019"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000081",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "3.83"
+        },
+        "creditor": {
+          "name": "Gebr Heinemann Retail",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": {
+          "iban": null,
+          "other": {
+            "identification": "1234",
+            "scheme_name": "CPAN",
+            "issuer": null
+          }
+        },
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Korttiosto",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "181114280444",
+        "reference_number_schema": null,
+        "remittance_information": ["181114280444", "DKK 49,00 Kastrup"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": {
+          "unit_currency": "DKK",
+          "exchange_rate": "7.2917",
+          "rate_type": null,
+          "contract_identification": null,
+          "instructed_amount": {
+            "currency": "DKK",
+            "amount": "49.00"
+          }
+        },
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000082",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.15"
+        },
+        "creditor": null,
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "SMM Appartments",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Pano",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "221127019888",
+        "reference_number_schema": null,
+        "remittance_information": ["221127019888", "Rent"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000083",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "39.60"
+        },
+        "creditor": null,
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "SMM Appartments",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Pano",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "221127019888",
+        "reference_number_schema": null,
+        "remittance_information": ["221127019888", "Rent"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000084",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "32.90"
+        },
+        "creditor": {
+          "name": "ATM Nosto 1212",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": {
+          "iban": null,
+          "other": {
+            "identification": "1234",
+            "scheme_name": "CPAN",
+            "issuer": null
+          }
+        },
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Debet automaattiotto",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "550772345",
+        "reference_number_schema": null,
+        "remittance_information": ["550772345", "EUR 35.00 Helsinki"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000085",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "34.10"
+        },
+        "creditor": null,
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "SMM Appartments",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Pano",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "221127019888",
+        "reference_number_schema": null,
+        "remittance_information": ["221127019888", "Rent"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000086",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "10.05"
+        },
+        "creditor": {
+          "name": "Helsinkimissio ry",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Itsepalvelu",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "181120258878060000",
+        "reference_number_schema": null,
+        "remittance_information": ["181120258878060000", "18110005577211"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000087",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "42.00"
+        },
+        "creditor": {
+          "name": "Virtanen Liisa",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Itsepalvelu",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "447711118878060000",
+        "reference_number_schema": null,
+        "remittance_information": ["447711118878060000", "Mobile phone"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000088",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "32.42"
+        },
+        "creditor": {
+          "name": "Avis",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": {
+          "iban": null,
+          "other": {
+            "identification": "1234.0",
+            "scheme_name": "CPAN",
+            "issuer": null
+          }
+        },
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Korttiosto",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "795622333023",
+        "reference_number_schema": null,
+        "remittance_information": ["795622333023", "GBP 31.20 Heathrow"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": {
+          "unit_currency": "GBP",
+          "exchange_rate": "0.8756",
+          "rate_type": null,
+          "contract_identification": null,
+          "instructed_amount": {
+            "currency": "GBP",
+            "amount": "31.20"
+          }
+        },
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000089",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "0.40"
+        },
+        "creditor": {
+          "name": "Virtanen Ville",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": null,
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": "Mibiilimaksu",
+          "code": null,
+          "sub_code": null
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-14",
+        "value_date": "2026-10-14",
+        "transaction_date": "2026-10-14",
+        "balance_after_transaction": null,
+        "reference_number": "221127000000",
+        "reference_number_schema": null,
+        "remittance_information": ["221127000000", "For present to Liisa"],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      }
+    ],
+    "continuation_key": "continuation-key-2"
+  }
+}

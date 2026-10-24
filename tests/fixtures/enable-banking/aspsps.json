@@ -1,0 +1,78 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/aspsps?country=FI"
+  },
+  "status": 200,
+  "body": {
+    "aspsps": [
+      {
+        "name": "Nordea",
+        "country": "FI",
+        "logo": "https://enablebanking.com/brands/FI/Nordea/",
+        "psu_types": ["personal"],
+        "auth_methods": [
+          {
+            "name": "MTA",
+            "title": "Nordea website",
+            "psu_type": "personal",
+            "approach": "REDIRECT",
+            "hidden_method": false
+          }
+        ],
+        "maximum_consent_validity": 15552000,
+        "beta": false,
+        "bic": "NDEAFIHH"
+      },
+      {
+        "name": "S-Pankki",
+        "country": "FI",
+        "logo": "https://enablebanking.com/brands/FI/S-Pankki/",
+        "psu_types": ["personal", "business"],
+        "auth_methods": [
+          {
+            "psu_type": "personal",
+            "approach": "REDIRECT",
+            "hidden_method": false
+          },
+          {
+            "psu_type": "business",
+            "approach": "REDIRECT",
+            "hidden_method": false
+          }
+        ],
+        "maximum_consent_validity": 15552000,
+        "sandbox": {
+          "users": [
+            {
+              "username": "customera",
+              "password": "12345678"
+            }
+          ]
+        },
+        "beta": false,
+        "bic": "SBANFIHH"
+      },
+      {
+        "name": "Mock ASPSP",
+        "country": "FI",
+        "logo": "https://enablebanking.com/brands/FI/Mock%20ASPSP/",
+        "psu_types": ["business", "personal"],
+        "auth_methods": [
+          {
+            "psu_type": "business",
+            "approach": "REDIRECT",
+            "hidden_method": false
+          },
+          {
+            "psu_type": "personal",
+            "approach": "REDIRECT",
+            "hidden_method": false
+          }
+        ],
+        "maximum_consent_validity": 15552000,
+        "beta": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/accounts/00000000-0000-4000-8000-000000000152/balances"
+  },
+  "status": 200,
+  "body": {
+    "balances": [
+      {
+        "name": "Balance calculated in the course of the business day",
+        "balance_amount": {
+          "currency": "EUR",
+          "amount": "137.50"
+        },
+        "balance_type": "ITBD",
+        "last_change_date_time": null,
+        "reference_date": "2026-10-24",
+        "last_committed_transaction": null
+      },
+      {
+        "name": "Available balance calculated in the course of the business day",
+        "balance_amount": {
+          "currency": "EUR",
+          "amount": "137.50"
+        },
+        "balance_type": "ITAV",
+        "last_change_date_time": null,
+        "reference_date": "2026-10-24",
+        "last_committed_transaction": null
+      }
+    ]
+  }
+}

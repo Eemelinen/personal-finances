@@ -1,0 +1,128 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/sessions",
+    "body": {
+      "code": "00000000-0000-4000-8000-000000000006"
+    }
+  },
+  "status": 200,
+  "body": {
+    "session_id": "00000000-0000-4000-8000-000000000007",
+    "accounts": [
+      {
+        "account_id": {
+          "iban": "FI4312345600000001",
+          "other": null
+        },
+        "all_account_ids": [
+          {
+            "identification": "FI4312345600000001",
+            "scheme_name": "IBAN",
+            "issuer": null
+          }
+        ],
+        "account_servicer": {
+          "bic_fi": "NDEAFIHH",
+          "clearing_system_member_id": null,
+          "name": null
+        },
+        "name": "Maija Meikäläinen;Matti Meikäläinen",
+        "details": null,
+        "usage": null,
+        "cash_account_type": "CACC",
+        "product": "KÄYTTÖTILI",
+        "currency": "EUR",
+        "psu_status": "OPEN",
+        "credit_limit": {
+          "currency": "EUR",
+          "amount": "100.00"
+        },
+        "legal_age": null,
+        "postal_address": null,
+        "uid": "00000000-0000-4000-8000-000000000005",
+        "identification_hash": "hash-2",
+        "identification_hashes": ["hash-3", "hash-2", "hash-4", "hash-5"]
+      },
+      {
+        "account_id": {
+          "iban": "FI1612345600000002",
+          "other": null
+        },
+        "all_account_ids": [
+          {
+            "identification": "FI1612345600000002",
+            "scheme_name": "IBAN",
+            "issuer": null
+          }
+        ],
+        "account_servicer": {
+          "bic_fi": "NDEAFIHH",
+          "clearing_system_member_id": null,
+          "name": null
+        },
+        "name": "Maija Meikäläinen",
+        "details": null,
+        "usage": null,
+        "cash_account_type": "CACC",
+        "product": "KÄYTTÖTILI",
+        "currency": "EUR",
+        "psu_status": "OPEN",
+        "credit_limit": {
+          "currency": "EUR",
+          "amount": "100.00"
+        },
+        "legal_age": null,
+        "postal_address": null,
+        "uid": "00000000-0000-4000-8000-000000000008",
+        "identification_hash": "hash-6",
+        "identification_hashes": ["hash-7", "hash-6", "hash-8", "hash-9"]
+      },
+      {
+        "account_id": {
+          "iban": "FI8612345600000003",
+          "other": null
+        },
+        "all_account_ids": [
+          {
+            "identification": "FI8612345600000003",
+            "scheme_name": "IBAN",
+            "issuer": null
+          }
+        ],
+        "account_servicer": {
+          "bic_fi": "NDEAFIHH",
+          "clearing_system_member_id": null,
+          "name": null
+        },
+        "name": "Maija Meikäläinen",
+        "details": null,
+        "usage": null,
+        "cash_account_type": "CACC",
+        "product": "KÄYTTÖTILI",
+        "currency": "EUR",
+        "psu_status": "OPEN",
+        "credit_limit": {
+          "currency": "EUR",
+          "amount": "100.00"
+        },
+        "legal_age": null,
+        "postal_address": null,
+        "uid": "00000000-0000-4000-8000-000000000009",
+        "identification_hash": "hash-10",
+        "identification_hashes": ["hash-11", "hash-10", "hash-12", "hash-9"]
+      }
+    ],
+    "aspsp": {
+      "name": "Nordea",
+      "country": "FI"
+    },
+    "psu_type": "personal",
+    "access": {
+      "accounts": null,
+      "balances": true,
+      "transactions": true,
+      "valid_until": "2027-04-22T06:34:24.369000Z"
+    }
+  }
+}

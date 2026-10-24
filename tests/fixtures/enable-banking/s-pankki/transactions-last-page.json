@@ -1,0 +1,147 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/accounts/00000000-0000-4000-8000-000000000152/transactions?continuation_key=continuation-key-6"
+  },
+  "status": 200,
+  "body": {
+    "transactions": [
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000355",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "50.00"
+        },
+        "creditor": {
+          "name": "Prisma",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2019-10-28",
+        "value_date": "2019-10-28",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": [],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000356",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "40.00"
+        },
+        "creditor": {
+          "name": "Amarillo",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "CCRD",
+          "sub_code": "POSD"
+        },
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2019-10-28",
+        "value_date": "2019-10-28",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": [],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      },
+      {
+        "entry_reference": "00000000-0000-4000-8000-000000000357",
+        "merchant_category_code": null,
+        "transaction_amount": {
+          "currency": "EUR",
+          "amount": "9.99"
+        },
+        "creditor": {
+          "name": null,
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "creditor_account": null,
+        "creditor_agent": null,
+        "debtor": {
+          "name": "Test Debtor",
+          "postal_address": null,
+          "organisation_id": null,
+          "private_id": null,
+          "contact_details": null
+        },
+        "debtor_account": null,
+        "debtor_agent": null,
+        "bank_transaction_code": {
+          "description": null,
+          "code": "RCDT",
+          "sub_code": "ESCT"
+        },
+        "credit_debit_indicator": "CRDT",
+        "status": "BOOK",
+        "booking_date": "2019-10-25",
+        "value_date": "2019-10-25",
+        "transaction_date": null,
+        "balance_after_transaction": null,
+        "reference_number": null,
+        "reference_number_schema": null,
+        "remittance_information": [],
+        "debtor_account_additional_identification": null,
+        "creditor_account_additional_identification": null,
+        "exchange_rate": null,
+        "note": null,
+        "transaction_id": null
+      }
+    ],
+    "continuation_key": null
+  }
+}

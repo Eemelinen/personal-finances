@@ -1,0 +1,118 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/sessions",
+    "body": {
+      "code": "00000000-0000-4000-8000-000000000150"
+    }
+  },
+  "status": 200,
+  "body": {
+    "session_id": "00000000-0000-4000-8000-000000000151",
+    "accounts": [
+      {
+        "account_id": {
+          "iban": "FI5912345600000004",
+          "other": null
+        },
+        "all_account_ids": [
+          {
+            "identification": "FI5912345600000004",
+            "scheme_name": "IBAN",
+            "issuer": null
+          }
+        ],
+        "account_servicer": null,
+        "name": "Customer A",
+        "details": "My account nickname",
+        "usage": "PRIV",
+        "cash_account_type": "CACC",
+        "product": "S-Tili AO",
+        "currency": "EUR",
+        "psu_status": null,
+        "credit_limit": null,
+        "legal_age": null,
+        "postal_address": null,
+        "uid": "00000000-0000-4000-8000-000000000152",
+        "identification_hash": "hash-13",
+        "identification_hashes": ["hash-14", "hash-13", "hash-15", "hash-16"]
+      },
+      {
+        "account_id": {
+          "iban": "FI3212345600000005",
+          "other": null
+        },
+        "all_account_ids": [
+          {
+            "identification": "FI3212345600000005",
+            "scheme_name": "IBAN",
+            "issuer": null
+          }
+        ],
+        "account_servicer": null,
+        "name": "Customer A",
+        "details": "My account nickname",
+        "usage": "PRIV",
+        "cash_account_type": "CACC",
+        "product": "S-Tili AO",
+        "currency": "EUR",
+        "psu_status": null,
+        "credit_limit": null,
+        "legal_age": null,
+        "postal_address": null,
+        "uid": "00000000-0000-4000-8000-000000000153",
+        "identification_hash": "hash-17",
+        "identification_hashes": ["hash-18", "hash-17", "hash-19", "hash-16"]
+      },
+      {
+        "account_id": {
+          "iban": null,
+          "other": {
+            "identification": "4000000001",
+            "scheme_name": "CPAN",
+            "issuer": null
+          }
+        },
+        "all_account_ids": [
+          {
+            "identification": "4000000001",
+            "scheme_name": "CPAN",
+            "issuer": null
+          }
+        ],
+        "account_servicer": null,
+        "name": "Customer A",
+        "details": null,
+        "usage": "PRIV",
+        "cash_account_type": "CARD",
+        "product": "S-Etukortti Visa Credit",
+        "currency": "EUR",
+        "psu_status": null,
+        "credit_limit": null,
+        "legal_age": null,
+        "postal_address": null,
+        "uid": "00000000-0000-4000-8000-000000000154",
+        "identification_hash": "hash-20",
+        "identification_hashes": [
+          "hash-20",
+          "hash-21",
+          "hash-22",
+          "hash-23",
+          "hash-24",
+          "hash-16"
+        ]
+      }
+    ],
+    "aspsp": {
+      "name": "S-Pankki",
+      "country": "FI"
+    },
+    "psu_type": "personal",
+    "access": {
+      "accounts": null,
+      "balances": true,
+      "transactions": true,
+      "valid_until": "2027-04-22T06:34:25.724000Z"
+    }
+  }
+}
