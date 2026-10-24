@@ -797,7 +797,7 @@
       "area": "categorization",
       "title": "Own names and household members",
       "user_visible_behavior": "Settings → Household holds the user's own name variants, household members (names and IBANs) and the toggle \"Ignore transfers with household members\" (off by default). A leg from or to an own name becomes an own transfer; a leg with a household member is marked and, while the toggle is on, left out of income and spending in both directions. Names match whole, ignoring case, punctuation and word order; card purchases are unaffected.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-026", "F-028"],
       "ticket": "FIN-030",
       "spec": "docs/tickets/FIN-030-own-names-and-household.md",
@@ -807,7 +807,12 @@
         "L2: pnpm test:integration tests/integration/household.int.test.ts (own-name credit is a transfer; household rows leave the totals only with the toggle on; joint-account card purchases still count)",
         "L3: pnpm test:e2e tests/e2e/household-settings.spec.ts (add a member, flip the toggle, dashboard income changes)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (working tree on ba88a00)",
+        "2026-10-24 pnpm test:unit tests/unit/categorization/names.test.ts → pass (working tree on ba88a00)",
+        "2026-10-24 pnpm test:integration tests/integration/household.int.test.ts → pass (working tree on ba88a00, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/household-settings.spec.ts → pass (working tree on ba88a00, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Found with real data 2026-10-24: deposits under the user's own name and a spouse's contributions to shared costs were reported as income."
     },

@@ -77,6 +77,7 @@ export function TransactionTable({ rows, categories }: TransactionTableProps) {
                     {row.status === "pending" && <Badge>Pending</Badge>}
                     {row.transferGroupId && <Badge>Transfer</Badge>}
                     {row.excluded && <Badge>Excluded</Badge>}
+                    {row.household && <Badge>Household</Badge>}
                   </div>
                   {row.counterparty && row.description && (
                     <div className="text-muted-foreground text-xs">

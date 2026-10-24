@@ -53,6 +53,8 @@ export interface TransactionRow {
   transferGroupId: string | null;
   /** In a category of kind `excluded`: left out of every report (F-027). */
   excluded: boolean;
+  /** With a household member (F-030). */
+  household: boolean;
 }
 
 /** Sums of the filtered transactions in one currency (minor units). */
@@ -122,6 +124,11 @@ export function filterConditions(filter: TransactionFilter): SQL | undefined {
   } else if (filter.excluded === "only") {
     conditions.push(IS_EXCLUDED);
   }
+  if (filter.household === "exclude") {
+    conditions.push(eq(transactions.household, false));
+  } else if (filter.household === "only") {
+    conditions.push(eq(transactions.household, true));
+  }
   return and(...conditions);
 }
 
@@ -180,6 +187,7 @@ export async function listTransactions(
             categorySource: transactions.categorySource,
             transferGroupId: transactions.transferGroupId,
             excluded: sql<boolean>`${IS_EXCLUDED}`,
+            household: transactions.household,
           })
           .from(transactions)
           .innerJoin(accounts, eq(accounts.id, transactions.accountId))

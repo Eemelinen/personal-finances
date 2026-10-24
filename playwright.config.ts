@@ -19,6 +19,9 @@ import { E2E_AUTH_STATE } from "./tests/e2e/support/credentials";
  * The `settings-reports` project (tests/e2e/settings-reports.spec.ts) runs
  * after it, alone, so the dashboard's income tile is exactly the reports'
  * seed plus its own credit while it switches the income setting.
+ * The `household-settings` project (tests/e2e/household-settings.spec.ts)
+ * runs after that, alone, so the income tile changes only by its own
+ * household credit while it flips the household toggle.
  * The `investments` project (tests/e2e/investments.spec.ts) runs after the
  * shared `chromium` one, so the balance history there never sees its
  * brokerage and crypto accounts (F-022 counts them in net worth), and
@@ -64,16 +67,29 @@ export default defineConfig({
       dependencies: ["setup", "dashboard", "reports"],
     },
     {
+      name: "household-settings",
+      testMatch: "**/household-settings.spec.ts",
+      use: { ...devices["Desktop Chrome"], storageState: E2E_AUTH_STATE },
+      dependencies: ["setup", "dashboard", "reports", "settings-reports"],
+    },
+    {
       name: "chromium",
       testIgnore: [
         "**/dashboard.spec.ts",
         "**/reports.spec.ts",
         "**/settings-reports.spec.ts",
+        "**/household-settings.spec.ts",
         "**/investments.spec.ts",
         "**/allocation.spec.ts",
       ],
       use: { ...devices["Desktop Chrome"], storageState: E2E_AUTH_STATE },
-      dependencies: ["setup", "dashboard", "reports", "settings-reports"],
+      dependencies: [
+        "setup",
+        "dashboard",
+        "reports",
+        "settings-reports",
+        "household-settings",
+      ],
     },
     {
       name: "investments",
@@ -84,6 +100,7 @@ export default defineConfig({
         "dashboard",
         "reports",
         "settings-reports",
+        "household-settings",
         "chromium",
       ],
     },
@@ -96,6 +113,7 @@ export default defineConfig({
         "dashboard",
         "reports",
         "settings-reports",
+        "household-settings",
         "chromium",
         "investments",
       ],

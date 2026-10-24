@@ -16,7 +16,11 @@ import {
   UNCATEGORIZED_PARAM,
 } from "@/server/queries/reports";
 import { resolvePeriod } from "@/server/reports/period";
-import { getAppSettings, setAppSetting } from "@/server/settings";
+import {
+  DEFAULT_APP_SETTINGS,
+  getAppSettings,
+  setAppSetting,
+} from "@/server/settings";
 import { startTestDatabase, type TestDatabase } from "./helpers/postgres";
 
 // The report read models against a real Postgres 18: spending per category
@@ -630,9 +634,8 @@ describe("the uncategorizedCreditsAsIncome setting (F-026)", () => {
     });
 
   it("is stored and read back, on without a row", async () => {
-    expect(await getAppSettings(testDb.db)).toEqual({
-      uncategorizedCreditsAsIncome: true,
-    });
+    expect(await getAppSettings(testDb.db)).toEqual(DEFAULT_APP_SETTINGS);
+    expect(DEFAULT_APP_SETTINGS.uncategorizedCreditsAsIncome).toBe(true);
     await setAppSetting("uncategorizedCreditsAsIncome", false, testDb.db);
     expect((await getAppSettings(testDb.db)).uncategorizedCreditsAsIncome).toBe(
       false,

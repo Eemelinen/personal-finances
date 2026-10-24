@@ -14,6 +14,9 @@ describe("appSettingsFrom", () => {
   it("gives the defaults without rows", () => {
     expect(appSettingsFrom([])).toEqual({
       uncategorizedCreditsAsIncome: true,
+      ownNames: [],
+      householdMembers: [],
+      ignoreHouseholdTransfers: false,
     });
     expect(DEFAULT_APP_SETTINGS.uncategorizedCreditsAsIncome).toBe(true);
   });
@@ -24,14 +27,17 @@ describe("appSettingsFrom", () => {
         { key: "uncategorizedCreditsAsIncome", value: false },
         { key: "somethingElse", value: 42 },
       ]),
-    ).toEqual({ uncategorizedCreditsAsIncome: false });
+    ).toEqual({
+      ...DEFAULT_APP_SETTINGS,
+      uncategorizedCreditsAsIncome: false,
+    });
   });
 
   it("falls back to the default for a stored value of the wrong type", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     expect(
       appSettingsFrom([{ key: "uncategorizedCreditsAsIncome", value: "no" }]),
-    ).toEqual({ uncategorizedCreditsAsIncome: true });
+    ).toEqual(DEFAULT_APP_SETTINGS);
     expect(warn).toHaveBeenCalledWith(
       expect.stringContaining("uncategorizedCreditsAsIncome"),
     );

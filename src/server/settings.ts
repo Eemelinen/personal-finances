@@ -15,6 +15,26 @@ const SETTINGS = {
    * is "other money in" and only income-kind categories are income.
    */
   uncategorizedCreditsAsIncome: { schema: z.boolean(), default: true },
+  /**
+   * The user's own name variants (F-030): a free leg whose counterparty is
+   * one of them is an own transfer (`names.ts`).
+   */
+  ownNames: { schema: z.array(z.string()), default: [] as string[] },
+  /**
+   * Household members (F-030), each with name variants and normalised
+   * IBANs: legs with them get `transactions.household`.
+   */
+  householdMembers: {
+    schema: z.array(
+      z.object({ names: z.array(z.string()), ibans: z.array(z.string()) }),
+    ),
+    default: [] as { names: string[]; ibans: string[] }[],
+  },
+  /**
+   * Whether the reports leave out `household` transactions (F-030), in
+   * both directions; off by default.
+   */
+  ignoreHouseholdTransfers: { schema: z.boolean(), default: false },
 } as const;
 
 export type AppSettings = {
@@ -78,7 +98,12 @@ export function appSettingsFrom(
   return settings as AppSettings;
 }
 
-export async function getAppSettings(db: Db = getDb()): Promise<AppSettings> {
+/** The database or a transaction: anything that can select. */
+type Reader = Pick<Db, "select">;
+
+export async function getAppSettings(
+  db: Reader = getDb(),
+): Promise<AppSettings> {
   const rows = await db
     .select({ key: appSettings.key, value: appSettings.value })
     .from(appSettings)
@@ -89,7 +114,7 @@ export async function getAppSettings(db: Db = getDb()): Promise<AppSettings> {
 export async function setAppSetting<K extends AppSettingKey>(
   key: K,
   value: AppSettings[K],
-  db: Db = getDb(),
+  db: Pick<Db, "insert"> = getDb(),
 ): Promise<void> {
   const parsed = parseAppSetting(key, value);
   await db

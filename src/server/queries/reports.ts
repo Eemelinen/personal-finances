@@ -46,6 +46,9 @@ import {
 // while the `uncategorizedCreditsAsIncome` setting is on (the default) or
 // "other money in" (not income, not in net or the savings rate) while it
 // is off. Both are reported as the Uncategorized category when one exists.
+// While the `ignoreHouseholdTransfers` setting is on (F-030), transactions
+// marked `household` (a household member's name or IBAN) count nowhere,
+// in either direction.
 // Months are the `YYYY-MM` of `booking_date`, which is already the bank's
 // calendar day; the caller's "today" is the `APP_TIMEZONE` day.
 
@@ -154,6 +157,8 @@ export interface SpendingOptions {
   period: DayRange;
   /** A category id or `UNCATEGORIZED_PARAM`; anything unknown means all. */
   category?: string;
+  /** Overrides the stored setting (`getAppSettings()`). */
+  ignoreHouseholdTransfers?: boolean;
 }
 
 const num = (value: string | number | null | undefined) => Number(value ?? 0);
@@ -205,7 +210,10 @@ export function resolveScope(
  */
 function flowParts(
   uncategorizedId: string | null,
-  { uncategorizedCreditsAsIncome = true } = {},
+  {
+    uncategorizedCreditsAsIncome = true,
+    ignoreHouseholdTransfers = false,
+  } = {},
 ) {
   const join = sql`${categories.id} = coalesce(${transactions.categoryId}, ${uncategorizedId}::uuid)`;
   const none = sql`(${transactions.categoryId} is null or ${transactions.categoryId} = ${uncategorizedId}::uuid)`;
@@ -217,6 +225,7 @@ function flowParts(
     eq(transactions.currency, REPORT_CURRENCY),
     isNull(transactions.transferGroupId),
     sql`(${transactions.categoryId} is null or ${categories.kind} not in ('transfer', 'excluded'))`,
+    ignoreHouseholdTransfers ? eq(transactions.household, false) : undefined,
   )!;
   return { join, kind, counted };
 }
@@ -285,14 +294,18 @@ export async function getSpendingReport(
     to: lastDay(trendLast),
   };
 
-  const [list, first] = await Promise.all([
+  const [list, first, ignoreHouseholdTransfers] = await Promise.all([
     loadCategories(db),
     firstTransactionDay(db),
+    options.ignoreHouseholdTransfers ??
+      getAppSettings(db).then((settings) => settings.ignoreHouseholdTransfers),
   ]);
   const byId = new Map(list.map((category) => [category.id, category]));
   const stand = uncategorizedCategory(list);
   const scope = resolveScope(options.category, list);
-  const { join, kind, counted } = flowParts(stand?.id ?? null);
+  const { join, kind, counted } = flowParts(stand?.id ?? null, {
+    ignoreHouseholdTransfers,
+  });
 
   // The grouping key one level below the scope, and the scope's filter.
   const top = sql<
@@ -616,8 +629,9 @@ export interface CashFlowOptions {
   /** Whose calendar decides the current month; `APP_TIMEZONE`. */
   timeZone?: string;
   months?: number;
-  /** Overrides the stored setting (`getAppSettings()`). */
+  /** Override the stored settings (`getAppSettings()`). */
   uncategorizedCreditsAsIncome?: boolean;
+  ignoreHouseholdTransfers?: boolean;
 }
 
 /** Income, expenses, net and other money in per month, plus the year to date. */
@@ -635,16 +649,19 @@ export async function getCashFlowReport(
   // The year's months may reach before the chart's.
   const from = [firstDay(months[0]), `${year}-01-01`].sort()[0];
 
-  const [list, uncategorizedCreditsAsIncome] = await Promise.all([
+  const [list, settings] = await Promise.all([
     loadCategories(db),
-    options.uncategorizedCreditsAsIncome ??
-      getAppSettings(db).then(
-        (settings) => settings.uncategorizedCreditsAsIncome,
-      ),
+    getAppSettings(db),
   ]);
   const { join, kind, counted } = flowParts(
     uncategorizedCategory(list)?.id ?? null,
-    { uncategorizedCreditsAsIncome },
+    {
+      uncategorizedCreditsAsIncome:
+        options.uncategorizedCreditsAsIncome ??
+        settings.uncategorizedCreditsAsIncome,
+      ignoreHouseholdTransfers:
+        options.ignoreHouseholdTransfers ?? settings.ignoreHouseholdTransfers,
+    },
   );
   const month = sql<string>`to_char(${transactions.bookingDate}, 'YYYY-MM')`;
   const [rows, first] = await Promise.all([
