@@ -157,8 +157,9 @@ tests/
                        projects before the others);
                        the run fails if the app server logs an error line
                        (support/server-errors.ts), even when every test passed; the
-                       server seeds the default categories and rules like db:migrate,
-                       and support/fixtures.ts (a pending transaction, own account)
+                       server seeds the default categories and rules like db:migrate
+                       (no accounts); support/fixtures.ts holds rows a spec seeds (a
+                       pending transaction in its own account)
   fixtures/            Synthetic or anonymised fixtures only, never real data
                        (csv/: synthetic Nordea, S-Pankki and generic exports;
                        nordnet/: a synthetic UTF-16 Nordnet transaction export;

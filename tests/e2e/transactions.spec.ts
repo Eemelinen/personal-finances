@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
-import { PENDING_FIXTURE_ACCOUNT } from "./support/fixtures";
+import { openTestDatabase } from "./support/database";
+import { seedPendingFixture } from "./support/fixtures";
 import {
   euros,
   importIntoNewAccount,
@@ -108,8 +109,8 @@ test("filters live in the URL", async ({ page }) => {
   await expect(filters.getByLabel("Income or expense")).toHaveValue("expense");
 
   // Changing the form changes the URL; a reload keeps the result.
-  await filters.getByLabel("From").fill("2024-03-05");
-  await filters.getByLabel("To").fill("2024-03-31");
+  await filters.getByLabel("From", { exact: true }).fill("2024-03-05");
+  await filters.getByLabel("To", { exact: true }).fill("2024-03-31");
   await filters.getByRole("button", { name: "Apply filters" }).click();
   await expect(page).toHaveURL(/from=2024-03-05/);
   await expect(page).toHaveURL(/to=2024-03-31/);
@@ -349,9 +350,15 @@ test("pages through more than 10 000 transactions with totals for the filter", a
 });
 
 test("marks pending transactions with a badge", async ({ page }) => {
-  // The e2e server's fixture account (support/fixtures.ts): one booked, one
-  // pending row.
-  await openAccount(page, PENDING_FIXTURE_ACCOUNT);
+  // One booked and one pending row, seeded directly (support/fixtures.ts).
+  const account = `E2E fixture pending ${uniqueTag()}`;
+  const db = openTestDatabase();
+  try {
+    await seedPendingFixture(db, account);
+  } finally {
+    await db.$client.end();
+  }
+  await openAccount(page, account);
   await expectRowCount(page, 2);
   await expect(
     transactionRow(page, "Card reservation fixture").getByText("Pending", {
