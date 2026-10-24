@@ -60,7 +60,7 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.4",
-    "@eemelinen/harness": "github:Eemelinen/harness#v0.3.5",
+    "@eemelinen/harness": "github:Eemelinen/harness#v0.3.6",
     "@playwright/test": "1.63.0",
     "@tailwindcss/turbopack": "^4",
     "@testcontainers/postgresql": "^12.2.1",
