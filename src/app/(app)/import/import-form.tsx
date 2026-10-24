@@ -22,6 +22,7 @@ import { MAX_CSV_BYTES } from "./limits";
 const FORMAT_LABELS: Record<CsvFormat | "auto", string> = {
   auto: "Detect automatically",
   nordea: "Nordea",
+  "nordea-card": "Nordea credit card",
   "s-pankki": "S-Pankki",
   generic: "Other CSV (choose the columns)",
 };
@@ -318,6 +319,8 @@ function PreviewSection({
         {preview.needsMapping
           ? ""
           : `, ${preview.rowCount} readable, ${preview.errors.length} with errors`}
+        {preview.repeated > 0 &&
+          `, ${preview.repeated} repeated in the file (read once)`}
         .
       </p>
 
@@ -443,6 +446,9 @@ function SummarySection({ summary }: { summary: ImportSummary }) {
     ["Rows read", summary.rowsRead],
     ["Inserted", summary.inserted],
     ["Skipped as duplicates", summary.duplicates],
+    ...(summary.repeated > 0
+      ? [["Repeated in the file", summary.repeated] as [string, number]]
+      : []),
     ["Errors", summary.errors.length],
   ];
   return (

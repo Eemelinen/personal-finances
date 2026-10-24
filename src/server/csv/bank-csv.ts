@@ -1,3 +1,4 @@
+import { normalizeIban, parseIban } from "@/server/iban";
 import type { IsoDate } from "@/server/providers/types";
 import {
   CSV_DELIMITERS,
@@ -20,13 +21,20 @@ import {
 // column order, the delimiter (`;`, tab or `,`), preamble lines above the
 // header and the encoding (UTF-8 or Windows-1252) may vary; any other CSV is
 // read with a chosen column mapping. A row that cannot be read becomes an
-// error with its line number, the rest are still read.
+// error with its line number, the rest are still read. The layouts were
+// checked against real October 2026 exports (F-031, D-011 amendment).
 
-export const CSV_FORMATS = ["nordea", "s-pankki", "generic"] as const;
+export const CSV_FORMATS = [
+  "nordea",
+  "nordea-card",
+  "s-pankki",
+  "generic",
+] as const;
 export type CsvFormat = (typeof CSV_FORMATS)[number];
 
 export const CSV_FORMAT_LABELS: Record<CsvFormat, string> = {
   nordea: "Nordea",
+  "nordea-card": "Nordea credit card",
   "s-pankki": "S-Pankki",
   generic: "Other CSV (choose the columns)",
 };
@@ -61,7 +69,11 @@ export interface CsvRow {
   /** From a currency column; null when the file has none (the account's). */
   currency: string | null;
   counterparty: string | null;
+  /** The other side's account number, normalised. */
+  counterpartyIban: string | null;
   description: string | null;
+  /** The bank's id of the transaction (S-Pankki's `Arkistointitunnus`). */
+  ref: string | null;
 }
 
 export interface CsvRowError {
@@ -80,6 +92,11 @@ export interface ParsedCsv {
   needsMapping: boolean;
   /** Data rows below the header (blank lines not counted). */
   rowsRead: number;
+  /**
+   * Lines the export repeats verbatim, balance included (a Nordea export
+   * with `Saldo`): read once, these copies are left out of `rows`.
+   */
+  repeated: number;
   rows: CsvRow[];
   errors: CsvRowError[];
 }
@@ -90,7 +107,7 @@ export class CsvFormatError extends Error {
 }
 
 export interface ReadCsvOptions {
-  /** `auto` (the default) recognises Nordea and S-Pankki, else generic. */
+  /** `auto` (the default) recognises the bank layouts, else generic. */
   format?: CsvFormat | "auto";
   /** For `generic`; missing columns are guessed from the header names. */
   mapping?: Partial<ColumnMapping>;
@@ -109,11 +126,19 @@ interface RawRow {
   amount: string | null;
   currency: string | null;
   counterparty: (amountMinor: number) => string | null;
+  counterpartyIban?: (amountMinor: number) => string | null;
   description: string | null;
+  ref?: string | null;
+  /** What an empty booking date means (a card purchase not booked yet). */
+  undatedMessage?: string;
 }
 
 interface BankLayout {
   required: string[];
+  /** Cleans a non-empty, trimmed cell before it is read; null is empty. */
+  clean?: (value: string) => string | null;
+  /** Lines identical in every cell are one line repeated by the export. */
+  dropsRepeatedLines?: (headers: Set<string>) => boolean;
   read(cell: Cell): RawRow;
 }
 
@@ -126,33 +151,98 @@ function firstOf(cell: Cell, ...headers: string[]): string | null {
 }
 
 /**
- * The bank layouts. Nordea: `Kirjauspäivä`, `Arvopäivä`, `Määrä`, the other
- * party in `Saaja/Maksaja` (or `Maksunsaaja` for money out and `Maksaja` for
- * money in, else `Nimi`), the text in `Viesti` or `Otsikko`, else
- * `Tapahtuma`, an optional `Valuutta`. S-Pankki: `Kirjauspäivä`,
- * `Maksupäivä`, `Summa`, `Saajan nimi` for money out and `Maksaja` for money
- * in, the text in `Viesti`, else `Tapahtumalaji`.
+ * Nordea's `Otsikko` names the kind of payment rather than the other party
+ * for these (compared case-insensitively); a card purchase's `Otsikko` is
+ * the merchant.
+ */
+const GENERIC_TITLES = new Set([
+  "tilisiirto",
+  "pikasiirto",
+  "oma siirto",
+  "viitesiirto",
+  "e-lasku",
+  "e-maksu",
+  "suoramaksu",
+  "verkkomaksu",
+  "korttiosto",
+  "maksu",
+]);
+
+function nordeaCounterparty(cell: Cell): string | null {
+  const title = cell("otsikko");
+  return (
+    firstOf(cell, "saaja/maksaja", "nimi") ??
+    (title !== null && !GENERIC_TITLES.has(title.toLowerCase()) ? title : null)
+  );
+}
+
+/** A single-quoted S-Pankki cell (`'Wedding gift'`) unwrapped; `-` is empty. */
+function cleanSPankkiCell(value: string): string | null {
+  const unwrapped = /^'([\s\S]*)'$/.exec(value)?.[1].trim() ?? value;
+  return unwrapped === "" || unwrapped === "-" ? null : unwrapped;
+}
+
+/**
+ * The bank layouts, matched in this order (the card export also has
+ * `Kirjauspäivä` and `Määrä`).
+ *
+ * Nordea credit card: `Tapahtumapäivä` (value date), `Kirjauspäivä`,
+ * `Otsikko` (the text), `Määrä` in EUR with a decimal point (a purchase in
+ * another currency has its own amount in `Alkuperäinen määrä`), `Valuutta`;
+ * no counterparty.
+ *
+ * Nordea netbank: `Kirjauspäivä` (`yyyy/mm/dd`), `Määrä`, `Maksaja` and
+ * `Maksunsaaja` holding account numbers (the other side's one, `Maksunsaaja`
+ * for money out and `Maksaja` for money in, is the counterparty's IBAN), the
+ * other party in `Nimi`, else `Otsikko` unless it is a payment kind, the
+ * text in `Viesti`, else `Otsikko` (when it is not the counterparty), else
+ * `Tapahtuma`, `Saldo`, `Valuutta`. An older layout's `Saaja/Maksaja` and
+ * `Arvopäivä` are still read.
+ *
+ * S-Pankki: `Kirjauspäivä`, `Maksupäivä`, `Summa`, `Saajan nimi` for money
+ * out and `Maksaja` for money in, `Saajan tilinumero` as the counterparty's
+ * IBAN for money out (for money in it is the receiving, own account), the
+ * text in `Viesti`, else `Tapahtumalaji`, and `Arkistointitunnus` as the
+ * ref (the same id as the bank API's `entry_reference`).
  */
 const BANK_LAYOUTS: Record<Exclude<CsvFormat, "generic">, BankLayout> = {
-  nordea: {
-    required: ["kirjauspäivä", "määrä"],
+  "nordea-card": {
+    required: ["tapahtumapäivä", "otsikko", "määrä"],
     read: (cell) => ({
       bookingDate: cell("kirjauspäivä"),
-      valueDate: cell("arvopäivä"),
+      valueDate: cell("tapahtumapäivä"),
       amount: cell("määrä"),
       currency: cell("valuutta"),
-      counterparty: (amountMinor) =>
-        firstOf(
-          cell,
-          "saaja/maksaja",
-          amountMinor < 0 ? "maksunsaaja" : "maksaja",
-          "nimi",
-        ),
-      description: firstOf(cell, "viesti", "otsikko", "tapahtuma"),
+      counterparty: () => null,
+      description: cell("otsikko"),
+      undatedMessage:
+        "A card purchase not booked yet: import it again once it is booked",
     }),
+  },
+  nordea: {
+    required: ["kirjauspäivä", "määrä"],
+    dropsRepeatedLines: (headers) => headers.has("saldo"),
+    read: (cell) => {
+      const counterparty = nordeaCounterparty(cell);
+      const title = cell("otsikko");
+      return {
+        bookingDate: cell("kirjauspäivä"),
+        valueDate: cell("arvopäivä"),
+        amount: cell("määrä"),
+        currency: cell("valuutta"),
+        counterparty: () => counterparty,
+        counterpartyIban: (amountMinor) =>
+          parseIban(cell(amountMinor < 0 ? "maksunsaaja" : "maksaja")),
+        description:
+          cell("viesti") ??
+          (title === counterparty ? null : title) ??
+          cell("tapahtuma"),
+      };
+    },
   },
   "s-pankki": {
     required: ["kirjauspäivä", "summa"],
+    clean: cleanSPankkiCell,
     read: (cell) => ({
       bookingDate: cell("kirjauspäivä"),
       valueDate: cell("maksupäivä"),
@@ -162,7 +252,12 @@ const BANK_LAYOUTS: Record<Exclude<CsvFormat, "generic">, BankLayout> = {
         amountMinor < 0
           ? firstOf(cell, "saajan nimi", "maksaja")
           : firstOf(cell, "maksaja", "saajan nimi"),
+      counterpartyIban: (amountMinor) => {
+        const account = amountMinor < 0 ? cell("saajan tilinumero") : null;
+        return account === null ? null : normalizeIban(account);
+      },
       description: firstOf(cell, "viesti", "tapahtumalaji"),
+      ref: cell("arkistointitunnus"),
     }),
   },
 };
@@ -210,7 +305,7 @@ function detectBankFormat(
 ): { format: Exclude<CsvFormat, "generic">; headerIndex: number } | null {
   for (const [index, record] of records.entries()) {
     const headers = new Set(record.cells.map(headerKey));
-    for (const format of ["nordea", "s-pankki"] as const) {
+    for (const format of ["nordea-card", "nordea", "s-pankki"] as const) {
       if (matchesLayout(BANK_LAYOUTS[format], headers)) {
         return { format, headerIndex: index };
       }
@@ -241,7 +336,13 @@ function parseValueDate(value: string): IsoDate {
 }
 
 function readRow(raw: RawRow): Omit<CsvRow, "row"> {
-  if (raw.bookingDate === null) throw new Error("The booking date is empty");
+  if (raw.bookingDate === null) {
+    throw new Error(
+      raw.valueDate !== null && raw.undatedMessage
+        ? raw.undatedMessage
+        : "The booking date is empty",
+    );
+  }
   if (raw.amount === null) throw new Error("The amount is empty");
   // Nordea lists card reservations with `Varaus` instead of a booking date.
   if (/^varaus$/i.test(raw.bookingDate)) {
@@ -261,7 +362,9 @@ function readRow(raw: RawRow): Omit<CsvRow, "row"> {
     amountMinor,
     currency,
     counterparty: text(raw.counterparty(amountMinor)),
+    counterpartyIban: raw.counterpartyIban?.(amountMinor) || null,
     description: text(raw.description),
+    ref: text(raw.ref ?? null),
   };
 }
 
@@ -363,6 +466,7 @@ export function readBankCsv(
         mapping,
         needsMapping: true,
         rowsRead: dataRecords.length,
+        repeated: 0,
         rows: [],
         errors: [],
       };
@@ -370,10 +474,29 @@ export function readBankCsv(
   } else {
     layout = BANK_LAYOUTS[format].read;
   }
+  const bank = format === "generic" ? null : BANK_LAYOUTS[format];
+  const clean = bank?.clean ?? ((value: string) => value);
+  const dropsRepeated =
+    bank?.dropsRepeatedLines?.(new Set(columns.keys())) ?? false;
 
   const rows: CsvRow[] = [];
   const errors: CsvRowError[] = [];
+  const seenLines = new Set<string>();
+  let repeated = 0;
   for (const record of dataRecords) {
+    if (dropsRepeated) {
+      // The balance makes two real transactions differ; equal lines are one.
+      const key = JSON.stringify(
+        record.cells
+          .slice(0, trimmedWidth(record.cells))
+          .map((value) => value.trim()),
+      );
+      if (seenLines.has(key)) {
+        repeated++;
+        continue;
+      }
+      seenLines.add(key);
+    }
     if (trimmedWidth(record.cells) > headers.length) {
       errors.push({
         row: record.line,
@@ -385,7 +508,7 @@ export function readBankCsv(
       const index = columns.get(headerKey(header));
       if (index === undefined) return null;
       const value = record.cells[index]?.trim() ?? "";
-      return value === "" ? null : value;
+      return value === "" ? null : clean(value);
     };
     try {
       rows.push({ row: record.line, ...readRow(layout(cell)) });
@@ -405,6 +528,7 @@ export function readBankCsv(
     mapping,
     needsMapping: false,
     rowsRead: dataRecords.length,
+    repeated,
     rows,
     errors,
   };

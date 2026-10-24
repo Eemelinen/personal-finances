@@ -121,6 +121,7 @@ describe("CSV import into a manual account", () => {
       rowsRead: 6,
       inserted: 6,
       duplicates: 0,
+      repeated: 0,
       errors: [],
     });
 
@@ -139,6 +140,77 @@ describe("CSV import into a manual account", () => {
       description: "Korttiosto",
       categorySource: "none",
     });
+  });
+
+  it("keeps an S-Pankki row's archive id and counterparty IBAN", async () => {
+    const accountId = await newManualAccount("s-pankki");
+    const summary = await importFile(accountId, fixture("s-pankki-2026.csv"));
+    expect(summary).toEqual({
+      rowsRead: 4,
+      inserted: 4,
+      duplicates: 0,
+      repeated: 0,
+      errors: [],
+    });
+    const stored = await transactionsOf(accountId);
+    expect(stored.find((row) => row.amountMinor === -100_000)).toMatchObject({
+      providerTxnRef: "20261005TEST00000003",
+      counterparty: "SÄÄSTÖTILI ESIMERKKI",
+      counterpartyIban: "FI5939000000000006",
+      description: "Säästö lokakuu",
+    });
+    expect(stored.find((row) => row.amountMinor === 15_000)).toMatchObject({
+      providerTxnRef: "20261003TEST00000002",
+      counterpartyIban: null,
+      description: "Wedding gift",
+    });
+
+    // The same archive id with another text is the same transaction.
+    const edited = new TextDecoder()
+      .decode(fixture("s-pankki-2026.csv"))
+      .replace("'Wedding gift'", "'Häälahja'");
+    expect(
+      await importFile(accountId, new TextEncoder().encode(edited)),
+    ).toMatchObject({ inserted: 0, duplicates: 4 });
+    expect(await transactionsOf(accountId)).toHaveLength(4);
+  });
+
+  it("imports a line the Nordea export repeats once", async () => {
+    const accountId = await newManualAccount();
+    const summary = await importFile(accountId, fixture("nordea-2026.csv"));
+    expect(summary).toEqual({
+      rowsRead: 8,
+      inserted: 7,
+      duplicates: 0,
+      repeated: 1,
+      errors: [],
+    });
+    const stored = await transactionsOf(accountId);
+    expect(stored.filter((row) => row.amountMinor === 250_000)).toHaveLength(1);
+    expect(stored.filter((row) => row.amountMinor === -450)).toHaveLength(2);
+    expect(stored.find((row) => row.amountMinor === -95_000)).toMatchObject({
+      counterparty: "Esimerkki Asunnot Oy",
+      counterpartyIban: "FI0510000000000003",
+    });
+  });
+
+  it("imports the Nordea card export into an account of its own", async () => {
+    const parsed = readBankCsv(fixture("nordea-card-2026.csv"));
+    const { accountId, summary } = await importCsvIntoNewAccount(
+      { name: `Card ${randomUUID()}`, type: "checking", format: parsed.format },
+      parsed,
+      { db: testDb.db },
+    );
+    expect(summary).toMatchObject({ inserted: 3, errors: [{ row: 5 }] });
+    const [institution] = await testDb.db
+      .select({
+        name: institutions.name,
+        providerRef: institutions.providerRef,
+      })
+      .from(accounts)
+      .innerJoin(institutions, eq(accounts.institutionId, institutions.id))
+      .where(eq(accounts.id, accountId));
+    expect(institution).toEqual({ name: "Nordea", providerRef: "nordea-card" });
   });
 
   it("creates manual accounts under one csv institution per format", async () => {
@@ -184,6 +256,7 @@ describe("CSV import into a manual account", () => {
       rowsRead: 5,
       inserted: 0,
       duplicates: 5,
+      repeated: 0,
       errors: [],
     });
     expect(await transactionsOf(accountId)).toEqual(before);
@@ -219,6 +292,7 @@ describe("CSV import into a manual account", () => {
       rowsRead: 6,
       inserted: 3,
       duplicates: 3,
+      repeated: 0,
       errors: [],
     });
     const stored = await transactionsOf(accountId);
@@ -259,6 +333,7 @@ describe("CSV import into a manual account", () => {
       rowsRead: 3,
       inserted: 1,
       duplicates: 0,
+      repeated: 0,
       errors: [
         { row: 3, message: "The currency SEK is not the account's EUR" },
         { row: 4, message: 'Not an amount: "kaksi"' },
@@ -457,6 +532,7 @@ describe("CSV import and the bank sync", () => {
       rowsRead: february.length + 1,
       inserted: 1,
       duplicates: february.length,
+      repeated: 0,
       errors: [],
     });
 

@@ -15,7 +15,9 @@ import type { CsvFormat, CsvRowError, ParsedCsv } from "./bank-csv";
 // bank sync's identity path: `identifyTransactions()` numbers otherwise
 // identical rows the way a sync numbers them, so a row hashes like the same
 // transaction from an earlier import or from the bank API, and the unique
-// `(account_id, dedupe_hash)` key skips it. An import only inserts: it never
+// `(account_id, dedupe_hash)` key skips it, as the `(account_id,
+// provider_txn_ref)` key skips a row whose bank id (S-Pankki's archive id,
+// F-031) is already stored. An import only inserts: it never
 // changes, books or removes a stored transaction (a later bank sync merges
 // its own data over imported rows, F-009).
 
@@ -29,6 +31,8 @@ export interface ImportSummary {
   inserted: number;
   /** Rows already stored for the account (earlier imports or bank sync). */
   duplicates: number;
+  /** Lines the file itself repeats verbatim, imported once (Nordea). */
+  repeated: number;
   /** Rows not imported, by file line. */
   errors: CsvRowError[];
 }
@@ -47,7 +51,7 @@ const INSERT_BATCH = 500;
 
 export async function importCsvRows(
   accountId: string,
-  parsed: Pick<ParsedCsv, "rowsRead" | "rows" | "errors">,
+  parsed: Pick<ParsedCsv, "rowsRead" | "repeated" | "rows" | "errors">,
   options: ImportOptions = {},
 ): Promise<ImportSummary> {
   const db = options.db ?? getDb();
@@ -72,7 +76,7 @@ export async function importCsvRows(
  */
 export async function importCsvIntoNewAccount(
   input: NewManualAccount,
-  parsed: Pick<ParsedCsv, "rowsRead" | "rows" | "errors">,
+  parsed: Pick<ParsedCsv, "rowsRead" | "repeated" | "rows" | "errors">,
   options: ImportOptions = {},
 ): Promise<{ accountId: string; summary: ImportSummary }> {
   const db = options.db ?? getDb();
@@ -109,13 +113,13 @@ function prepareRows(
       continue;
     }
     listing.push({
-      ref: null,
+      ref: row.ref,
       bookingDate: row.bookingDate,
       valueDate: row.valueDate,
       amountMinor: row.amountMinor,
       currency,
       counterparty: row.counterparty,
-      counterpartyIban: null,
+      counterpartyIban: row.counterpartyIban,
       description: row.description,
       status: "booked",
     });
@@ -140,9 +144,8 @@ async function insertRows(
           .slice(start, start + INSERT_BATCH)
           .map((value) => ({ ...value, accountId })),
       )
-      .onConflictDoNothing({
-        target: [transactions.accountId, transactions.dedupeHash],
-      })
+      // Either unique key: the same hash or the same bank ref.
+      .onConflictDoNothing()
       .returning({ id: transactions.id });
     ids.push(...rows.map((row) => row.id));
   }
@@ -151,7 +154,7 @@ async function insertRows(
 }
 
 function summarise(
-  parsed: Pick<ParsedCsv, "rowsRead">,
+  parsed: Pick<ParsedCsv, "rowsRead" | "repeated">,
   importable: number,
   inserted: number,
   errors: CsvRowError[],
@@ -160,6 +163,7 @@ function summarise(
     rowsRead: parsed.rowsRead,
     inserted,
     duplicates: importable - inserted,
+    repeated: parsed.repeated,
     errors: errors.sort((a, b) => a.row - b.row),
   };
 }
@@ -167,6 +171,7 @@ function summarise(
 /** The institution a new manual account of each format belongs to. */
 const MANUAL_INSTITUTIONS: Record<CsvFormat, string> = {
   nordea: "Nordea",
+  "nordea-card": "Nordea",
   "s-pankki": "S-Pankki",
   generic: "Other bank",
 };
