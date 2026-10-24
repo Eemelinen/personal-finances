@@ -34,8 +34,10 @@ export interface HoldingsDay {
   valueMinor: number | null;
   /**
    * EUR value of the day's movements at the day's prices. Units that moved
-   * while their asset had no price (or rate) count on the first day it has
-   * one, at that day's price, so they are not left to the market gain.
+   * while their asset had no price (or rate), and units already held but
+   * unpriced on the day the account enters, count on the first day the
+   * asset has one, at that day's price, so they are not left to the market
+   * gain.
    */
   movedMinor: number;
 }
@@ -50,7 +52,11 @@ function byDate<T extends { date: IsoDate }>(rows: readonly T[]): T[] {
  * `valueHoldings()` would give for every day, in one pass. Movements dated
  * on one of the days are valued at that day's price; earlier ones are in
  * the first day's value already, unless their asset is still unpriced then.
- * Unpriced movements wait until the asset is priced.
+ * Unpriced movements wait until the asset is priced. So do the units held
+ * on the day the account enters (`knownFrom` or its first holding snapshot,
+ * whichever comes first; the first of `days` at the latest) while unpriced:
+ * the value it enters with leaves them out, whatever brought them in (a
+ * buy before a synced account's first balance, F-022 review).
  */
 export function holdingsSeries(
   input: {
@@ -58,6 +64,8 @@ export function holdingsSeries(
     prices: readonly PriceInput[];
     fxRates: readonly FxRateInput[];
     movements?: readonly Movement[];
+    /** First day the account's value is known without holdings (its cash). */
+    knownFrom?: IsoDate | null;
   },
   days: readonly IsoDate[],
 ): HoldingsDay[] {
@@ -79,6 +87,7 @@ export function holdingsSeries(
   let m = 0;
   /** Units moved in (or out) while unpriced, by asset. */
   const pending = new Map<string, bigint>();
+  let entered = false;
 
   /** EUR minor units of `units` of the asset today; null when unpriced. */
   const value = (assetId: string, units: string): number | null => {
@@ -120,6 +129,23 @@ export function holdingsSeries(
       if (priced === null) continue;
       movedMinor += priced;
       pending.delete(assetId);
+    }
+    const knownFrom = input.knownFrom ?? null;
+    if (
+      !entered &&
+      (quantity.size > 0 || (knownFrom !== null && day >= knownFrom))
+    ) {
+      entered = true;
+      // What is held and unpriced now enters when priced, in full; this
+      // replaces the units its earlier unpriced movements left pending.
+      for (const [assetId, units] of quantity) {
+        const held = parseDecimal(units);
+        if (held !== ZERO && value(assetId, units) === null) {
+          pending.set(assetId, held);
+        } else {
+          pending.delete(assetId);
+        }
+      }
     }
     if (quantity.size === 0) return { valueMinor: null, movedMinor };
 
@@ -236,6 +262,8 @@ export function investmentAccountSeries(
     transactions: readonly TransactionInput[];
     /** The account has balance snapshots, so its cash is known. */
     syncedCash: boolean;
+    /** The synced cash's first day; defaults to the first of `days`. */
+    cashFrom?: IsoDate | null;
   },
   days: readonly IsoDate[],
 ): InvestmentAccountSeries {
@@ -257,12 +285,21 @@ export function investmentAccountSeries(
             : [],
         )
       : snapshotMovements(input.holdings);
+  const derivedFrom = hasTransactions
+    ? (input.transactions
+        .filter((tx) => tx.currency === VALUATION_CURRENCY)
+        .map((tx) => tx.tradeDate)
+        .sort()[0] ?? null)
+    : null;
   const holdings = holdingsSeries(
     {
       holdings: input.holdings,
       prices: input.prices,
       fxRates: input.fxRates,
       movements,
+      knownFrom: input.syncedCash
+        ? (input.cashFrom ?? days[0] ?? null)
+        : derivedFrom,
     },
     days,
   );

@@ -287,6 +287,102 @@ describe("contributions of holdings without a price yet", () => {
   });
 });
 
+describe("contributions of holdings an account enters with unpriced", () => {
+  // Kraken-like: 1.3. a 100,00 deposit, a coin transferred in and one bought
+  // for 30,00 before the first sync on 2.3.; the price job first prices the
+  // coin on 4.3. at 100,00, then 5.3. at 120,00.
+  const series = (days: string[]) =>
+    investmentAccountSeries(
+      {
+        holdings: [{ assetId: "coin", date: "2026-03-02", quantity: "2" }],
+        prices: [
+          {
+            assetId: "coin",
+            date: "2026-03-04",
+            priceMinor: "10000",
+            currency: "EUR",
+          },
+          {
+            assetId: "coin",
+            date: "2026-03-05",
+            priceMinor: "12000",
+            currency: "EUR",
+          },
+        ],
+        fxRates: [],
+        transactions: [
+          {
+            assetId: null,
+            type: "transfer",
+            tradeDate: "2026-03-01",
+            quantity: null,
+            amountMinor: 10_000,
+            currency: "EUR",
+          },
+          {
+            assetId: "coin",
+            type: "transfer",
+            tradeDate: "2026-03-01",
+            quantity: "1",
+            amountMinor: 0,
+            currency: "EUR",
+          },
+          {
+            assetId: "coin",
+            type: "buy",
+            tradeDate: "2026-03-01",
+            quantity: "1",
+            amountMinor: -3_000,
+            currency: "EUR",
+          },
+        ],
+        syncedCash: true,
+        cashFrom: "2026-03-02",
+      },
+      days,
+    );
+  const cash = (count: number) =>
+    Array.from({ length: count }, () => ({
+      amountMinor: 7_000,
+      estimated: false,
+    }));
+
+  it("counts every unit held at the first snapshot once it is priced", () => {
+    // The `all` range starts at the synced account's first snapshot.
+    const days = daysBetween("2026-03-02", "2026-03-05");
+    const account = series(days);
+    // Both coins, the bought one too, and each only once.
+    expect(account.flows).toEqual([0, 0, 20_000, 0]);
+    const values = withHoldings(cash(days.length), account).map(
+      (point) => point.amountMinor,
+    );
+    expect(values).toEqual([7_000, 7_000, 27_000, 31_000]);
+    const result = portfolioPerformance(
+      [{ values, flows: account.flows }],
+      days.length,
+    );
+    expect(points(result, "contributedMinor")).toEqual([
+      7_000, 7_000, 27_000, 27_000,
+    ]);
+    expect(points(result, "gainMinor")).toEqual([0, 0, 0, 4_000]);
+  });
+
+  it("counts units still unpriced on a later range's first day", () => {
+    const days = daysBetween("2026-03-03", "2026-03-05");
+    const account = series(days);
+    expect(account.flows).toEqual([0, 20_000, 0]);
+    const values = withHoldings(cash(days.length), account).map(
+      (point) => point.amountMinor,
+    );
+    const result = portfolioPerformance(
+      [{ values, flows: account.flows }],
+      days.length,
+    );
+    expect(points(result, "gainMinor")).toEqual([0, 0, 4_000]);
+    expect(result.contributionsMinor).toBe(20_000);
+  });
+});
+
 describe("contributions vs market gain of an account's transactions", () => {
   const days = daysBetween("2026-03-01", "2026-03-06");
   const STOCK = "stock";

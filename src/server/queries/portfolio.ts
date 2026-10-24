@@ -322,7 +322,11 @@ export async function getPortfolioPerformance(
     ),
     loadInvestmentHistory(
       db,
-      shown.map((row) => ({ id: row.id, syncedCash: synced.has(row.id) })),
+      shown.map((row) => ({
+        id: row.id,
+        syncedCash: synced.has(row.id),
+        cashFrom: synced.get(row.id),
+      })),
       days,
     ),
   ]);

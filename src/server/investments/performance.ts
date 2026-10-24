@@ -6,12 +6,14 @@
 // when nothing is known yet) and then moves with the external flows:
 // deposits and withdrawals of cash, units transferred in or out at the day's
 // price, and for accounts without transactions (manual wallets) the
-// quantity changes between snapshots. An
-// account whose value first becomes known within the range (a new account,
-// or the first day of its data) brings that value in as a contribution, so
-// adding an account is not a gain. Everything else that changes the value
-// (price moves, dividends, fees, buying below or above the close) is the
-// market gain: value − contributed.
+// quantity changes between snapshots. An account whose value first becomes
+// known within the range (a new account, or the first day of its data)
+// brings that value in as a contribution, so adding an account is not a
+// gain. Units an account holds on its first day (in the range or of its
+// data) without a price yet are left out of that value and come in as a
+// flow on the day they are first priced (`holdingsSeries()`). Everything
+// else that changes the value (price moves, dividends, fees, buying below
+// or above the close) is the market gain: value − contributed.
 
 export interface PerformanceAccountInput {
   /** The account's value (cash + holdings) per day; null where unknown. */

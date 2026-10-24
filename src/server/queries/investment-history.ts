@@ -31,6 +31,11 @@ export interface InvestmentHistoryAccount {
   id: string;
   /** The account has balance snapshots, so its cash is synced. */
   syncedCash: boolean;
+  /**
+   * The first balance snapshot's day, for the units an account enters with
+   * unpriced (`holdingsSeries()`); the first of the days when not given.
+   */
+  cashFrom?: IsoDate;
 }
 
 export interface LoadedInvestmentAccount extends InvestmentAccountSeries {
@@ -167,6 +172,7 @@ export async function loadInvestmentHistory(
         fxRates: rateRows,
         transactions: transactionsOf.get(account.id) ?? [],
         syncedCash: account.syncedCash,
+        cashFrom: account.cashFrom,
       },
       days,
     );

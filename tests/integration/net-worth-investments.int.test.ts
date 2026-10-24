@@ -464,6 +464,56 @@ describe("getPortfolioPerformance", () => {
     });
   });
 
+  it("counts a synced account's coins bought before its first sync once priced", async () => {
+    // Kraken: 100,00 deposited and 2 coins bought for 60,00 eight days ago;
+    // the first sync six days ago; the price job first prices the coin four
+    // days ago at 100,00, then 120,00.
+    const kraken = await account("Kraken", "crypto");
+    const coin = await asset("NEWCOIN", "crypto");
+    await trade(kraken.id, {
+      daysAgo: 8,
+      type: "transfer",
+      amountMinor: 10_000,
+    });
+    await trade(kraken.id, {
+      daysAgo: 8,
+      type: "buy",
+      amountMinor: -6_000,
+      assetId: coin.id,
+      quantity: "2",
+    });
+    await snapshot(kraken.id, 6, 4_000);
+    await holding(kraken.id, coin.id, 6, "2");
+    await price(coin.id, 4, "10000");
+    await price(coin.id, 2, "12000");
+
+    for (const range of ["all", "3m"] as const) {
+      const report = await getPortfolioPerformance({
+        db: testDb.db,
+        now: NOW,
+        timeZone: TIME_ZONE,
+        range,
+      });
+      const at = (daysAgo: number) =>
+        report.performance.points[report.days.indexOf(ago(daysAgo))];
+      expect(at(6)).toEqual({
+        valueMinor: 4_000,
+        contributedMinor: 4_000,
+        gainMinor: 0,
+      });
+      // Priced: the coins are what the account came with, not a gain.
+      expect(at(4)).toEqual({
+        valueMinor: 24_000,
+        contributedMinor: 24_000,
+        gainMinor: 0,
+      });
+      expect(report.performance).toMatchObject({
+        endMinor: 28_000,
+        gainMinor: 4_000,
+      });
+    }
+  });
+
   it("does not stretch `all` back to a synced account's older ledger", async () => {
     const kraken = await account("Kraken", "crypto");
     const btc = await asset("BTC", "crypto");
