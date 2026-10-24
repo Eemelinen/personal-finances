@@ -20,3 +20,6 @@ The schema adds assets (symbol, ISIN or CoinGecko id, asset class, currency), ho
 ## Notes
 
 - Replaces old FIN-022.
+- Implemented in `src/server/db/schema/investments.ts` (migration `drizzle/0003_investments.sql`), `src/server/investments/{decimal,valuation}.ts`, `src/server/queries/investments.ts` and the final `ProviderHolding` in `src/server/providers/types.ts` (D-016).
+- Choices made without a human (D-016): `numeric(38, 18)` for quantities, unit prices and rates; holdings are per-day quantity snapshots that hold until the next one (0 = sold out); signed quantity and cash effect on investment transactions; ECB rates as units per EUR; one rounding per position, total = sum of rounded positions; an asset without any earlier price or rate is reported as missing and left out of the total; holdings only, cash balances stay in `balance_snapshots`.
+- Deviation (refinement): "money stays in minor units" holds for amounts (`amount_minor` is `bigint`); unit prices are minor units too, but as a `numeric(38, 18)` decimal, since a price per unit can be below a cent (D-016).
