@@ -13,10 +13,12 @@ import {
   archiveConnection,
   listConnections,
   removeConnection,
+  summarizeRemovals,
   updateBankAccount,
   type ManageOptions,
 } from "@/server/connections/manage";
 import { decryptSecret, encryptSecret } from "@/server/crypto";
+import { dedupeHash } from "@/server/dedupe-hash";
 import {
   accounts,
   balanceSnapshots,
@@ -46,7 +48,8 @@ import { startTestDatabase, type TestDatabase } from "./helpers/postgres";
 
 // The connect-bank flow (F-007) against the fake provider and a real
 // Postgres 18: starting an authorisation, the callback, renaming accounts,
-// and removing or archiving a connection.
+// and removing or archiving a connection; what Remove keeps and how a bank
+// connected anew takes over the accounts the app already holds (F-033).
 
 const KEY = randomBytes(32);
 const NOW = new Date("2026-10-24T09:00:00.000Z");
@@ -377,8 +380,10 @@ describe("managing connections", () => {
   it("lists bank connections with their accounts, archived ones last", async () => {
     const setup = recordingConnector();
     const archivedId = await connect(setup, "S-Pankki");
-    await archiveConnection(archivedId, setup.options());
+    // Connected before the archive: the fake's banks share IBANs, and a
+    // bank connected anew takes over archived accounts (F-033).
     const activeId = await connect(setup);
+    await archiveConnection(archivedId, setup.options());
     await testDb.db
       .update(connections)
       .set({ consentExpiresAt: new Date(NOW.getTime() - 1) })
@@ -599,5 +604,171 @@ describe("managing connections", () => {
     await expect(
       archiveConnection(missing, setup.options()),
     ).rejects.toBeInstanceOf(BankConnectionError);
+  });
+});
+
+describe("history across removal and reconnects (F-033)", () => {
+  async function rowsOf(accountId: string) {
+    return testDb.db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.accountId, accountId))
+      .orderBy(asc(transactions.bookingDate), asc(transactions.id));
+  }
+
+  /**
+   * Stores an imported copy of `row` the way an export describes it: other
+   * texts, no ref, a day earlier (Nordea's API books some a day later).
+   */
+  async function importCopyOf(row: typeof transactions.$inferSelect) {
+    const bookingDate = new Date(Date.parse(row.bookingDate) - 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+    const values = {
+      bookingDate,
+      amountMinor: row.amountMinor,
+      counterparty: "EXPORT NAME OY",
+      description: "Korttiosto",
+    };
+    const [inserted] = await testDb.db
+      .insert(transactions)
+      .values({
+        ...values,
+        accountId: row.accountId,
+        currency: row.currency,
+        dedupeHash: dedupeHash(values),
+        source: "csv",
+      })
+      .returning();
+    return inserted;
+  }
+
+  async function deleteAccounts(ids: string[]) {
+    await testDb.db.delete(accounts).where(inArray(accounts.id, ids));
+  }
+
+  it("remove keeps an account with imported rows as a manual account and deletes its bank rows", async () => {
+    const setup = recordingConnector();
+    const connectionId = await connect(setup);
+    await syncHistory(setup, connectionId);
+    const [checking, savings] = await accountsOf(connectionId);
+    const bankRows = await rowsOf(checking.id);
+    expect(bankRows.length).toBeGreaterThan(1);
+    const savingsRows = await rowsOf(savings.id);
+    const imported = await importCopyOf(bankRows[0]);
+
+    const summaries = await summarizeRemovals([connectionId], {
+      db: testDb.db,
+    });
+    expect(summaries.get(connectionId)).toEqual({
+      deletedAccounts: 1,
+      keptAccounts: [checking.name],
+      bankTransactions: bankRows.length + savingsRows.length,
+      importedTransactions: 1,
+    });
+
+    await removeConnection(connectionId, setup.options());
+
+    expect(await getConnection(connectionId)).toBeUndefined();
+    const [kept] = await testDb.db
+      .select()
+      .from(accounts)
+      .where(eq(accounts.id, checking.id));
+    expect(kept).toMatchObject({
+      connectionId: null,
+      providerAccountRef: null,
+      archived: false,
+      name: checking.name,
+      iban: checking.iban,
+      transactionsSyncedAt: null,
+    });
+    expect((await rowsOf(checking.id)).map(({ id }) => id)).toEqual([
+      imported.id,
+    ]);
+    expect(
+      await testDb.db
+        .select()
+        .from(balanceSnapshots)
+        .where(eq(balanceSnapshots.accountId, checking.id)),
+    ).toEqual([]);
+    expect(
+      await testDb.db
+        .select()
+        .from(accounts)
+        .where(eq(accounts.id, savings.id)),
+    ).toEqual([]);
+
+    await deleteAccounts([checking.id]);
+  });
+
+  it("connecting anew reuses an archived account with the same IBAN without duplicating its transactions", async () => {
+    const setup = recordingConnector();
+    const archivedId = await connect(setup);
+    await syncHistory(setup, archivedId);
+    const before = await accountsOf(archivedId);
+    const counts = await Promise.all(
+      before.map(async ({ id }) => (await rowsOf(id)).length),
+    );
+    await updateBankAccount(
+      before[0].id,
+      { name: "My bills", type: "savings" },
+      { db: testDb.db },
+    );
+    await archiveConnection(archivedId, setup.options());
+
+    const connectionId = await connect(setup);
+    const after = await accountsOf(connectionId);
+    expect(after.map(({ id }) => id)).toEqual(before.map(({ id }) => id));
+    expect(after[0]).toMatchObject({
+      name: "My bills",
+      type: "savings",
+      archived: false,
+      transactionsSyncedAt: null,
+    });
+    expect(await accountsOf(archivedId)).toEqual([]);
+
+    await syncHistory(setup, connectionId);
+    expect(
+      await Promise.all(after.map(async ({ id }) => (await rowsOf(id)).length)),
+    ).toEqual(counts);
+
+    // Not taken from a connection that is still in use.
+    const third = await connect(setup);
+    expect(
+      (await accountsOf(third)).every(
+        ({ id }) => !after.some((account) => account.id === id),
+      ),
+    ).toBe(true);
+    await removeConnection(third, setup.options());
+    await removeConnection(connectionId, setup.options());
+    await removeConnection(archivedId, setup.options());
+  });
+
+  it("connecting anew attaches a kept manual account and its sync adopts the imported rows", async () => {
+    const setup = recordingConnector();
+    const firstId = await connect(setup);
+    await syncHistory(setup, firstId);
+    const [checking] = await accountsOf(firstId);
+    const bankRows = await rowsOf(checking.id);
+    const imported = await importCopyOf(bankRows[bankRows.length - 1]);
+    await removeConnection(firstId, setup.options());
+    expect(await rowsOf(checking.id)).toHaveLength(1);
+
+    const connectionId = await connect(setup);
+    const attached = await accountsOf(connectionId);
+    expect(attached.map(({ id }) => id)).toContain(checking.id);
+    await syncHistory(setup, connectionId);
+
+    const rows = await rowsOf(checking.id);
+    // The bank's history once: its copy of the imported row is that row.
+    expect(rows).toHaveLength(bankRows.length);
+    const adopted = rows.find(({ id }) => id === imported.id);
+    expect(adopted).toMatchObject({
+      source: "csv",
+      providerTxnRef: bankRows[bankRows.length - 1].providerTxnRef,
+    });
+
+    await removeConnection(connectionId, setup.options());
+    await deleteAccounts([checking.id]);
   });
 });

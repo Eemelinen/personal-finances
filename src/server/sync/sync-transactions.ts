@@ -1,8 +1,19 @@
-import { and, asc, eq, inArray, isNotNull, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  between,
+  eq,
+  inArray,
+  isNotNull,
+  or,
+  sql,
+} from "drizzle-orm";
 import {
   categorizeTransactions,
   lockCategorization,
 } from "@/server/categorization/categorize";
+import { CSV_MATCH_DAYS } from "@/server/csv/match";
+import { addDays } from "@/server/dates";
 import { getDb } from "@/server/db/client";
 import { accounts, connections, transactions } from "@/server/db/schema";
 import { getEnv } from "@/server/env";
@@ -258,12 +269,17 @@ const STORED_COLUMNS = {
   counterpartyIban: transactions.counterpartyIban,
   description: transactions.description,
   status: transactions.status,
+  source: transactions.source,
 };
 
 /** Values per `IN (…)` list, well below Postgres' parameter limit. */
 const LOOKUP_BATCH = 1_000;
 
-/** What `mergeTransactions()` needs: every pending row and every match. */
+/**
+ * What `mergeTransactions()` needs: every pending row, every match by ref
+ * or hash, and the booked imported rows within `CSV_MATCH_DAYS` of the
+ * listing's days.
+ */
 async function loadStored(
   tx: Tx,
   accountId: string,
@@ -281,6 +297,21 @@ async function loadStored(
   for (let start = 0; start < hashes.length; start += LOOKUP_BATCH) {
     const batch = hashes.slice(start, start + LOOKUP_BATCH);
     filters.push(inArray(transactions.dedupeHash, batch));
+  }
+  const days = listing.map((txn) => txn.bookingDate).sort();
+  if (days.length > 0) {
+    const from = addDays(days[0], -CSV_MATCH_DAYS);
+    const to = addDays(days[days.length - 1], CSV_MATCH_DAYS);
+    filters.push(
+      and(
+        eq(transactions.source, "csv"),
+        eq(transactions.status, "booked"),
+        or(
+          between(transactions.bookingDate, from, to),
+          between(transactions.valueDate, from, to),
+        ),
+      )!,
+    );
   }
 
   const byId = new Map<string, StoredTransaction>();

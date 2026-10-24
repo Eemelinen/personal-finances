@@ -1,12 +1,20 @@
-import { randomUUID } from "node:crypto";
+import { randomInt, randomUUID } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
+import {
+  accounts,
+  connections,
+  institutions,
+  transactions,
+} from "@/server/db/schema";
+import { openTestDatabase } from "./support/database";
 
 // The connect-bank flow end to end (F-007) through the fake provider
 // (`BANK_PROVIDER=fake`): /connections redirects to the fake's stand-in bank
 // page, which approves or cancels back to /connections/callback like a
 // bank. The callback syncs the new connection right away (F-010). Other
 // specs seed connections too, so each test finds its own connection by the
-// id the callback puts in the URL.
+// id the callback puts in the URL. Remove's confirmation says what goes and
+// what stays (F-033): an account with imported rows is kept as a manual one.
 
 /** Opens /connections and waits for hydration (Connect is disabled while pending). */
 async function openConnections(page: Page) {
@@ -134,4 +142,99 @@ test("archives a connection, then removes it", async ({ page }) => {
     .getByRole("button", { name: "Confirm remove", exact: true })
     .click();
   await expect(card).toHaveCount(0);
+});
+
+test("the Remove confirmation lists what stays, and the account with imported rows is kept", async ({
+  page,
+}) => {
+  const tag = randomUUID().slice(0, 8);
+  const kept = `E2E Kept ${tag}`;
+  const gone = `E2E Gone ${tag}`;
+  const db = openTestDatabase();
+  let connectionId: string;
+  try {
+    const [institution] = await db
+      .insert(institutions)
+      .values({
+        name: "Nordea",
+        country: "FI",
+        provider: "fake",
+        providerRef: "Nordea",
+      })
+      .onConflictDoUpdate({
+        target: [institutions.provider, institutions.providerRef],
+        set: { updatedAt: new Date() },
+      })
+      .returning();
+    // Archived, so no sync or consent banner touches it meanwhile.
+    const [connection] = await db
+      .insert(connections)
+      .values({
+        institutionId: institution.id,
+        provider: "fake",
+        sessionRef: null,
+        status: "archived",
+      })
+      .returning();
+    connectionId = connection.id;
+    const iban = () =>
+      `FI99${Array.from({ length: 14 }, () => randomInt(10)).join("")}`;
+    const [keptAccount, goneAccount] = await db
+      .insert(accounts)
+      .values(
+        [kept, gone].map((name) => ({
+          connectionId: connection.id,
+          institutionId: institution.id,
+          providerAccountRef: `e2e-${name}`,
+          iban: iban(),
+          name,
+          type: "checking" as const,
+          currency: "EUR",
+          archived: true,
+        })),
+      )
+      .returning();
+    // Long ago and unique, so no other spec's sums or lists see them.
+    const row = (accountId: string, key: string, source: "bank" | "csv") => ({
+      accountId,
+      providerTxnRef: source === "bank" ? `${accountId}:${key}` : null,
+      dedupeHash: `${accountId}:${key}`,
+      bookingDate: "2019-02-01",
+      amountMinor: -1_234,
+      currency: "EUR",
+      counterparty: `E2E Remove ${tag}`,
+      source,
+    });
+    await db
+      .insert(transactions)
+      .values([
+        row(keptAccount.id, "a", "bank"),
+        row(keptAccount.id, "b", "bank"),
+        row(keptAccount.id, "c", "csv"),
+        row(goneAccount.id, "d", "bank"),
+      ]);
+  } finally {
+    await db.$client.end();
+  }
+
+  await openConnections(page);
+  const card = page.locator(`[data-connection-id="${connectionId}"]`);
+  await card.getByRole("button", { name: "Remove", exact: true }).click();
+  const summary = card.getByTestId("removal-summary");
+  await expect(summary).toContainText("Remove Nordea?");
+  await expect(summary).toContainText(
+    "Deleted: 1 account, 3 bank transactions and the balances.",
+  );
+  await expect(summary).toContainText(
+    `Kept as a manual account: ${kept}, with 1 imported transaction.`,
+  );
+
+  await card
+    .getByRole("button", { name: "Confirm remove", exact: true })
+    .click();
+  await expect(card).toHaveCount(0);
+
+  await page.goto("/settings/accounts");
+  await expect(page.getByRole("main")).toContainText(kept);
+  await expect(page.getByRole("main")).not.toContainText(gone);
 });

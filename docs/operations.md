@@ -1,7 +1,7 @@
 # Operations
 
-Running the stack day to day: backups, restoring one, and the notifications the worker
-sends (FIN-024). Starting the stack is in the [README](../README.md#quick-start); how the
+Running the stack day to day: backups, restoring one, the notifications the worker
+sends (FIN-024), and what ending or renewing a bank connection keeps (FIN-033). Starting the stack is in the [README](../README.md#quick-start); how the
 pieces fit is in [architecture.md](architecture.md#backups-and-notifications).
 
 ## Backups
@@ -134,3 +134,24 @@ failure.
 
 To test the setup, publish to the topic yourself:
 `curl -d "test" "$NTFY_URL"`.
+
+## Ending and renewing bank connections
+
+Connections offers three ways to deal with a bank connection. What each keeps:
+
+| Action  | The consent at the bank | Accounts                                                                       | Bank-synced transactions and balances | CSV-imported transactions |
+| ------- | ----------------------- | ------------------------------------------------------------------------------ | ------------------------------------- | ------------------------- |
+| Renew   | Replaced by a new one   | Kept, the same accounts continue                                               | Kept, the gap is fetched              | Kept                      |
+| Archive | Ended                   | Kept, archived (no longer synced)                                              | Kept, still in reports                | Kept                      |
+| Remove  | Ended                   | Deleted, except an account with imported rows, which stays as a manual account | Deleted                               | Kept                      |
+
+The Remove confirmation lists what is deleted and what stays before anything changes.
+An archived connection can still be removed later, with the same rules.
+
+Prefer **Renew** when a consent ends: it keeps the connection. Connecting the same bank
+anew (instead of renewing) also works without counting anything twice: an account the
+app already holds with the same IBAN, as an archived account or a manual one (a CSV
+import, Settings → Accounts, or what Remove kept), is attached to the new connection with
+its name, type and history, and the first sync matches the bank's rows to the stored
+ones, imported rows included. Only an account without an IBAN in the bank data (such as
+the S-Pankki card) is added again; archive or remove its old account yourself.

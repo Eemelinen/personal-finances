@@ -1,7 +1,13 @@
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { decryptSecret, DecryptionError } from "@/server/crypto";
 import { getDb, type Db } from "@/server/db/client";
-import { accounts, connections, institutions } from "@/server/db/schema";
+import {
+  accounts,
+  balanceSnapshots,
+  connections,
+  institutions,
+  transactions,
+} from "@/server/db/schema";
 import { ProviderAuthError } from "@/server/providers/errors";
 import {
   asBankConnector,
@@ -17,7 +23,10 @@ import { BankConnectionError } from "./authorization";
 // an account and choosing checking or savings, and ending a connection.
 //
 // - Remove revokes the session at the provider, then deletes the connection
-//   and its accounts with all their history (transactions, balances).
+//   and its accounts with all their history (transactions, balances). An
+//   account with CSV-imported rows stays as a manual account with only
+//   those rows (F-033); `summarizeRemovals()` counts both for the
+//   confirmation.
 // - Archive revokes the session too (an archived connection is never synced
 //   again), forgets it and archives the accounts; their history stays in
 //   reports and the transaction list.
@@ -214,9 +223,68 @@ async function institutionName(db: Db, institutionId: string) {
   return row?.name ?? "bank";
 }
 
+/** What `removeConnection()` would delete and keep (F-033). */
+export interface RemovalSummary {
+  /** Accounts deleted with their transactions and balances. */
+  deletedAccounts: number;
+  /** Accounts kept as manual accounts with their imported rows, by name. */
+  keptAccounts: string[];
+  /** Transactions from the bank sync (deleted). */
+  bankTransactions: number;
+  /** Transactions from CSV imports (kept). */
+  importedTransactions: number;
+}
+
+const NO_REMOVAL: Readonly<RemovalSummary> = {
+  deletedAccounts: 0,
+  keptAccounts: [],
+  bankTransactions: 0,
+  importedTransactions: 0,
+};
+
+/** Per connection: what removing it would delete and keep. Read-only. */
+export async function summarizeRemovals(
+  connectionIds: readonly string[],
+  options: { db?: Db } = {},
+): Promise<Map<string, RemovalSummary>> {
+  const db = options.db ?? getDb();
+  const summaries = new Map<string, RemovalSummary>(
+    connectionIds.map((id) => [id, { ...NO_REMOVAL, keptAccounts: [] }]),
+  );
+  if (connectionIds.length === 0) return summaries;
+  const rows = await db
+    .select({
+      connectionId: accounts.connectionId,
+      name: accounts.name,
+      bank: sql<number>`count(${transactions.id}) filter (where ${transactions.source} = 'bank')`.mapWith(
+        Number,
+      ),
+      imported:
+        sql<number>`count(${transactions.id}) filter (where ${transactions.source} = 'csv')`.mapWith(
+          Number,
+        ),
+    })
+    .from(accounts)
+    .leftJoin(transactions, eq(transactions.accountId, accounts.id))
+    .where(inArray(accounts.connectionId, [...connectionIds]))
+    .groupBy(accounts.id)
+    .orderBy(asc(accounts.name), asc(accounts.id));
+  for (const row of rows) {
+    const summary = summaries.get(row.connectionId!);
+    if (!summary) continue;
+    summary.bankTransactions += row.bank;
+    summary.importedTransactions += row.imported;
+    if (row.imported > 0) summary.keptAccounts.push(row.name);
+    else summary.deletedAccounts++;
+  }
+  return summaries;
+}
+
 /**
  * Revokes the session, then deletes the connection and its accounts with
- * their transactions and balances.
+ * their transactions and balances. An account holding CSV-imported rows
+ * (F-033) is kept as a manual account with only those rows: the import is
+ * history the bank no longer gives, and nothing else holds it.
  */
 export async function removeConnection(
   connectionId: string,
@@ -231,6 +299,40 @@ export async function removeConnection(
   );
   await db.transaction(async (tx) => {
     await lockConnectionSync(tx, connectionId);
+    const kept = (
+      await tx
+        .selectDistinct({ id: accounts.id })
+        .from(accounts)
+        .innerJoin(transactions, eq(transactions.accountId, accounts.id))
+        .where(
+          and(
+            eq(accounts.connectionId, connectionId),
+            eq(transactions.source, "csv"),
+          ),
+        )
+    ).map(({ id }) => id);
+    if (kept.length > 0) {
+      await tx
+        .delete(transactions)
+        .where(
+          and(
+            inArray(transactions.accountId, kept),
+            eq(transactions.source, "bank"),
+          ),
+        );
+      await tx
+        .delete(balanceSnapshots)
+        .where(inArray(balanceSnapshots.accountId, kept));
+      await tx
+        .update(accounts)
+        .set({
+          connectionId: null,
+          providerAccountRef: null,
+          archived: false,
+          transactionsSyncedAt: null,
+        })
+        .where(inArray(accounts.id, kept));
+    }
     // `accounts.connection_id` is `ON DELETE SET NULL`, so the accounts go
     // first; their transactions and balances cascade.
     await tx.delete(accounts).where(eq(accounts.connectionId, connectionId));
