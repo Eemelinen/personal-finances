@@ -57,7 +57,7 @@ Repository-local session log. Read it at clock-in, update it at clock-out (AGENT
 - Goal: F-025 — the real Nordea Gold card failed every transaction sync (`400 ASPSP_ERROR` for a `date_from` 540 days back).
 - Completed: `HISTORY_DAYS_BY_ASPSP` no longer applies to card accounts (`cash_account_type` `CARD`), remembered from `completeAuthorization()` / `listAccounts()` or looked up once per account and process; two new provider tests, the two Nordea backfill tests expect the details lookup. Docs: D-028, FIN-025, architecture (Enable Banking), FIN-013 Findings (first real use: https-only redirect, key permissions, Nordea connected, card history).
 - Choices: no retry of a generic `ASPSP_ERROR` with a shorter range (a checking account's failed backfill would silently become 7 days); cards, not Nordea alone, because the S-Pankki card was already asked without `date_from`.
-- Verification run: `pnpm harness:verify F-025` (below). Mutation check: without the card condition both new tests fail.
+- Verification run: `pnpm harness:verify F-025` on `649c89a` → L1 pass (605 unit tests). Mutation check: without the card condition both new tests fail.
 - Known risk: only one real card seen; the card serves ~3½ months, older purchases need a CSV import.
 - Next best step: human: continue F-013 (Sync now on the Nordea card after the images are rebuilt, then S-Pankki).
 
