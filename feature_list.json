@@ -182,7 +182,7 @@
       "area": "banking",
       "title": "Connect-bank flow",
       "user_visible_behavior": "`/connections` lists connections (bank, status, consent expiry, last sync) and connects Nordea or S-Pankki: the app redirects to the bank with a server-stored state, `/connections/callback` validates the state, creates the session and stores the encrypted session id, institution and accounts, and I can name accounts and mark them checking or savings. A cancelled or invalid callback shows an error; a connection can be removed (revoked at the provider) or archived with its history.",
-      "status": "not_started",
+      "status": "in_progress",
       "depends_on": ["F-004", "F-006"],
       "ticket": "FIN-007",
       "spec": "docs/tickets/FIN-007-connect-bank-flow.md",

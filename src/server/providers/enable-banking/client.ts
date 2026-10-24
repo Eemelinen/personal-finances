@@ -1,7 +1,7 @@
 import { createPrivateKey, type KeyObject } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { SignJWT } from "jose";
-import type { z } from "zod";
+import { z } from "zod";
 import type { Env } from "@/server/env";
 import {
   parseRetryAfter,
@@ -196,6 +196,8 @@ export interface EnableBankingClient {
   ): Promise<{ url: string; authorizationId: string }>;
   createSession(code: string): Promise<CreatedSession>;
   getSession(sessionId: string): Promise<EnableBankingSession>;
+  /** Closes the session: the consent ends and its accounts are no longer readable. */
+  deleteSession(sessionId: string): Promise<void>;
   getAccountDetails(uid: string): Promise<EnableBankingAccount>;
   getBalances(uid: string): Promise<EnableBankingBalance[]>;
   getTransactions(
@@ -209,6 +211,8 @@ interface RequestOptions {
   query?: Record<string, string | undefined>;
   /** False for calls that must not repeat after a 5xx (`POST /sessions`). */
   retryUnavailable?: boolean;
+  /** True when a success may come without a JSON body (`DELETE`). */
+  allowEmpty?: boolean;
 }
 
 export function createEnableBankingClient(
@@ -285,10 +289,15 @@ export function createEnableBankingClient(
   }
 
   async function request<S extends z.ZodType>(
-    method: "GET" | "POST",
+    method: "GET" | "POST" | "DELETE",
     path: string,
     schema: S,
-    { body, query, retryUnavailable = true }: RequestOptions = {},
+    {
+      body,
+      query,
+      retryUnavailable = true,
+      allowEmpty = false,
+    }: RequestOptions = {},
   ): Promise<z.infer<S>> {
     const label = `${method} ${redactPath(path)}`;
     const params = new URLSearchParams();
@@ -328,7 +337,13 @@ export function createEnableBankingClient(
       if (response.ok) {
         let json: unknown;
         try {
-          json = await response.json();
+          const text = allowEmpty ? await response.text() : null;
+          json =
+            text === null
+              ? await response.json()
+              : text.trim()
+                ? JSON.parse(text)
+                : undefined;
         } catch (error) {
           throw new Error(`Enable Banking ${label} returned no JSON`, {
             cause: error,
@@ -406,6 +421,12 @@ export function createEnableBankingClient(
 
     getSession(sessionId) {
       return request("GET", sessionPath(sessionId), sessionResponseSchema);
+    },
+
+    async deleteSession(sessionId) {
+      await request("DELETE", sessionPath(sessionId), z.unknown(), {
+        allowEmpty: true,
+      });
     },
 
     getAccountDetails(uid) {

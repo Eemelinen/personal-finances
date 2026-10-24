@@ -121,3 +121,26 @@ export const balanceSnapshots = pgTable(
     ),
   ],
 );
+
+/**
+ * A bank authorisation the user has started but not finished (F-007): the
+ * `state` sent to the bank, as its SHA-256 (the state itself is never
+ * stored), and the bank it was sent to. The callback deletes the row it
+ * matches, so a state works once; rows past `expires_at` are refused and
+ * pruned when the next authorisation starts.
+ */
+export const bankAuthorizations = pgTable(
+  "bank_authorizations",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    /** Hex SHA-256 of the state. */
+    stateHash: text().notNull(),
+    provider: text().notNull(),
+    /** The bank's name at the provider (the ASPSP name, e.g. `Nordea`). */
+    aspspName: text().notNull(),
+    aspspCountry: char({ length: 2 }).notNull(),
+    expiresAt: timestamptz().notNull(),
+    ...timestamps,
+  },
+  (t) => [unique("bank_authorizations_state_hash_unique").on(t.stateHash)],
+);

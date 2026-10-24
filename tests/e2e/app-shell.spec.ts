@@ -9,16 +9,17 @@ const SECTIONS = [
   { href: "/settings", label: "Settings" },
 ] as const;
 
-// The dashboard has data by the time this spec runs (dashboard.spec.ts seeds
-// it first), Reports links to its reports, Settings links to category
-// management, and Transactions and Investments may already show what other
-// specs (running in parallel) imported; every other section is still a
-// placeholder.
+// The dashboard and Connections have data by the time this spec runs
+// (dashboard.spec.ts seeds accounts and connections first), Reports links to
+// its reports, Settings links to category management, and Transactions and
+// Investments may already show what other specs (running in parallel)
+// imported; every other section is still a placeholder.
 const WITH_DATA = new Set<string>([
   "/",
   "/transactions",
   "/reports",
   "/investments",
+  "/connections",
   "/settings",
 ]);
 

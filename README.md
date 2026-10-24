@@ -32,7 +32,7 @@ openssl rand -base64 32     # a second one as ENCRYPTION_KEY (keep it: it decryp
 
 Every page asks for that password at `/login` (one user, no accounts); the session lasts 30 days from the last visit.
 
-Bank sync (Nordea, S-Pankki) goes through an [Enable Banking](https://enablebanking.com/) application: put its RSA private key in `secrets/enable-banking.pem` and set `ENABLE_BANKING_APP_ID`, `ENABLE_BANKING_REDIRECT_URL` (as registered for the application) and `ENABLE_BANKING_ENV` (`sandbox` or `production`) in `.env`. Compose mounts `secrets/` read-only into the app and the worker. Without them the app runs, but bank connections fail. The connect flow itself comes with FIN-007.
+Bank sync (Nordea, S-Pankki) goes through an [Enable Banking](https://enablebanking.com/) application: put its RSA private key in `secrets/enable-banking.pem` and set `ENABLE_BANKING_APP_ID`, `ENABLE_BANKING_REDIRECT_URL` (as registered for the application) and `ENABLE_BANKING_ENV` (`sandbox` or `production`) in `.env`. Compose mounts `secrets/` read-only into the app and the worker. Without them the app runs, but bank connections fail. Connect a bank on `/connections` (FIN-007): the bank redirects back to `ENABLE_BANKING_REDIRECT_URL`, which must be `<app URL>/connections/callback`; the app also needs `ENCRYPTION_KEY` to store the session.
 
 Optional: a free [Twelve Data](https://twelvedata.com/) key as `PRICE_API_KEY` gives the worker daily closing prices for the holdings imported from Nordnet on `/investments`; without it holdings are valued at their last trade price (exchange rates come from the ECB either way).
 

@@ -43,6 +43,9 @@ services:
       APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Helsinki}
       AUTH_PASSWORD_HASH: ${AUTH_PASSWORD_HASH:?set AUTH_PASSWORD_HASH in .env (pnpm auth:hash)}
       SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env}
+      # Encrypts the bank session ids the connect flow stores (FIN-007).
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
+      BANK_PROVIDER: ${BANK_PROVIDER:-enable_banking}
       # Enable Banking (FIN-006); the key path is inside the container, where
       # ./secrets is mounted read-only at /app/secrets.
       ENABLE_BANKING_APP_ID: ${ENABLE_BANKING_APP_ID:-}
@@ -74,6 +77,7 @@ services:
       KRAKEN_API_SECRET: ${KRAKEN_API_SECRET:-}
       COINGECKO_API_KEY: ${COINGECKO_API_KEY:-}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
+      BANK_PROVIDER: ${BANK_PROVIDER:-enable_banking}
       # Enable Banking (FIN-006); the key path is inside the container, where
       # ./secrets is mounted read-only at /app/secrets.
       ENABLE_BANKING_APP_ID: ${ENABLE_BANKING_APP_ID:-}

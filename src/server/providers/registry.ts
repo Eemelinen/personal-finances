@@ -6,7 +6,13 @@ import {
 import { createEnableBankingProvider } from "./enable-banking/provider";
 import { createFakeProvider } from "./fake";
 import { createKrakenProvider } from "./kraken";
-import { isProviderId, type FinancialProvider, type ProviderId } from "./types";
+import {
+  isBankConnector,
+  isProviderId,
+  type BankConnectorProvider,
+  type FinancialProvider,
+  type ProviderId,
+} from "./types";
 
 // Maps the provider id stored in `provider` columns to its implementation.
 // Enable Banking (F-006) and Kraken (F-021) are always registered.
@@ -97,4 +103,25 @@ export function getBankProvider(
   providers: ProviderRegistry = getProviderRegistry(),
 ): FinancialProvider {
   return providers.get(env.BANK_PROVIDER);
+}
+
+/**
+ * The bank provider as a connector (F-007): `getBankProvider()` narrowed to
+ * the providers that connect through a redirect to the bank.
+ */
+export function getBankConnector(
+  env: ProviderEnv = getEnv(),
+  providers: ProviderRegistry = getProviderRegistry(),
+): BankConnectorProvider {
+  return asBankConnector(getBankProvider(env, providers));
+}
+
+/** `provider` as a connector; throws for one that cannot connect banks. */
+export function asBankConnector(
+  provider: FinancialProvider,
+): BankConnectorProvider {
+  if (!isBankConnector(provider)) {
+    throw new Error(`Provider ${provider.id} cannot connect banks`);
+  }
+  return provider;
 }
