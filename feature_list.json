@@ -364,7 +364,7 @@
       "area": "categorization",
       "title": "Transactions view and category management",
       "user_visible_behavior": "`/transactions` lists all transactions (date, account, counterparty or description, category, signed amount, pending badge) with filters kept in the URL (date range, accounts, category, text, income or expense, transfers), pagination that works with 10k+ rows and totals for the filter; I can change a category inline (marked manual), add a note, mark or unlink a transfer and create a rule from a transaction, optionally applying it to similar past ones. `/settings/categories` manages categories and rules.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-004", "F-014"],
       "ticket": "FIN-015",
       "spec": "docs/tickets/FIN-015-transactions-view.md",
@@ -373,9 +373,22 @@
         "L3: pnpm test:e2e tests/e2e/transactions.spec.ts (filters via the URL, inline category change persists, create rule from a transaction)",
         "L3: pnpm test:e2e tests/e2e/categories-settings.spec.ts (create, reorder and delete a rule)"
       ],
-      "evidence": [],
-      "attempts": 0,
-      "notes": "Replaces old FIN-015 plus the `/settings/categories` UI from old FIN-013."
+      "evidence": [
+        "2026-10-24 pnpm check → pass (commit 25a7fcf)",
+        "2026-10-24 pnpm test:e2e tests/e2e/transactions.spec.ts → pass (commit 25a7fcf, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/categories-settings.spec.ts → pass (commit 25a7fcf, Docker available)",
+        "2026-10-24 pnpm check → pass (commit f838029)",
+        "2026-10-24 pnpm test:e2e tests/e2e/transactions.spec.ts → pass (commit f838029, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/categories-settings.spec.ts → pass (commit f838029, Docker available)",
+        "2026-10-24 pnpm check → pass (commit 22ac1f1)",
+        "2026-10-24 pnpm test:e2e tests/e2e/transactions.spec.ts → pass (commit 22ac1f1, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/categories-settings.spec.ts → pass (commit 22ac1f1, Docker available)",
+        "2026-10-24 pnpm check → pass (commit c4095d2)",
+        "2026-10-24 pnpm test:e2e tests/e2e/transactions.spec.ts → pass (commit c4095d2, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/categories-settings.spec.ts → pass (commit c4095d2, Docker available)"
+      ],
+      "attempts": 2,
+      "notes": "Replaces old FIN-015 plus the `/settings/categories` UI from old FIN-013. Attempt 1 failed 2026-10-24: evaluator: Revise Attempt 2 failed 2026-10-24: evaluator: Revise"
     },
     {
       "id": "F-016",

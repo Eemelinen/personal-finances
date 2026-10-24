@@ -4,7 +4,7 @@ import {
   isApiPath,
   isHealthPath,
   isPublicPath,
-  isServerActionRequest,
+  mayReissueSession,
 } from "@/lib/auth/routes";
 
 describe("isPublicPath", () => {
@@ -62,11 +62,49 @@ describe("accessDecision", () => {
   });
 });
 
-describe("isServerActionRequest", () => {
-  it("matches only POSTs that carry the Next-Action header", () => {
-    const action = new Headers({ "Next-Action": "7f3a" });
-    expect(isServerActionRequest("POST", action)).toBe(true);
-    expect(isServerActionRequest("GET", action)).toBe(false);
-    expect(isServerActionRequest("POST", new Headers())).toBe(false);
+describe("mayReissueSession", () => {
+  const navigate = {
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Dest": "document",
+  };
+
+  it("allows a page load", () => {
+    expect(mayReissueSession("GET", new Headers(navigate))).toBe(true);
+    expect(mayReissueSession("HEAD", new Headers(navigate))).toBe(true);
+  });
+
+  it("refuses fetches from a page: prefetches, client navigations, actions", () => {
+    const fetchFromPage = new Headers({
+      "Sec-Fetch-Mode": "cors",
+      "Sec-Fetch-Dest": "empty",
+    });
+    expect(mayReissueSession("GET", fetchFromPage)).toBe(false);
+    expect(
+      mayReissueSession(
+        "POST",
+        new Headers({ "Sec-Fetch-Mode": "cors", "Next-Action": "7f3a" }),
+      ),
+    ).toBe(false);
+  });
+
+  it("refuses a form POST even as a navigation (an action without JavaScript)", () => {
+    expect(mayReissueSession("POST", new Headers(navigate))).toBe(false);
+  });
+
+  it("refuses speculative page loads", () => {
+    const purposes: Record<string, string>[] = [
+      { "Sec-Purpose": "prefetch" },
+      { "Sec-Purpose": "prefetch;prerender" },
+      { Purpose: "prefetch" },
+    ];
+    for (const purpose of purposes) {
+      expect(
+        mayReissueSession("GET", new Headers({ ...navigate, ...purpose })),
+      ).toBe(false);
+    }
+  });
+
+  it("refuses a request without Fetch Metadata", () => {
+    expect(mayReissueSession("GET", new Headers())).toBe(false);
   });
 });

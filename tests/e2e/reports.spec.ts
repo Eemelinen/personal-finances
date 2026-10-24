@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
+import { and, eq, isNull } from "drizzle-orm";
 import type { Db } from "@/server/db/client";
 import {
   accounts,
@@ -30,6 +31,8 @@ const eur = (text: string) => `${text.replace(/ /g, " ").replace("-", "−")} 
 
 test.beforeAll(async () => {
   db = openTestDatabase();
+  // The e2e server seeds the default categories, which include these (same
+  // kinds and colours), so an existing one is reused rather than duplicated.
   const category = async (
     name: string,
     kind: "expense" | "income" | "transfer",
@@ -39,8 +42,21 @@ test.beforeAll(async () => {
     const [row] = await db
       .insert(categories)
       .values({ name, kind, color, parentId })
-      .returning();
-    return row.id;
+      .onConflictDoNothing()
+      .returning({ id: categories.id });
+    if (row) return row.id;
+    const [existing] = await db
+      .select({ id: categories.id })
+      .from(categories)
+      .where(
+        and(
+          eq(categories.name, name),
+          parentId
+            ? eq(categories.parentId, parentId)
+            : isNull(categories.parentId),
+        ),
+      );
+    return existing.id;
   };
   const groceries = await category("Groceries", "expense", "#22c55e");
   const supermarkets = await category(

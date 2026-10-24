@@ -43,8 +43,12 @@ The app and the worker share the same code in `src/server`. The worker is not a 
 src/
   app/                 Next.js App Router: pages, layouts, route handlers (UI + HTTP)
     (app)/             Route group: every page inside the app shell (layout.tsx renders
-                       AppShell); Dashboard (page.tsx: overview, F-016), transactions/,
-                       reports/ (spending/, cash-flow/; F-017; balances/, F-018), connections/, settings/,
+                       AppShell); Dashboard (page.tsx: overview, F-016),
+                       transactions/ (list, URL filters, inline category, details sheet,
+                       edit Server Actions; F-015),
+                       reports/ (spending/, cash-flow/; F-017; balances/, F-018), connections/,
+                       settings/ (index) + settings/categories/ (categories, rules,
+                       re-apply; the shared rule form and actions; F-015),
                        import/ (CSV upload: page, preview/import Server Actions, form),
                        investments/ (holdings table, Nordnet import action and form; F-020;
                        manual crypto holding action and form, F-021)
@@ -66,6 +70,7 @@ src/
                        (performance-chart.tsx, a client component, F-022)
     investments/       The /investments holdings table (F-020; crypto, F-021)
     empty-state.tsx    Placeholder for pages without data yet
+    form-controls.tsx  Native select and textarea styled like the shadcn input
   lib/                 App helpers: cn() (utils.ts), the navigation items, fi-FI
                        money, change, percent, day, month and time formatting for
                        display (format.ts), report URLs and labels (reports.ts)
@@ -104,8 +109,14 @@ src/
     categorization/    Categorisation (F-014): rules.ts (rule matcher), transfers.ts
                        (own-transfer pairing), categorize.ts (the sync/import hook,
                        reapplyRules()), defaults.ts + seed.ts (default categories
-                       and Finnish merchant rules, seeded by migrate.ts)
-    queries/           Read models for the dashboard: balances.ts (balance on a day,
+                       and Finnish merchant rules, seeded by migrate.ts); F-015:
+                       manage.ts (categories and rules: list, create, rename,
+                       delete, reorder), rule-input.ts (checks a rule the user
+                       enters), transaction-edits.ts (inline category, note,
+                       mark / unlink transfer)
+    queries/           Read models: transaction-filter.ts (the /transactions URL
+                       filters, pure), transactions.ts (filtered page + totals,
+                       F-015); for the dashboard: balances.ts (balance on a day,
                        daily series), dashboard.ts (overview: totals, accounts by bank,
                        connection health; F-016, holdings in net worth F-020), reports.ts (spending, cash flow and
                        the month tiles; F-017), balance-history.ts (daily balances and
@@ -145,7 +156,10 @@ tests/
                        (dashboard.spec.ts, then reports.spec.ts, run as their own
                        projects before the others);
                        the run fails if the app server logs an error line
-                       (support/server-errors.ts), even when every test passed
+                       (support/server-errors.ts), even when every test passed; the
+                       server seeds the default categories and rules like db:migrate
+                       (no accounts); support/fixtures.ts holds rows a spec seeds (a
+                       pending transaction in its own account)
   fixtures/            Synthetic or anonymised fixtures only, never real data
                        (csv/: synthetic Nordea, S-Pankki and generic exports;
                        nordnet/: a synthetic UTF-16 Nordnet transaction export;
@@ -326,7 +340,18 @@ Providers return **normalized** DTOs whose fields mirror the table columns: amou
 - **Rules** (`rules.ts`, pure): a rule matches `counterparty` or `description` with `contains` / `equals` (case-insensitive, whitespace collapsed) or `regex` (JavaScript, `i` flag; an invalid pattern never matches), optionally only `debit`s or `credit`s and an inclusive range on the absolute amount (`amount_min_minor`, `amount_max_minor`). Rules run by `priority` (lower first), then creation time, then id; the first match wins.
 - **Applying**: transactions with `category_source = 'manual'` are never touched. Transactions in a transfer group keep Transfers. Every other one in scope gets its first matching rule's category (`rule`), or no category and `none` when nothing matches (so a changed or deleted rule also un-categorises on re-apply). Uncategorized is a category for manual picks and reports, not something the engine assigns.
 - **Transfers** (`transfers.ts`, pure; `categorize.ts` loads the candidates): booked, non-manual transactions in no group (or the only member of one) are paired when a debit and a credit of the same absolute amount and currency sit on two different own accounts at most 3 days apart. A transaction whose counterparty or description contains another own account's IBAN (spaces and case ignored) is a transfer to that account: it pairs only with a leg there, and is a one-sided transfer (its own group) until that leg shows up, which then joins the group. Without an IBAN, a leg that a rule put in any category other than Transfers never pairs, so a grocery purchase does not pair with an equal payment from a friend. Pairs closest in days are taken first. Both legs get one `transfer_group_id`, the top-level Transfers category (created if missing) and source `rule`; reports leave kind `transfer` out of spending and income. Pending transactions are not paired until booked.
-- `reapplyRules()` runs both steps over all transactions in one database transaction and returns how many changed category and how many were linked; existing transfer groups are kept (unlinking is F-015's job).
+- `reapplyRules()` runs both steps over all transactions in one database transaction and returns how many changed category and how many were linked; existing transfer groups are kept (unlinking is a user edit, below).
+
+## Transactions view and category management
+
+`/transactions` and `/settings/categories` (F-015, D-020) are Server Components that read through `src/server/queries/` and `src/server/categorization/manage.ts`, with client components for the forms and Server Actions (each calls `verifySession()` and `refresh()`) for every change.
+
+- **Filters** are only in the URL: `from`, `to` (booking days), `account` (repeated), `category` (an id, its subcategories included, or `none`), `q` (counterparty, description or note), `type` (`income` / `expense`), `transfers` (`exclude` / `only`) and `page`. `transaction-filter.ts` parses them (invalid values are ignored) and writes them back (`transactionsHref()`); the filter form navigates to the URL of the fields that are set.
+- **Pages** of 50 rows, LIMIT/OFFSET ordered by booking day, creation time and id; the totals (count, income, expenses, net per currency) are one aggregate over the whole filter. A page past the end shows the last one.
+- **Edits** (`transaction-edits.ts`) are `manual`, so the engine never undoes them: the inline category; "Automatic (rules)" hands a transaction back to the rules (a transfer leg gets Transfers); a note; "Mark as transfer" makes a one-sided transfer (own group, Transfers); "Unlink transfer" takes every leg out of its group with its rule category (or none).
+- **Rules**: a new rule runs before all others (priority = lowest − 10); "apply to similar past ones" is `reapplyRules()`. Moving a rule places it before or after another (the settings page can list one category's rules) and renumbers all rules 10, 20, …; creating and moving take an advisory lock. Regex patterns are compiled before saving (`rule-input.ts`).
+- **Categories**: two levels, a subcategory has its parent's kind; deleting one deletes its subcategories and their rules and returns its transactions to no category (`none`; transfer legs get Transfers). The top-level Transfers category cannot be renamed or deleted.
+- **Concurrency**: categorisation runs under one transaction-scoped advisory lock (`lockCategorization()` in `categorize.ts`), which the sync takes at the start of each account's write transaction and every user edit of a category or transfer group takes first; the engine's updates re-check that a row is not `manual`, so a concurrent user edit wins.
 
 ## Dashboard
 
@@ -371,7 +396,7 @@ F-022 (D-019) values brokerage and crypto accounts per day and adds `/reports/al
 
 ## Security
 
-- Single-user login protects every page and route except `/login` and `/api/health` (FIN-004, D-007), even though the app runs locally. `AUTH_PASSWORD_HASH` holds an argon2id hash of the one password (`pnpm auth:hash`). A login sets `pf_session`: an iron-session seal (`SESSION_SECRET`) of the issue time, `httpOnly`, `sameSite=lax`, `secure` in production, valid 30 days and re-issued by the proxy once a day (not on Server Action calls, which may change the cookie themselves: logout deletes it), so it expires 30 days after the last visit. Sessions are stateless: logout deletes the cookie, rotating `SESSION_SECRET` signs out every browser. After 5 consecutive wrong passwords each attempt waits 1 s, 2 s, 4 s, … (at most 15 min) after the last failure; the counter is in memory and global, so a persistent attacker who can reach the app could keep the owner locked out (accepted: the app is bound to `127.0.0.1`; a restart clears it). `/api/health` is answered before the session check, so it works even when the login secrets are missing.
+- Single-user login protects every page and route except `/login` and `/api/health` (FIN-004, D-007), even though the app runs locally. `AUTH_PASSWORD_HASH` holds an argon2id hash of the one password (`pnpm auth:hash`). A login sets `pf_session`: an iron-session seal (`SESSION_SECRET`) of the issue time, `httpOnly`, `sameSite=lax`, `secure` in production, valid 30 days and re-issued by the proxy once a day on a page load only (`mayReissueSession()`, D-021: a prefetch, client navigation or Server Action response could land after logout deleted the cookie and log the browser back in), so it expires 30 days after the last page load. Sessions are stateless: logout deletes the cookie, rotating `SESSION_SECRET` signs out every browser. After 5 consecutive wrong passwords each attempt waits 1 s, 2 s, 4 s, … (at most 15 min) after the last failure; the counter is in memory and global, so a persistent attacker who can reach the app could keep the owner locked out (accepted: the app is bound to `127.0.0.1`; a restart clears it). `/api/health` is answered before the session check, so it works even when the login secrets are missing.
 - `src/proxy.ts` only redirects optimistically. Server Components, Server Actions and Route Handlers that touch data call `verifySession()` (`src/lib/auth/session.ts`) themselves; a Server Action is a POST to its page and must never rely on the proxy matcher. `getSession()` awaits `io()` (`next/cache`) before it checks the expiry, because with Cache Components a clock read after `cookies()` still counts as prerendering in the runtime prefetch (`Date.now()` → logged `blocking-prerender-current-time` error); other request-time code that reads the clock needs the same.
 - The Enable Banking private key lives in `./secrets/` (gitignored) and is mounted read-only.
 - Session and consent identifiers are encrypted at rest with AES-256-GCM, using `ENCRYPTION_KEY` (32 random bytes, base64): `encryptSecret()` / `decryptSecret()` in `src/server/crypto.ts` write `v1:<iv>:<ciphertext>:<tag>` (base64url, fresh 12-byte IV, 16-byte tag, the version authenticated as additional data) and reject tampered values, the wrong key and non-canonical encodings with `DecryptionError`. Losing the key means reconnecting the banks; rotating it needs a re-encryption step (a future `v2` or key id, not built yet).

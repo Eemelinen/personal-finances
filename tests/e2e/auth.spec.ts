@@ -1,4 +1,10 @@
-import { expect, test, type BrowserContext } from "@playwright/test";
+import {
+  expect,
+  test,
+  type APIResponse,
+  type BrowserContext,
+} from "@playwright/test";
+import { LOGIN_PATH } from "@/lib/auth/routes";
 import { SESSION_COOKIE, sealSession } from "@/server/auth/session";
 import { E2E_PASSWORD, E2E_SESSION_SECRET } from "./support/credentials";
 
@@ -154,4 +160,64 @@ test("logout clears a day-old session instead of re-issuing it", async ({
   ).toBeUndefined();
   await page.goto("/");
   await expect(page).toHaveURL("/login");
+});
+
+/** The `pf_session` value a response sets, if any. */
+function setSessionCookie(response: APIResponse): string | undefined {
+  return response
+    .headersArray()
+    .find(
+      ({ name, value }) =>
+        name.toLowerCase() === "set-cookie" &&
+        value.startsWith(`${SESSION_COOKIE}=`),
+    )?.value;
+}
+
+// The race behind the test above, made deterministic: a request the page
+// sends in the background (a link prefetch, a client navigation) can still
+// be in flight when logout's response deletes the cookie, and a re-issued
+// cookie in its later response would log the browser back in. So only a
+// page load re-issues; every other request leaves the cookie alone.
+test("only a page load re-issues a day-old session, so no background response can outlive logout", async ({
+  request,
+}) => {
+  const seal = await sealSession(E2E_SESSION_SECRET, Date.now() - 2 * DAY_MS);
+  const cookie = `${SESSION_COOKIE}=${seal}`;
+  const document = {
+    "sec-fetch-mode": "navigate",
+    "sec-fetch-dest": "document",
+  };
+
+  const background: Record<string, string>[] = [
+    // The router's prefetch and client navigation: fetch() from the page.
+    {
+      "sec-fetch-mode": "cors",
+      "sec-fetch-dest": "empty",
+      rsc: "1",
+      "next-router-prefetch": "1",
+    },
+    { "sec-fetch-mode": "cors", "sec-fetch-dest": "empty", rsc: "1" },
+    // A speculative page load (prerender) the browser may make on its own.
+    { ...document, "sec-purpose": "prefetch;prerender" },
+  ];
+  for (const headers of background) {
+    const response = await request.get("/settings", {
+      headers: { cookie, ...headers },
+      maxRedirects: 0,
+    });
+    // The session was accepted: the page, or Next's redirect that adds the
+    // `_rsc` cache-busting parameter to an RSC request, never the login page.
+    expect(response.status(), JSON.stringify(headers)).toBeLessThan(400);
+    expect(response.headers().location ?? "").not.toContain(LOGIN_PATH);
+    expect(setSessionCookie(response), JSON.stringify(headers)).toBeUndefined();
+  }
+
+  const load = await request.get("/settings", {
+    headers: { cookie, ...document },
+    maxRedirects: 0,
+  });
+  expect(load.status()).toBe(200);
+  const reissued = setSessionCookie(load);
+  expect(reissued).toBeDefined();
+  expect(reissued).not.toContain(seal);
 });

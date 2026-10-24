@@ -10,10 +10,17 @@ const SECTIONS = [
 ] as const;
 
 // The dashboard has data by the time this spec runs (dashboard.spec.ts seeds
-// it first), Reports links to its reports and Investments may already show
-// what investments.spec.ts (running in parallel) imported; every other
-// section is still a placeholder.
-const WITH_DATA = new Set<string>(["/", "/reports", "/investments"]);
+// it first), Reports links to its reports, Settings links to category
+// management, and Transactions and Investments may already show what other
+// specs (running in parallel) imported; every other section is still a
+// placeholder.
+const WITH_DATA = new Set<string>([
+  "/",
+  "/transactions",
+  "/reports",
+  "/investments",
+  "/settings",
+]);
 
 async function expectSection(page: Page, label: string, href: string) {
   await expect(page).toHaveURL(href);

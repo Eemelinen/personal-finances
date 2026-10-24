@@ -124,7 +124,23 @@ async function loadScope(
   return rows;
 }
 
+/** Any constant; serialises categorisation (D-020). */
+const CATEGORIZE_LOCK = 0x46_14_c;
+
+/**
+ * Serialises categorisation for the rest of the transaction: two runs at
+ * once (a re-apply and an import, or two re-applies) would update
+ * overlapping rows in different orders and could deadlock, and could each
+ * link the same free leg. A writer that changes stored transactions before
+ * its hook runs (the sync) takes it first, so it never holds row locks a
+ * running re-apply waits for.
+ */
+export async function lockCategorization(tx: Tx): Promise<void> {
+  await tx.execute(sql`select pg_advisory_xact_lock(${CATEGORIZE_LOCK})`);
+}
+
 async function categorize(tx: Tx, scope: Scope): Promise<CategorizeSummary> {
+  await lockCategorization(tx);
   const recategorized = await applyRules(tx, scope);
   const transfers = await linkTransfers(tx, scope);
   return { recategorized, transfers };
@@ -181,7 +197,14 @@ async function applyRules(tx: Tx, scope: Scope): Promise<number> {
             ? { categoryId: null, categorySource: "none" }
             : { categoryId: key, categorySource: "rule" },
         )
-        .where(inArray(transactions.id, batch));
+        // Checked again: a manual edit may have committed since the read.
+        .where(
+          and(
+            inArray(transactions.id, batch),
+            ne(transactions.categorySource, "manual"),
+            isNull(transactions.transferGroupId),
+          ),
+        );
     }
     changed += ids.length;
   }
@@ -276,7 +299,12 @@ async function linkTransfers(tx: Tx, scope: Scope): Promise<number> {
     await tx
       .update(transactions)
       .set({ categoryId, categorySource: "rule", transferGroupId: groupId })
-      .where(inArray(transactions.id, ids));
+      .where(
+        and(
+          inArray(transactions.id, ids),
+          ne(transactions.categorySource, "manual"),
+        ),
+      );
   };
   let linked = 0;
   for (const pair of pairs) {
@@ -302,6 +330,13 @@ async function findTransfersCategory(tx: Tx): Promise<string | null> {
     .from(categories)
     .where(TRANSFERS_WHERE);
   return row?.id ?? null;
+}
+
+/** The top-level Transfers category's id; created when it is missing. */
+export async function transfersCategoryId(tx: Tx): Promise<string> {
+  return (
+    (await findTransfersCategory(tx)) ?? (await createTransfersCategory(tx))
+  );
 }
 
 /** Creates the top-level Transfers category (unseeded databases). */

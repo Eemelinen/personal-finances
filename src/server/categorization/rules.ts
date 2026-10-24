@@ -6,7 +6,7 @@
 // `contains` and `equals` compare case-insensitively after collapsing
 // whitespace; `regex` is a JavaScript regular expression with the `i` flag
 // on the raw text. A pattern that does not compile never matches (F-015
-// validates patterns when they are saved).
+// rejects such patterns when a rule is saved, `regexError()`).
 
 export type RuleMatchField = "counterparty" | "description";
 export type RuleMatchType = "contains" | "equals" | "regex";
@@ -44,16 +44,33 @@ export interface CompiledRule {
   test: (text: string) => boolean;
 }
 
-/** Orders the rules (priority, created, id) and compiles their patterns. */
+/** The order rules run in: priority, then creation time, then id. */
+export function compareRules(
+  a: Pick<CategoryRule, "id" | "priority" | "createdAt">,
+  b: Pick<CategoryRule, "id" | "priority" | "createdAt">,
+): number {
+  return (
+    a.priority - b.priority ||
+    a.createdAt.getTime() - b.createdAt.getTime() ||
+    a.id.localeCompare(b.id)
+  );
+}
+
+/** Orders the rules (`compareRules`) and compiles their patterns. */
 export function compileRules(rules: readonly CategoryRule[]): CompiledRule[] {
   return [...rules]
-    .sort(
-      (a, b) =>
-        a.priority - b.priority ||
-        a.createdAt.getTime() - b.createdAt.getTime() ||
-        a.id.localeCompare(b.id),
-    )
+    .sort(compareRules)
     .map((rule) => ({ rule, test: textTest(rule) }));
+}
+
+/** Why a regex rule pattern does not compile, or null when it does. */
+export function regexError(pattern: string): string | null {
+  try {
+    new RegExp(pattern, "i");
+    return null;
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error);
+  }
 }
 
 function textTest(rule: CategoryRule): (text: string) => boolean {
