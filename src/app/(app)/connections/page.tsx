@@ -147,6 +147,17 @@ async function ConnectionsSection({
         </p>
       )}
       <ConnectForm banks={SUPPORTED_BANKS.map((bank) => bank.name)} />
+      <p className="text-muted-foreground text-sm">
+        An own account that no connection shows, such as a savings account the
+        consent does not cover? Add it under{" "}
+        <Link
+          href="/settings/accounts"
+          className="text-foreground underline underline-offset-4"
+        >
+          Settings → Accounts
+        </Link>{" "}
+        so transfers to it are not counted as income or spending.
+      </p>
       {views.length === 0 ? (
         <EmptyState
           icon={Landmark}

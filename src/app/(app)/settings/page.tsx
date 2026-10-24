@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ChartPie, ChevronRight, Tags } from "lucide-react";
+import { ChartPie, ChevronRight, Landmark, Tags } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { REPORT_SETTINGS_PATH } from "@/lib/reports";
@@ -20,6 +20,13 @@ const SECTIONS = [
     description: "What the cash-flow report and the dashboard count as income.",
     icon: ChartPie,
   },
+  {
+    href: "/settings/accounts",
+    title: "Accounts",
+    description:
+      "Your own accounts that no bank connection shows, so transfers to them are not income or spending.",
+    icon: Landmark,
+  },
 ] as const;
 
 export default function SettingsPage() {
@@ -27,7 +34,7 @@ export default function SettingsPage() {
     <>
       <PageHeader
         title="Settings"
-        description="Categories, rules and app preferences."
+        description="Categories, rules, own accounts and app preferences."
       />
       <ul className="flex flex-col gap-3">
         {SECTIONS.map(({ href, title, description, icon: Icon }) => (

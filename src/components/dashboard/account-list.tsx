@@ -16,7 +16,7 @@ interface AccountListProps {
 }
 
 function lastSync(account: AccountSummary, timeZone: string): string {
-  if (account.manual) return "Manual account (CSV import)";
+  if (account.manual) return "Manual account";
   if (!account.lastSyncedAt) return "Not synced yet";
   return `Synced ${formatDateTime(account.lastSyncedAt, timeZone)}`;
 }

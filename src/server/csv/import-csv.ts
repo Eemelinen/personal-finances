@@ -175,11 +175,20 @@ const MANUAL_CURRENCY = "EUR";
 
 export type ManualAccountType = "checking" | "savings";
 
-export interface NewManualAccount {
+/**
+ * A manual account's institution: a CSV import's export format (provider
+ * `csv`), or the bank name the user typed under Settings → Accounts
+ * (provider `manual`, `provider_ref` `bank:<name>`, one institution row
+ * per name, F-029).
+ */
+export type ManualInstitution = { format: CsvFormat } | { institution: string };
+
+export type NewManualAccount = {
   name: string;
   type: ManualAccountType;
-  format: CsvFormat;
-}
+  /** Normalised; null or left out when not known (a CSV import). */
+  iban?: string | null;
+} & ManualInstitution;
 
 function checkName(name: string): string {
   const trimmed = name.trim();
@@ -187,10 +196,7 @@ function checkName(name: string): string {
   return trimmed;
 }
 
-/**
- * A manual account (no connection) for imports, under the `csv`
- * institution of the export's format, in EUR.
- */
+/** A manual account (no connection) in EUR. */
 export async function createManualAccount(
   input: NewManualAccount,
   options: { db?: Db } = {},
@@ -200,18 +206,30 @@ export async function createManualAccount(
   return db.transaction((tx) => insertManualAccount(tx, { ...input, name }));
 }
 
-async function insertManualAccount(
+function institutionKey(input: ManualInstitution) {
+  return "format" in input
+    ? {
+        name: MANUAL_INSTITUTIONS[input.format],
+        provider: "csv",
+        providerRef: input.format,
+      }
+    : {
+        name: input.institution,
+        provider: "manual",
+        // Prefixed: the crypto wallets' institution is `manual` / `manual`.
+        providerRef: `bank:${input.institution}`,
+      };
+}
+
+/** `createManualAccount()` inside the caller's transaction. */
+export async function insertManualAccount(
   tx: Tx,
   input: NewManualAccount,
 ): Promise<string> {
+  const key = institutionKey(input);
   await tx
     .insert(institutions)
-    .values({
-      name: MANUAL_INSTITUTIONS[input.format],
-      country: "FI",
-      provider: "csv",
-      providerRef: input.format,
-    })
+    .values({ ...key, country: "FI" })
     .onConflictDoNothing({
       target: [institutions.provider, institutions.providerRef],
     });
@@ -220,8 +238,8 @@ async function insertManualAccount(
     .from(institutions)
     .where(
       and(
-        eq(institutions.provider, "csv"),
-        eq(institutions.providerRef, input.format),
+        eq(institutions.provider, key.provider),
+        eq(institutions.providerRef, key.providerRef),
       ),
     );
   const [account] = await tx
@@ -230,6 +248,7 @@ async function insertManualAccount(
       institutionId: institution.id,
       type: input.type,
       name: input.name,
+      iban: input.iban ?? null,
       currency: MANUAL_CURRENCY,
     })
     .returning({ id: accounts.id });
