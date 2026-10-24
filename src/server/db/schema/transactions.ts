@@ -39,6 +39,8 @@ export const transactions = pgTable(
     amountMinor: amountMinor().notNull(),
     currency: currency().notNull(),
     counterparty: text(),
+    /** The counterparty's IBAN, normalised, when the bank gives it (F-028). */
+    counterpartyIban: text(),
     description: text(),
     status: transactionStatus().notNull().default("booked"),
     categoryId: uuid().references(() => categories.id, {

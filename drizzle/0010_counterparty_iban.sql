@@ -1,0 +1,1 @@
+ALTER TABLE "transactions" ADD COLUMN "counterparty_iban" text;

@@ -25,6 +25,7 @@ function leg(
     amountMinor,
     currency: "EUR",
     counterparty: null,
+    counterpartyIban: null,
     description: null,
     transferGroupId: null,
     eligible: true,
@@ -243,5 +244,81 @@ describe("transfers to an own IBAN", () => {
         accounts: ACCOUNTS,
       }),
     ).toEqual({ pairs: [], oneSided: [] });
+  });
+});
+
+describe("transfers by counterparty account (F-028)", () => {
+  const savingsIban = normalizeIban(SAVINGS.iban!);
+
+  it("pairs only with that account, whatever the texts and category", () => {
+    const result = detect([
+      leg("out", "nordea", "2026-03-16", -30_000, {
+        counterparty: "Säästötili",
+        counterpartyIban: savingsIban,
+        eligible: false,
+      }),
+      leg("decoy", "s-pankki", "2026-03-16", 30_000),
+      leg("in", "savings", "2026-03-18", 30_000),
+    ]);
+    expect(result).toEqual({
+      pairs: [{ ids: ["out", "in"], groupId: null }],
+      oneSided: [],
+    });
+  });
+
+  it("is a one-sided transfer when that account has no matching leg", () => {
+    expect(
+      detect([
+        leg("out", "nordea", "2026-03-16", -30_000, {
+          counterpartyIban: savingsIban,
+        }),
+        leg("elsewhere", "s-pankki", "2026-03-16", 30_000),
+      ]),
+    ).toEqual({ pairs: [], oneSided: ["out"] });
+  });
+
+  it("wins over an own IBAN in the texts", () => {
+    expect(
+      detect([
+        leg("out", "nordea", "2026-03-16", -30_000, {
+          counterpartyIban: savingsIban,
+          description: `Siirto ${SPANKKI.iban}`,
+        }),
+        leg("s-pankki", "s-pankki", "2026-03-16", 30_000),
+        leg("savings", "savings", "2026-03-17", 30_000),
+      ]),
+    ).toEqual({
+      pairs: [{ ids: ["out", "savings"], groupId: null }],
+      oneSided: [],
+    });
+  });
+
+  it("a credit from an own account is not a partner of a third account", () => {
+    expect(
+      detect([
+        leg("out", "nordea", "2026-03-16", -30_000),
+        leg("in", "savings", "2026-03-16", 30_000, {
+          counterpartyIban: normalizeIban(SPANKKI.iban!),
+        }),
+      ]),
+    ).toEqual({ pairs: [], oneSided: ["in"] });
+  });
+
+  it("falls back to the texts for a stranger's or the leg's own IBAN", () => {
+    expect(
+      detect([
+        leg("stranger", "nordea", "2026-03-16", -30_000, {
+          counterpartyIban: "FI2112345600000785X",
+          description: `Siirto ${SAVINGS.iban}`,
+        }),
+        leg("own", "s-pankki", "2026-03-20", -40_000, {
+          counterpartyIban: normalizeIban(SPANKKI.iban!),
+        }),
+        leg("plain", "nordea", "2026-03-25", -50_000, {
+          counterpartyIban: "DE89370400440532013000",
+          eligible: false,
+        }),
+      ]),
+    ).toEqual({ pairs: [], oneSided: ["stranger"] });
   });
 });

@@ -20,7 +20,10 @@ import {
   mapTransaction,
   toMinorUnits,
 } from "@/server/providers/enable-banking/provider";
-import type { EnableBankingTransaction } from "@/server/providers/enable-banking/schemas";
+import {
+  transactionSchema,
+  type EnableBankingTransaction,
+} from "@/server/providers/enable-banking/schemas";
 import {
   ProviderAuthError,
   ProviderRateLimitError,
@@ -799,6 +802,7 @@ describe("transaction mapping", () => {
       amountMinor: 1_032,
       currency: "EUR",
       counterparty: "Erik Esimerkki",
+      counterpartyIban: null,
       description: "Kiitos",
       status: "booked",
     });
@@ -820,6 +824,7 @@ describe("transaction mapping", () => {
       amountMinor: -1_000,
       currency: "EUR",
       counterparty: "Inpay A/S",
+      counterpartyIban: null,
       description: "wsg8ruhyu9",
       status: "booked",
     });
@@ -926,6 +931,125 @@ describe("transaction mapping", () => {
         TODAY,
       ),
     ).toMatchObject({ amountMinor: -1_250, counterparty: null });
+  });
+
+  describe("counterparty account (F-028)", () => {
+    const OTHER = "FI21 1234 5600 0007 85";
+    const OWN = "FI49 5000 9420 0287 30";
+    const account = (iban: string | null, other?: string) => ({
+      iban,
+      other: other ? { identification: other, scheme_name: "BBAN" } : null,
+    });
+
+    it("takes the creditor's account of a debit, not the debtor's (own) one", () => {
+      expect(
+        mapTransaction(
+          {
+            ...base,
+            creditor_account: account(OTHER),
+            debtor_account: account(OWN),
+          },
+          TODAY,
+        ),
+      ).toMatchObject({
+        amountMinor: -19,
+        counterparty: "Virtanen Liisa",
+        counterpartyIban: "FI2112345600000785",
+      });
+    });
+
+    it("takes the debtor's account of a credit, not the creditor's (own) one", () => {
+      expect(
+        mapTransaction(
+          {
+            ...nordeaRows[0],
+            creditor_account: account(OWN),
+            debtor_account: account("fi21 1234 5600 0007 85"),
+          },
+          TODAY,
+        ),
+      ).toMatchObject({
+        amountMinor: 1_032,
+        counterparty: "Erik Esimerkki",
+        counterpartyIban: "FI2112345600000785",
+      });
+    });
+
+    it("uses another identification only when it is an IBAN", () => {
+      const withOther = (other: string) =>
+        mapTransaction(
+          { ...base, creditor_account: account(null, other) },
+          TODAY,
+        )?.counterpartyIban;
+      expect(withOther(OTHER)).toBe("FI2112345600000785");
+      expect(withOther("1234")).toBeNull();
+      expect(withOther("123456-785")).toBeNull();
+      // The right shape with wrong check digits.
+      expect(withOther("FI22 1234 5600 0007 85")).toBeNull();
+    });
+
+    it("ignores the account on the own side: a Nordea card's CPAN", () => {
+      const card = rows("nordea/transactions-default").find(
+        (row) => row.debtor_account?.other?.scheme_name === "CPAN",
+      )!;
+      expect(card.credit_debit_indicator).toBe("DBIT");
+      expect(mapTransaction(card, TODAY)?.counterpartyIban).toBeNull();
+      expect(
+        mapTransaction({ ...card, credit_debit_indicator: "CRDT" }, TODAY)
+          ?.counterpartyIban,
+      ).toBeNull();
+    });
+
+    it("falls back to a description that is exactly an IBAN when there is no name", () => {
+      const transfer = {
+        ...base,
+        creditor: { name: null },
+        reference_number: null,
+        remittance_information: [OTHER],
+      };
+      expect(mapTransaction(transfer, TODAY)).toMatchObject({
+        counterparty: null,
+        counterpartyIban: "FI2112345600000785",
+        description: OTHER,
+      });
+      expect(
+        mapTransaction(
+          { ...transfer, remittance_information: [`Siirto ${OTHER}`] },
+          TODAY,
+        )?.counterpartyIban,
+      ).toBeNull();
+      expect(
+        mapTransaction(
+          { ...transfer, creditor: { name: "Virtanen Liisa" } },
+          TODAY,
+        )?.counterpartyIban,
+      ).toBeNull();
+    });
+
+    it("is null without an account, an indicator or an IBAN", () => {
+      expect(mapTransaction(base, TODAY)?.counterpartyIban).toBeNull();
+      expect(
+        mapTransaction(
+          {
+            ...base,
+            credit_debit_indicator: null,
+            creditor_account: account(OTHER),
+            debtor_account: account(OTHER),
+          },
+          TODAY,
+        )?.counterpartyIban,
+      ).toBeNull();
+    });
+
+    it("keeps creditor_account and debtor_account when parsing a response", () => {
+      const parsed = transactionSchema.parse({
+        ...base,
+        creditor_account: { ...account(OTHER), extra: 1 },
+        debtor_account: account(null, "1234"),
+      });
+      expect(parsed.creditor_account).toEqual(account(OTHER));
+      expect(parsed.debtor_account?.other?.identification).toBe("1234");
+    });
   });
 
   it("converts decimal strings to minor units of the currency", () => {

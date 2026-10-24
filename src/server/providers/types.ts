@@ -73,6 +73,8 @@ export interface ProviderTransaction {
   amountMinor: number;
   currency: CurrencyCode;
   counterparty: string | null;
+  /** The counterparty's IBAN, normalised (`parseIban()`), when known. */
+  counterpartyIban: string | null;
   description: string | null;
   status: "booked" | "pending";
 }

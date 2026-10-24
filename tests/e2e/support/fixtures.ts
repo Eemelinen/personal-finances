@@ -27,6 +27,7 @@ export async function seedPendingFixture(
       amountMinor: -1_234,
       currency: "EUR",
       counterparty: "Corner shop fixture",
+      counterpartyIban: "FI2112345600000785",
       status: "booked",
     },
     {

@@ -17,6 +17,12 @@ const accountIdentification = z.object({
   scheme_name: z.string().nullish(),
 });
 
+/** An account's numbers: the IBAN, else another scheme (a card's `CPAN`). */
+const accountReference = z.object({
+  iban: z.string().nullish(),
+  other: accountIdentification.nullish(),
+});
+
 export const aspspSchema = z.object({
   name: z.string(),
   country: z.string(),
@@ -40,12 +46,7 @@ export const authResponseSchema = z.object({
 
 export const accountSchema = z.object({
   uid: z.string(),
-  account_id: z
-    .object({
-      iban: z.string().nullish(),
-      other: accountIdentification.nullish(),
-    })
-    .nullish(),
+  account_id: accountReference.nullish(),
   name: z.string().nullish(),
   details: z.string().nullish(),
   product: z.string().nullish(),
@@ -95,7 +96,9 @@ export const transactionSchema = z.object({
   transaction_id: z.string().nullish(),
   transaction_amount: amount,
   creditor: party,
+  creditor_account: accountReference.nullish(),
   debtor: party,
+  debtor_account: accountReference.nullish(),
   bank_transaction_code: z
     .object({ description: z.string().nullish() })
     .nullish(),

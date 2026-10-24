@@ -115,6 +115,7 @@ function prepareRows(
       amountMinor: row.amountMinor,
       currency,
       counterparty: row.counterparty,
+      counterpartyIban: null,
       description: row.description,
       status: "booked",
     });

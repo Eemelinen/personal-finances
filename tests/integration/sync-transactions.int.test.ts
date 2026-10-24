@@ -22,6 +22,7 @@ import type {
   ProviderTransaction,
   TransactionRange,
 } from "@/server/providers/types";
+import { rereadConnectionHistory } from "@/server/sync/bank-sync";
 import { syncBalances } from "@/server/sync/sync-balances";
 import {
   ConnectionNotFoundError,
@@ -219,6 +220,7 @@ function asListed(row: typeof transactions.$inferSelect) {
     amountMinor: row.amountMinor,
     currency: row.currency,
     counterparty: row.counterparty,
+    counterpartyIban: row.counterpartyIban,
     description: row.description,
     status: row.status,
   };
@@ -384,6 +386,106 @@ describe("syncTransactions: idempotent re-run", () => {
   });
 });
 
+describe("rereadConnectionHistory (F-028)", () => {
+  it("re-reads the whole history and fills the counterparty IBAN on stored rows without inserting any", async () => {
+    const fake = controllableFake();
+    const connection = await connectionWithAccounts(fake);
+    const checking = await accountOf(connection.id, "fake-checking");
+    const savings = await accountOf(connection.id, "fake-savings");
+    const coffee: ProviderTransaction = {
+      ref: null,
+      bookingDate: "2025-01-02",
+      valueDate: null,
+      amountMinor: -350,
+      currency: "EUR",
+      counterparty: "Example Roastery",
+      counterpartyIban: null,
+      description: "Coffee",
+      status: "booked",
+    };
+    // Synced before the column existed: no IBANs, one row without a ref.
+    fake.state.rewrite = (account, txns) =>
+      account === "fake-checking" ? [...txns, coffee] : txns;
+    await syncTransactions(connection.id, fake.options());
+    fake.state.now = DAY_2;
+    await syncTransactions(connection.id, fake.options());
+    const before = await transactionsOf(checking.id);
+    const savingsBefore = await transactionsOf(savings.id);
+    expect(before.every((row) => row.counterpartyIban === null)).toBe(true);
+
+    // Now the bank names the accounts: the savings transfers and the roastery.
+    const ROASTERY_IBAN = "FI2112345600000785";
+    const SAVINGS_IBAN = "FI0000000000000002";
+    fake.state.rewrite = (account, txns) =>
+      account === "fake-checking"
+        ? [
+            ...txns.map((txn) =>
+              txn.counterparty === "Fake Savings"
+                ? { ...txn, counterpartyIban: SAVINGS_IBAN }
+                : txn,
+            ),
+            { ...coffee, counterpartyIban: ROASTERY_IBAN },
+          ]
+        : txns;
+    fake.state.calls = [];
+    fake.state.categorized = [];
+    const [result] = await rereadConnectionHistory(
+      connection.id,
+      fake.options(),
+    );
+
+    expect(result.status).toBe("succeeded");
+    // A backfill (no `from`) for every account, not the 7-day overlap.
+    expect(fake.state.calls.map((call) => [call.account, call.range])).toEqual([
+      ["fake-checking", {}],
+      ["fake-savings", {}],
+    ]);
+    const transfers = before.filter(
+      (row) => row.counterparty === "Fake Savings",
+    );
+    expect(transfers.length).toBeGreaterThan(1);
+    expect(transfers[0].bookingDate < "2025-06-01").toBe(true);
+    expect(
+      result.status === "succeeded" && result.transactions.counts,
+    ).toMatchObject({
+      inserted: 0,
+      removed: 0,
+      updated: transfers.length + 1,
+    });
+
+    const after = await transactionsOf(checking.id);
+    expect(after.map((row) => row.id).sort()).toEqual(
+      before.map((row) => row.id).sort(),
+    );
+    for (const row of after) {
+      const old = before.find((other) => other.id === row.id)!;
+      expect(row.dedupeHash).toBe(old.dedupeHash);
+      expect(row.providerTxnRef).toBe(old.providerTxnRef);
+      expect(row.counterpartyIban).toBe(
+        row.counterparty === "Fake Savings"
+          ? SAVINGS_IBAN
+          : row.counterparty === "Example Roastery"
+            ? ROASTERY_IBAN
+            : null,
+      );
+    }
+    expect(await transactionsOf(savings.id)).toEqual(savingsBefore);
+    // The changed rows went through categorisation (transfer detection).
+    expect(fake.state.categorized.flat().sort()).toEqual(
+      after
+        .filter((row) => row.counterpartyIban !== null)
+        .map((row) => row.id)
+        .sort(),
+    );
+    const synced = await accountOf(connection.id, "fake-checking");
+    expect(synced.transactionsSyncedAt).toEqual(DAY_2);
+
+    // Nothing left to change on the next sync.
+    const again = await syncTransactions(connection.id, fake.options());
+    expect(again.counts).toMatchObject({ inserted: 0, updated: 0, removed: 0 });
+  });
+});
+
 describe("syncTransactions: manual edits preserved", () => {
   it("never overwrites a manual category, a note or a transfer link", async () => {
     const fake = controllableFake();
@@ -445,6 +547,7 @@ describe("syncTransactions: pending transactions", () => {
       amountMinor: -4_321,
       currency: "EUR",
       counterparty: "Example Bookshop",
+      counterpartyIban: null,
       description: "Reserved",
       status: "pending",
       ...overrides,
@@ -512,6 +615,7 @@ describe("syncTransactions: pending transactions", () => {
       amountMinor: -20_000,
       currency: "EUR",
       counterparty: "Example Hotel",
+      counterpartyIban: null,
       description: "Deposit",
       status: "pending",
     };
@@ -552,6 +656,7 @@ describe("syncTransactions: pending transactions", () => {
       amountMinor: -350,
       currency: "EUR",
       counterparty: "Example Cafe",
+      counterpartyIban: null,
       description: "Coffee",
       status: "booked",
     };

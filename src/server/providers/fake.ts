@@ -210,6 +210,7 @@ function transactionsOn(
     amountMinor,
     currency: spec.currency,
     counterparty,
+    counterpartyIban: null,
     description,
     status: date === today ? "pending" : "booked",
   }));

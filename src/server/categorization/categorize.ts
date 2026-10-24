@@ -97,6 +97,7 @@ const CANDIDATE_COLUMNS = {
   amountMinor: transactions.amountMinor,
   currency: transactions.currency,
   counterparty: transactions.counterparty,
+  counterpartyIban: transactions.counterpartyIban,
   description: transactions.description,
   status: transactions.status,
   categoryId: transactions.categoryId,
@@ -253,6 +254,7 @@ function toCandidate(
     amountMinor: row.amountMinor,
     currency: row.currency,
     counterparty: row.counterparty,
+    counterpartyIban: row.counterpartyIban,
     description: row.description,
     transferGroupId: row.transferGroupId,
     // Any category a rule gave but Transfers speaks against a transfer

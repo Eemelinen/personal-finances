@@ -1,6 +1,6 @@
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { getDb } from "@/server/db/client";
-import { connections, institutions } from "@/server/db/schema";
+import { accounts, connections, institutions } from "@/server/db/schema";
 import { BANK_PROVIDER_IDS } from "@/server/providers/types";
 import {
   ConnectionNotFoundError,
@@ -265,6 +265,33 @@ export async function syncBankConnections(
     }
   }
   return results;
+}
+
+/**
+ * Re-read history (F-028): forgets when the connection's accounts last
+ * synced transactions, then syncs it, so each listing goes back as far as
+ * the bank allows and the merge rewrites the stored rows in place (matched
+ * by ref, else by hash: nothing is duplicated), filling columns added since
+ * they were first synced. Waits for a running sync of the connection first.
+ * A sync that fails leaves the accounts to be backfilled by the next one.
+ */
+export async function rereadConnectionHistory(
+  connectionId: string,
+  options: BankSyncOptions = {},
+): Promise<BankConnectionSyncResult[]> {
+  const db = options.db ?? getDb();
+  await db.transaction(async (tx) => {
+    await lockConnectionSync(tx, connectionId);
+    await tx
+      .update(accounts)
+      .set({ transactionsSyncedAt: null })
+      .where(eq(accounts.connectionId, connectionId));
+  });
+  return syncBankConnections({
+    ...options,
+    db,
+    connectionIds: [connectionId],
+  });
 }
 
 /** One line per connection for the worker's log, without ids or secrets. */

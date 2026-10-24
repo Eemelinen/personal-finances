@@ -41,6 +41,8 @@ export interface TransactionRow {
   amountMinor: number;
   currency: string;
   counterparty: string | null;
+  /** The counterparty's IBAN when the bank gave it (F-028). */
+  counterpartyIban: string | null;
   description: string | null;
   note: string | null;
   accountId: string;
@@ -168,6 +170,7 @@ export async function listTransactions(
             amountMinor: transactions.amountMinor,
             currency: transactions.currency,
             counterparty: transactions.counterparty,
+            counterpartyIban: transactions.counterpartyIban,
             description: transactions.description,
             note: transactions.note,
             accountId: transactions.accountId,
