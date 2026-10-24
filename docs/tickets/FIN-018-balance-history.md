@@ -17,3 +17,4 @@
 ## Notes
 
 - Replaces old FIN-019.
+- F-018 implementation (2026-10-24, D-015): pure ranges and series in `src/server/reports/balance-series.ts`, read model `getBalanceHistory()` in `src/server/queries/balance-history.ts`, page `src/app/(app)/reports/balances/page.tsx` (a Balances tab and a card on `/reports`), charts in `src/components/reports/balance-history-chart.tsx`; date helpers moved to `src/server/dates.ts`. Choices made without a human: `?range=3m|6m|1y|all` (default 3 months) ending today, a month range starting the day after the same day that many months ago; non-archived EUR accounts with at least one snapshot (CSV-only accounts have nothing to reconstruct from and are counted as omitted); estimates go back to the account's first transaction, subtracting booked and pending transactions including transfers; estimated days are dashed in the net-worth line, shaded in both charts and marked "(est.)" in the tooltip and table.

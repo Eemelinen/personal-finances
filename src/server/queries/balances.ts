@@ -1,6 +1,6 @@
 import type { IsoDate } from "@/server/providers/types";
 import { pickDisplayBalance } from "@/server/sync/balance-types";
-import { addDays } from "@/server/sync/transaction-merge";
+import { addDays } from "@/server/dates";
 
 // The pure part of the dashboard's balance read model (F-016): an account's
 // balance on a given day from its stored snapshots. `dashboard.ts` loads the

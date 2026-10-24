@@ -27,7 +27,7 @@ import {
   resolvePeriod,
   type Period,
 } from "@/server/reports/period";
-import { localDate } from "@/server/sync/transaction-merge";
+import { localDate } from "@/server/dates";
 
 export const metadata: Metadata = { title: "Spending" };
 
@@ -38,7 +38,7 @@ export default function SpendingPage({
     <>
       <PageHeader
         title="Reports"
-        description="Spending by category, income versus expenses and cash flow."
+        description="Spending by category, income versus expenses, cash flow and balance history."
       />
       <ReportTabs active={SPENDING_PATH} />
       <Suspense

@@ -15,7 +15,7 @@ import {
   SPARKLINE_DAYS,
 } from "@/server/queries/dashboard";
 import { syncBalances } from "@/server/sync/sync-balances";
-import { addDays } from "@/server/sync/transaction-merge";
+import { addDays } from "@/server/dates";
 import { startTestDatabase, type TestDatabase } from "./helpers/postgres";
 
 // getDashboardOverview() against a real Postgres 18: totals, the 30-day
