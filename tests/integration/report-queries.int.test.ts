@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
   accounts,
+  appSettings,
   categories,
   institutions,
   transactions,
@@ -15,12 +16,15 @@ import {
   UNCATEGORIZED_PARAM,
 } from "@/server/queries/reports";
 import { resolvePeriod } from "@/server/reports/period";
+import { getAppSettings, setAppSetting } from "@/server/settings";
 import { startTestDatabase, type TestDatabase } from "./helpers/postgres";
 
 // The report read models against a real Postgres 18: spending per category
 // and per month, the comparisons, top merchants, drill-down lists and cash
 // flow. Own transfers stay out, refunds net against their category, months
-// follow the Helsinki calendar. Each test starts from empty tables.
+// follow the Helsinki calendar. With the `uncategorizedCreditsAsIncome`
+// setting off (F-026), credits without an income category are other money
+// in. Each test starts from empty tables.
 
 const TIME_ZONE = "Europe/Helsinki";
 const NOW = new Date("2026-10-24T09:00:00Z");
@@ -68,7 +72,7 @@ async function category(
 
 beforeEach(async () => {
   await testDb.db.execute(
-    sql`TRUNCATE ${institutions}, ${accounts}, ${transactions}, ${categories} CASCADE`,
+    sql`TRUNCATE ${institutions}, ${accounts}, ${transactions}, ${categories}, ${appSettings} CASCADE`,
   );
   const [bank] = await testDb.db
     .insert(institutions)
@@ -501,6 +505,7 @@ describe("getCashFlowReport", () => {
       expensesMinor: 0,
       netMinor: 0,
       savingsRate: null,
+      otherInMinor: 0,
     });
   });
 
@@ -534,6 +539,7 @@ describe("getCashFlowReport", () => {
       expensesMinor: 12_000,
       netMinor: -12_000,
       savingsRate: null,
+      otherInMinor: 0,
     });
     const income = 300_500 + 300_000 + 5 * 280_000;
     const expenses = 11_900 + 10_000 + 5 * 6_000 + 12_000;
@@ -609,6 +615,137 @@ describe("getCashFlowReport", () => {
     expect(trend.map((m) => [m.month, m.values[cat.restaurants]])).toEqual([
       ["2026-10", 2_000],
       ["2026-11", 500],
+    ]);
+  });
+});
+
+describe("the uncategorizedCreditsAsIncome setting (F-026)", () => {
+  const cashFlow = (extra: { uncategorizedCreditsAsIncome?: boolean } = {}) =>
+    getCashFlowReport({
+      db: testDb.db,
+      now: NOW,
+      timeZone: TIME_ZONE,
+      ...extra,
+    });
+
+  it("is stored and read back, on without a row", async () => {
+    expect(await getAppSettings(testDb.db)).toEqual({
+      uncategorizedCreditsAsIncome: true,
+    });
+    await setAppSetting("uncategorizedCreditsAsIncome", false, testDb.db);
+    expect((await getAppSettings(testDb.db)).uncategorizedCreditsAsIncome).toBe(
+      false,
+    );
+    await setAppSetting("uncategorizedCreditsAsIncome", true, testDb.db);
+    expect((await getAppSettings(testDb.db)).uncategorizedCreditsAsIncome).toBe(
+      true,
+    );
+    const rows = await testDb.db.select().from(appSettings);
+    expect(rows).toHaveLength(1);
+  });
+
+  it("on, keeps today's totals: an uncategorised credit is income", async () => {
+    await seedYear();
+    const byDefault = await cashFlow();
+    await setAppSetting("uncategorizedCreditsAsIncome", true, testDb.db);
+    expect(await cashFlow()).toEqual(byDefault);
+    expect(byDefault.months.at(-1)).toMatchObject({
+      incomeMinor: 300_500,
+      expensesMinor: 11_900,
+      netMinor: 288_600,
+      otherInMinor: 0,
+    });
+    expect(byDefault.yearToDate.otherInMinor).toBe(0);
+  });
+
+  it("off, moves an uncategorised credit to other money in and keeps salary and refunds", async () => {
+    await seedYear();
+    // A credit straight in the top-level Income category stays income too.
+    await txn("2026-10-03", 10_000, { categoryId: cat.income });
+    await setAppSetting("uncategorizedCreditsAsIncome", false, testDb.db);
+
+    const report = await cashFlow();
+    const october = report.months.at(-1)!;
+    // Salary and Income; the uncategorised +500 is other money in; the
+    // supermarket refund still nets (11 900 as before), the uncategorised
+    // debit is still spending.
+    expect(october).toMatchObject({
+      month: "2026-10",
+      incomeMinor: 310_000,
+      expensesMinor: 11_900,
+      netMinor: 298_100,
+      otherInMinor: 500,
+    });
+    expect(october.savingsRate).toBeCloseTo(298_100 / 310_000, 10);
+    expect(report.months.at(-2)).toMatchObject({
+      month: "2026-09",
+      incomeMinor: 300_000,
+      otherInMinor: 0,
+    });
+    const income = 310_000 + 300_000 + 5 * 280_000;
+    const expenses = 11_900 + 10_000 + 5 * 6_000 + 12_000;
+    expect(report.yearToDate).toMatchObject({
+      incomeMinor: income,
+      expensesMinor: expenses,
+      netMinor: income - expenses,
+      otherInMinor: 500,
+    });
+
+    expect(
+      await getMonthCashFlow({ db: testDb.db, now: NOW, timeZone: TIME_ZONE }),
+    ).toMatchObject({ incomeMinor: 310_000, otherInMinor: 500 });
+
+    // The spending report does not depend on the setting.
+    const spending = await getSpendingReport({
+      db: testDb.db,
+      period: OCTOBER,
+    });
+    expect(spending.totalMinor).toBe(11_900);
+  });
+
+  it("counts a transaction in Uncategorized exactly like one without a category", async () => {
+    await txn("2026-10-04", 700, { categoryId: cat.uncategorized });
+    await txn("2026-10-05", -300, { categoryId: cat.uncategorized });
+    await txn("2026-10-06", 200, { counterparty: "Kaveri" });
+
+    const on = (await cashFlow()).months.at(-1)!;
+    expect(on).toMatchObject({
+      incomeMinor: 900,
+      expensesMinor: 300,
+      netMinor: 600,
+      otherInMinor: 0,
+    });
+
+    // The option overrides the stored setting.
+    await setAppSetting("uncategorizedCreditsAsIncome", false, testDb.db);
+    expect(
+      (await cashFlow({ uncategorizedCreditsAsIncome: true })).months.at(-1),
+    ).toEqual(on);
+    expect((await cashFlow()).months.at(-1)).toEqual({
+      month: "2026-10",
+      incomeMinor: 0,
+      expensesMinor: 300,
+      netMinor: -300,
+      savingsRate: null,
+      otherInMinor: 900,
+    });
+
+    // The credit in Uncategorized is no longer negative spending.
+    const spending = await getSpendingReport({
+      db: testDb.db,
+      period: OCTOBER,
+    });
+    expect(spending.totalMinor).toBe(300);
+    expect(spending.categories).toMatchObject([
+      { param: cat.uncategorized, amountMinor: 300 },
+    ]);
+    const drill = await getSpendingReport({
+      db: testDb.db,
+      period: OCTOBER,
+      category: UNCATEGORIZED_PARAM,
+    });
+    expect(drill.transactions?.rows.map((row) => row.amountMinor)).toEqual([
+      -300,
     ]);
   });
 });

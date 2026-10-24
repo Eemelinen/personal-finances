@@ -9,7 +9,11 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { verifySession } from "@/lib/auth/session";
 import { formatMoney, formatMonth, formatPercent } from "@/lib/format";
-import { CASH_FLOW_PATH } from "@/lib/reports";
+import {
+  CASH_FLOW_PATH,
+  OTHER_IN_LABEL,
+  REPORT_SETTINGS_PATH,
+} from "@/lib/reports";
 import { getEnv } from "@/server/env";
 import { getCashFlowReport, TREND_MONTHS } from "@/server/queries/reports";
 
@@ -58,11 +62,18 @@ async function CashFlow() {
   }
 
   const { currency, yearToDate: ytd, months } = report;
+  const showOtherIn = months.some((month) => month.otherInMinor !== 0);
   return (
     <div className="flex flex-col gap-6">
       <section aria-label={`Year to date ${ytd.year}`}>
         <h2 className="mb-3 font-medium">Year to date {ytd.year}</h2>
-        <div className="grid gap-4 sm:grid-cols-4">
+        <div
+          className={
+            ytd.otherInMinor !== 0
+              ? "grid gap-4 sm:grid-cols-3 lg:grid-cols-5"
+              : "grid gap-4 sm:grid-cols-4"
+          }
+        >
           <Total
             label="Income"
             value={formatMoney(ytd.incomeMinor, currency)}
@@ -73,7 +84,21 @@ async function CashFlow() {
           />
           <Total label="Net" value={formatMoney(ytd.netMinor, currency)} />
           <Total label="Savings rate" value={rate(ytd.savingsRate)} />
+          {ytd.otherInMinor !== 0 && (
+            <Total
+              label={OTHER_IN_LABEL}
+              value={formatMoney(ytd.otherInMinor, currency)}
+            />
+          )}
         </div>
+        {(ytd.otherInMinor !== 0 || showOtherIn) && (
+          <p className="text-muted-foreground mt-3 text-sm">
+            Credits without an income category are not counted as income.{" "}
+            <Link href={REPORT_SETTINGS_PATH} className="underline">
+              Change in Settings → Reports
+            </Link>
+          </p>
+        )}
       </section>
       <section
         aria-label="Income and expenses per month"
@@ -96,6 +121,11 @@ async function CashFlow() {
                 <th className="pb-2 text-right font-medium">Expenses</th>
                 <th className="pb-2 text-right font-medium">Net</th>
                 <th className="pb-2 text-right font-medium">Savings rate</th>
+                {showOtherIn && (
+                  <th className="pb-2 text-right font-medium">
+                    {OTHER_IN_LABEL}
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -120,6 +150,11 @@ async function CashFlow() {
                   <td className="py-2 pl-3 text-right whitespace-nowrap tabular-nums">
                     {rate(month.savingsRate)}
                   </td>
+                  {showOtherIn && (
+                    <td className="py-2 pl-3 text-right whitespace-nowrap tabular-nums">
+                      {formatMoney(month.otherInMinor, currency)}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

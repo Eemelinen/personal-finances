@@ -17,6 +17,7 @@ import { startTestDatabase, type TestDatabase } from "./helpers/postgres";
 
 const CORE_TABLES = [
   "accounts",
+  "app_settings",
   "assets",
   "balance_snapshots",
   "bank_authorizations",

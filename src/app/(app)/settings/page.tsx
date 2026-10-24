@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { ChevronRight, Tags } from "lucide-react";
+import { ChartPie, ChevronRight, Tags } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
+import { REPORT_SETTINGS_PATH } from "@/lib/reports";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -12,6 +13,12 @@ const SECTIONS = [
     description:
       "Spending and income categories, and the rules that categorise transactions.",
     icon: Tags,
+  },
+  {
+    href: REPORT_SETTINGS_PATH,
+    title: "Reports",
+    description: "What the cash-flow report and the dashboard count as income.",
+    icon: ChartPie,
   },
 ] as const;
 

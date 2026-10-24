@@ -16,6 +16,9 @@ import { E2E_AUTH_STATE } from "./tests/e2e/support/credentials";
  * accounts, then seeds accounts and balances, which later specs see too.
  * The `reports` project (tests/e2e/reports.spec.ts) runs next, alone, so
  * the report totals see only the transactions it seeds.
+ * The `settings-reports` project (tests/e2e/settings-reports.spec.ts) runs
+ * after it, alone, so the dashboard's income tile is exactly the reports'
+ * seed plus its own credit while it switches the income setting.
  * The `investments` project (tests/e2e/investments.spec.ts) runs after the
  * shared `chromium` one, so the balance history there never sees its
  * brokerage and crypto accounts (F-022 counts them in net worth), and
@@ -55,21 +58,34 @@ export default defineConfig({
       dependencies: ["setup", "dashboard"],
     },
     {
+      name: "settings-reports",
+      testMatch: "**/settings-reports.spec.ts",
+      use: { ...devices["Desktop Chrome"], storageState: E2E_AUTH_STATE },
+      dependencies: ["setup", "dashboard", "reports"],
+    },
+    {
       name: "chromium",
       testIgnore: [
         "**/dashboard.spec.ts",
         "**/reports.spec.ts",
+        "**/settings-reports.spec.ts",
         "**/investments.spec.ts",
         "**/allocation.spec.ts",
       ],
       use: { ...devices["Desktop Chrome"], storageState: E2E_AUTH_STATE },
-      dependencies: ["setup", "dashboard", "reports"],
+      dependencies: ["setup", "dashboard", "reports", "settings-reports"],
     },
     {
       name: "investments",
       testMatch: "**/investments.spec.ts",
       use: { ...devices["Desktop Chrome"], storageState: E2E_AUTH_STATE },
-      dependencies: ["setup", "dashboard", "reports", "chromium"],
+      dependencies: [
+        "setup",
+        "dashboard",
+        "reports",
+        "settings-reports",
+        "chromium",
+      ],
     },
     {
       name: "allocation",
@@ -79,6 +95,7 @@ export default defineConfig({
         "setup",
         "dashboard",
         "reports",
+        "settings-reports",
         "chromium",
         "investments",
       ],

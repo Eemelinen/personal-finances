@@ -14,6 +14,10 @@ export const SPENDING_PATH = "/reports/spending";
 export const CASH_FLOW_PATH = "/reports/cash-flow";
 export const BALANCES_PATH = "/reports/balances";
 export const ALLOCATION_PATH = "/reports/allocation";
+export const REPORT_SETTINGS_PATH = "/settings/reports";
+
+/** Credits that are not income while the setting says so (F-026). */
+export const OTHER_IN_LABEL = "Other money in (not income)";
 
 /** The balance history over `range` (F-018). */
 export function balancesHref(range: BalanceRangeId): string {

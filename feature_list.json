@@ -695,7 +695,7 @@
       "area": "reports",
       "title": "App settings and income only from income categories",
       "user_visible_behavior": "Settings → Reports has \"Count credits without a category as income\" (on by default, today's behaviour). Off, only credits in an income-kind category are income; other non-transfer credits that are not refunds show as \"Other money in (not income)\" on the cash-flow report and the dashboard. A transaction in the Uncategorized category counts exactly like one without a category. A small `app_settings` store backs the setting.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-017"],
       "ticket": "FIN-026",
       "spec": "docs/tickets/FIN-026-income-from-income-categories.md",
@@ -705,7 +705,12 @@
         "L2: pnpm test:integration tests/integration/report-queries.int.test.ts (setting on = today's totals; off: uncategorised credit is other-in, Income/Salary stays income, refunds net, Uncategorized like none)",
         "L3: pnpm test:e2e tests/e2e/settings-reports.spec.ts (toggle changes the dashboard income tile and shows Other money in)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (commit 00e8b91)",
+        "2026-10-24 pnpm test:unit tests/unit/settings/app-settings.test.ts → pass (commit 00e8b91)",
+        "2026-10-24 pnpm test:integration tests/integration/report-queries.int.test.ts → pass (commit 00e8b91, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/settings-reports.spec.ts → pass (commit 00e8b91, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Found with real data 2026-10-24: income was about eight times the salary (loan drawdown, own-account transfers, spouse contributions)."
     },

@@ -41,6 +41,8 @@ Optional: a **read-only** Kraken API key as `KRAKEN_API_KEY` / `KRAKEN_API_SECRE
 
 Net worth on the dashboard and under Reports → Balances counts the investments at each day's prices; Reports → Allocation breaks it down by asset class and by account and splits the investments' value into contributions and market gain. A Nordnet account's cash is worked out from its imported transactions, so import the export from the account's opening.
 
+Income on the dashboard and under Reports → Cash flow includes every incoming payment without a category by default. If loan drawdowns or transfers from your own accounts inflate it, turn off **Count credits without a category as income** under Settings → Reports: then only credits in an income category (for example Income › Salary through a rule) are income, and the rest are shown as "Other money in (not income)".
+
 Notes:
 
 - Postgres is published on host port **5434** (not 5432) to avoid clashing with other local projects. Change `POSTGRES_PORT` and `DATABASE_URL` in `.env` if needed.

@@ -5,3 +5,4 @@ export * from "./transactions";
 export * from "./sync";
 export * from "./investments";
 export * from "./ops";
+export * from "./settings";
