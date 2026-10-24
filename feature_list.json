@@ -412,7 +412,7 @@
       "area": "dashboard",
       "title": "Spending and cash-flow reports",
       "user_visible_behavior": "`/reports/spending` shows spending per category for a chosen period (chart with amounts and %, drill-down to subcategories and to the filtered transaction list), a 12-month stacked bar per category, comparison to the previous period and the 6-month average, and the top merchants with normalised names. `/reports/cash-flow` shows monthly income vs expenses with a net line, savings rate and year-to-date totals, and the dashboard gets this month's income, expenses and net. Transfers are excluded, refunds net against their category, and months are grouped in `APP_TIMEZONE` in SQL.",
-      "status": "in_progress",
+      "status": "passing",
       "depends_on": ["F-014", "F-016"],
       "ticket": "FIN-017",
       "spec": "docs/tickets/FIN-017-spending-and-cash-flow-reports.md",
@@ -422,7 +422,16 @@
         "L2: pnpm test:integration tests/integration/report-queries.int.test.ts (category and monthly aggregates, transfers excluded, refunds netted, Helsinki month boundaries)",
         "L3: pnpm test:e2e tests/e2e/reports.spec.ts (period switch, drill-down to transactions, cash-flow chart)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (commit 0aa7acd)",
+        "2026-10-24 pnpm test:unit tests/unit/reports/merchant-name.test.ts → pass (commit 0aa7acd)",
+        "2026-10-24 pnpm test:integration tests/integration/report-queries.int.test.ts → pass (commit 0aa7acd, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/reports.spec.ts → pass (commit 0aa7acd, Docker available)",
+        "2026-10-24 pnpm check → pass (working tree on 4eedf38)",
+        "2026-10-24 pnpm test:unit tests/unit/reports/merchant-name.test.ts → pass (working tree on 4eedf38)",
+        "2026-10-24 pnpm test:integration tests/integration/report-queries.int.test.ts → pass (working tree on 4eedf38, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/reports.spec.ts → pass (working tree on 4eedf38, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Replaces old FIN-017, FIN-018 and the top-merchants part of FIN-020. Recurring-payment detection moved to the backlog."
     },
