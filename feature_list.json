@@ -525,7 +525,7 @@
       "area": "investments",
       "title": "Kraken holdings and crypto prices",
       "user_visible_behavior": "`KrakenProvider` signs private REST calls (HMAC-SHA512 with a nonce) with a read-only key from `KRAKEN_API_KEY` / `KRAKEN_API_SECRET`, maps `BalanceEx` to holdings and `Ledgers` to investment transactions (deposits, withdrawals, trades, staking); manual holdings cover wallets without an API; CoinGecko prices are added to the price-update job; crypto appears on `/investments` and in net worth.",
-      "status": "in_progress",
+      "status": "passing",
       "depends_on": ["F-019"],
       "ticket": "FIN-021",
       "spec": "docs/tickets/FIN-021-kraken-and-crypto-prices.md",
@@ -535,7 +535,12 @@
         "L2: pnpm test:integration tests/integration/crypto-holdings.int.test.ts (holdings and prices stored; a manual holding is valued)",
         "L3: pnpm test:e2e tests/e2e/investments.spec.ts (a manual crypto holding saved through the form is valued and counted in net worth)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (commit 6cc271b)",
+        "2026-10-24 pnpm test:unit tests/unit/investments/kraken.test.ts → pass (commit 6cc271b)",
+        "2026-10-24 pnpm test:integration tests/integration/crypto-holdings.int.test.ts → pass (commit 6cc271b, Docker available)",
+        "2026-10-24 pnpm test:e2e tests/e2e/investments.spec.ts → pass (commit 6cc271b, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Replaces old FIN-024. See [research: Kraken](../api-access-research.md#3-kraken-crypto)."
     },
