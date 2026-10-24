@@ -19,6 +19,7 @@ const CORE_TABLES = [
   "accounts",
   "assets",
   "balance_snapshots",
+  "bank_authorizations",
   "categories",
   "category_rules",
   "connections",

@@ -11,14 +11,19 @@ import {
 import {
   createFakeProvider,
   FAKE_ACCOUNTS,
+  FAKE_AUTHORIZATION_CODES,
+  FAKE_BANK_PATH,
+  fakeAuthorizationCode,
   FAKE_RETRY_AFTER_MS,
   FAKE_SESSION_REFS,
   FAKE_TRANSACTION_PAGE_SIZE,
 } from "@/server/providers/fake";
 import { fetchAllTransactions } from "@/server/providers/paging";
 import {
+  asBankConnector,
   createProviderRegistry,
   defaultProviders,
+  getBankConnector,
   getBankProvider,
   UnknownProviderError,
 } from "@/server/providers/registry";
@@ -85,6 +90,19 @@ describe("provider registry", () => {
     expect(registry.has("kraken")).toBe(true);
     // Registered without ENABLE_BANKING_*: the configuration loads on use.
     expect(getBankProvider(env, registry).id).toBe("enable_banking");
+  });
+
+  it("returns the bank provider as a connector, and refuses one that cannot connect", () => {
+    for (const env of [
+      parseEnv({ DATABASE_URL }),
+      parseEnv({ DATABASE_URL, BANK_PROVIDER: "fake" }),
+    ]) {
+      const registry = createProviderRegistry(defaultProviders(env));
+      expect(getBankConnector(env, registry).id).toBe(env.BANK_PROVIDER);
+    }
+    expect(() => asBankConnector(stubProvider("csv"))).toThrow(
+      /csv cannot connect banks/,
+    );
   });
 
   it("rejects an unknown BANK_PROVIDER", () => {
@@ -392,4 +410,77 @@ describe("transaction paging", () => {
   function fake() {
     return createFakeProvider({ now: () => NOW });
   }
+});
+
+describe("fake bank authorisation", () => {
+  const provider = createFakeProvider();
+  const nordea = { name: "Nordea", country: "FI" };
+  const validUntil = new Date("2027-04-22T09:00:00.000Z");
+
+  it("lists Nordea and S-Pankki with a 180-day consent", async () => {
+    expect(await provider.listBanks("FI")).toEqual([
+      { name: "Nordea", country: "FI", maximumConsentSeconds: 15_552_000 },
+      { name: "S-Pankki", country: "FI", maximumConsentSeconds: 15_552_000 },
+    ]);
+    expect(await provider.listBanks("SE")).toEqual([]);
+  });
+
+  it("sends the user to the stand-in bank with the state and an approving code", async () => {
+    const { url } = await provider.startAuthorization({
+      aspsp: nordea,
+      state: "the-state",
+      validUntil,
+    });
+    const parsed = new URL(url, "http://app.test");
+
+    expect(parsed.pathname).toBe(FAKE_BANK_PATH);
+    expect(parsed.searchParams.get("state")).toBe("the-state");
+    expect(parsed.searchParams.get("bank")).toBe("Nordea");
+    expect(parsed.searchParams.get("code")).toBe(
+      fakeAuthorizationCode(nordea, validUntil),
+    );
+    await expect(
+      provider.startAuthorization({
+        aspsp: { name: "Other Bank", country: "FI" },
+        state: "s",
+        validUntil,
+      }),
+    ).rejects.toThrow(/Unknown fake bank/);
+  });
+
+  it("completes with the bank, the consent end and the fake accounts", async () => {
+    expect(
+      await provider.completeAuthorization(
+        fakeAuthorizationCode(nordea, validUntil),
+      ),
+    ).toEqual({
+      sessionRef: FAKE_SESSION_REFS.valid,
+      aspsp: nordea,
+      validUntil: validUntil.toISOString(),
+      accounts: FAKE_ACCOUNTS,
+    });
+  });
+
+  it("rejects unknown codes and can play an unavailable bank", async () => {
+    await expect(
+      provider.completeAuthorization("nonsense"),
+    ).rejects.toBeInstanceOf(ProviderAuthError);
+    await expect(
+      provider.completeAuthorization(
+        fakeAuthorizationCode({ name: "Other", country: "FI" }, validUntil),
+      ),
+    ).rejects.toBeInstanceOf(ProviderAuthError);
+    await expect(
+      provider.completeAuthorization(FAKE_AUTHORIZATION_CODES.unavailable),
+    ).rejects.toBeInstanceOf(ProviderUnavailableError);
+  });
+
+  it("revokes a valid session and reports an expired one", async () => {
+    await expect(
+      provider.revokeSession({ sessionRef: FAKE_SESSION_REFS.valid }),
+    ).resolves.toBeUndefined();
+    await expect(
+      provider.revokeSession({ sessionRef: FAKE_SESSION_REFS.expired }),
+    ).rejects.toBeInstanceOf(ProviderAuthError);
+  });
 });

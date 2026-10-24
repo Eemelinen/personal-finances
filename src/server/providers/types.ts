@@ -195,3 +195,70 @@ export interface FinancialProvider {
     range: TransactionRange,
   ): Promise<ProviderInvestmentHistory>;
 }
+
+/** A bank a connector can authorise against (F-007). */
+export interface ProviderBank {
+  /** The bank's name at the provider (the ASPSP name), e.g. `Nordea`. */
+  name: string;
+  /** ISO 3166 alpha-2. */
+  country: string;
+  /** The longest consent the bank grants, in seconds; null when unknown. */
+  maximumConsentSeconds: number | null;
+}
+
+export interface ProviderAspsp {
+  name: string;
+  country: string;
+}
+
+export interface StartAuthorizationRequest {
+  aspsp: ProviderAspsp;
+  /** Returned unchanged in the redirect, to tie it to this request. */
+  state: string;
+  /** When the consent ends; at most the bank's maximum consent. */
+  validUntil: Date;
+}
+
+/** What a finished authorisation gives: the session and its accounts. */
+export interface ProviderAuthorizedSession {
+  /** The session id: store it encrypted as `connections.session_ref`. */
+  sessionRef: string;
+  aspsp: ProviderAspsp;
+  /** When the consent ends (ISO timestamp). */
+  validUntil: string;
+  accounts: ProviderAccount[];
+}
+
+/**
+ * Bank providers that connect through a redirect to the bank (F-007): the
+ * user is sent to `startAuthorization()`'s URL and comes back to
+ * `/connections/callback` with the `state` and a `code` (or an `error`).
+ */
+export interface BankConnector {
+  listBanks(country: string): Promise<ProviderBank[]>;
+  /** The bank's authorisation URL to send the user to. */
+  startAuthorization(
+    request: StartAuthorizationRequest,
+  ): Promise<{ url: string }>;
+  /** Exchanges the redirect's `code` for a session and its accounts. */
+  completeAuthorization(code: string): Promise<ProviderAuthorizedSession>;
+  /**
+   * Ends the session at the provider, so the consent stops. A session that
+   * is already gone rejects with `ProviderAuthError`.
+   */
+  revokeSession(connection: ProviderConnection): Promise<void>;
+}
+
+export type BankConnectorProvider = FinancialProvider & BankConnector;
+
+export function isBankConnector(
+  provider: FinancialProvider,
+): provider is BankConnectorProvider {
+  const candidate = provider as Partial<BankConnector>;
+  return (
+    typeof candidate.listBanks === "function" &&
+    typeof candidate.startAuthorization === "function" &&
+    typeof candidate.completeAuthorization === "function" &&
+    typeof candidate.revokeSession === "function"
+  );
+}

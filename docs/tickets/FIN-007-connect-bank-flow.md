@@ -24,3 +24,4 @@
 
 - Replaces old FIN-007. Real banks are checked in F-013; here the e2e environment uses the fake provider.
 - The first sync after connecting is triggered by F-010.
+- Implemented in session 023 (D-024). Choices made without a human: the state lives one hour, hashed, in `bank_authorizations`, and is used up by any callback, a cancelled one too; the consent is the bank's maximum less 10 minutes; Archive revokes the consent as well (an archived connection is never synced again), and a session the provider no longer knows counts as revoked; the balance sync now keeps the user's account name and type; the fake provider plays the bank with a stand-in page `/connections/fake-bank` (404 without `BANK_PROVIDER=fake`). Reconnecting a bank adds a second connection (renewal is F-011).

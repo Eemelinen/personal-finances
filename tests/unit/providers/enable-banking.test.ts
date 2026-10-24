@@ -312,9 +312,10 @@ describe("authorisation", () => {
       "S-Pankki",
       "Mock ASPSP",
     ]);
-    expect(banks[0]).toMatchObject({
-      bic: "NDEAFIHH",
-      maximum_consent_validity: 15_552_000,
+    expect(banks[0]).toEqual({
+      name: "Nordea",
+      country: "FI",
+      maximumConsentSeconds: 15_552_000,
     });
   });
 
@@ -889,6 +890,31 @@ describe("error mapping", () => {
     });
     expect((error as Error).message).not.toContain(uid);
     expect(calls).toHaveLength(1);
+  });
+
+  it("revokes a session with DELETE /sessions/{id}, with or without a body", async () => {
+    const { fetchFn, calls } = scriptedFetch([
+      () => Response.json({ message: "OK" }),
+      () => new Response(null, { status: 204 }),
+    ]);
+    const { provider } = setup(fetchFn);
+
+    await provider.revokeSession(nordeaConnection);
+    await provider.revokeSession(spankkiConnection);
+
+    expect(calls).toEqual([
+      `DELETE /sessions/${nordea.session_id}`,
+      `DELETE /sessions/${spankki.session_id}`,
+    ]);
+  });
+
+  it("reports a session that is already closed as an auth error", async () => {
+    const { fetchFn } = scriptedFetch([() => errorBody(422, "CLOSED_SESSION")]);
+    const { provider } = setup(fetchFn);
+
+    await expect(
+      provider.revokeSession(nordeaConnection),
+    ).rejects.toBeInstanceOf(ProviderAuthError);
   });
 
   it("does not retry a wrong authorisation code", async () => {

@@ -5,10 +5,12 @@ import {
   ProviderUnavailableError,
 } from "./errors";
 import type {
-  FinancialProvider,
+  BankConnectorProvider,
   IsoDate,
   ProviderAccount,
   ProviderAccountRef,
+  ProviderAspsp,
+  ProviderBank,
   ProviderBalance,
   ProviderConnection,
   ProviderTransaction,
@@ -25,6 +27,11 @@ import type {
 // key is the offset), like a real bank's. The only input besides the
 // arguments is `now` (today's date, UTC), injectable for tests. All names and
 // IBANs are synthetic.
+//
+// It connects like Enable Banking (F-007): `startAuthorization()` sends the
+// user to the app's own stand-in bank page (`FAKE_BANK_PATH`), which approves
+// with a code that carries the bank and the consent end, or cancels with
+// `error=access_denied`. Every authorised session is `FAKE_SESSION_REFS.valid`.
 
 /** Session refs that make every call fail, for error-handling tests. */
 export const FAKE_SESSION_REFS = {
@@ -33,6 +40,64 @@ export const FAKE_SESSION_REFS = {
   rateLimited: "fake:rate-limited",
   unavailable: "fake:unavailable",
 } as const;
+
+/** The stand-in bank page `startAuthorization()` sends the user to. */
+export const FAKE_BANK_PATH = "/connections/fake-bank";
+
+/** The banks the fake can connect, with Enable Banking's consent maximum. */
+export const FAKE_BANKS: readonly ProviderBank[] = [
+  { name: "Nordea", country: "FI", maximumConsentSeconds: 15_552_000 },
+  { name: "S-Pankki", country: "FI", maximumConsentSeconds: 15_552_000 },
+];
+
+/** Authorisation codes that make `completeAuthorization()` fail. */
+export const FAKE_AUTHORIZATION_CODES = {
+  unavailable: "fake-code:unavailable",
+} as const;
+
+const CODE_PREFIX = "fake-code:";
+
+/** The code the stand-in bank returns for an approved authorisation. */
+export function fakeAuthorizationCode(
+  aspsp: ProviderAspsp,
+  validUntil: Date,
+): string {
+  const payload = JSON.stringify({
+    name: aspsp.name,
+    country: aspsp.country,
+    validUntil: validUntil.toISOString(),
+  });
+  return `${CODE_PREFIX}${Buffer.from(payload).toString("base64url")}`;
+}
+
+function parseAuthorizationCode(
+  code: string,
+): { aspsp: ProviderAspsp; validUntil: string } | null {
+  if (!code.startsWith(CODE_PREFIX)) return null;
+  try {
+    const value: unknown = JSON.parse(
+      Buffer.from(code.slice(CODE_PREFIX.length), "base64url").toString(),
+    );
+    if (typeof value !== "object" || value === null) return null;
+    const { name, country, validUntil } = value as Record<string, unknown>;
+    const bank = FAKE_BANKS.find(
+      (candidate) => candidate.name === name && candidate.country === country,
+    );
+    if (
+      !bank ||
+      typeof validUntil !== "string" ||
+      Number.isNaN(Date.parse(validUntil))
+    ) {
+      return null;
+    }
+    return {
+      aspsp: { name: bank.name, country: bank.country },
+      validUntil,
+    };
+  } catch {
+    return null;
+  }
+}
 
 /** How long (ms) the fake asks callers to wait when rate limited. */
 export const FAKE_RETRY_AFTER_MS = 60_000;
@@ -159,7 +224,7 @@ export interface FakeProviderOptions {
 
 export function createFakeProvider(
   options: FakeProviderOptions = {},
-): FinancialProvider {
+): BankConnectorProvider {
   const now = options.now ?? (() => new Date());
   const pageSize = options.transactionPageSize ?? FAKE_TRANSACTION_PAGE_SIZE;
   if (!Number.isSafeInteger(pageSize) || pageSize < 1) {
@@ -204,6 +269,42 @@ export function createFakeProvider(
 
   return {
     id: "fake",
+
+    async listBanks(country) {
+      return FAKE_BANKS.filter((bank) => bank.country === country);
+    },
+
+    async startAuthorization({ aspsp, state, validUntil }) {
+      if (!FAKE_BANKS.some((bank) => bank.name === aspsp.name)) {
+        throw new Error(`Unknown fake bank: ${JSON.stringify(aspsp.name)}`);
+      }
+      const params = new URLSearchParams({
+        state,
+        code: fakeAuthorizationCode(aspsp, validUntil),
+        bank: aspsp.name,
+      });
+      return { url: `${FAKE_BANK_PATH}?${params}` };
+    },
+
+    async completeAuthorization(code) {
+      if (code === FAKE_AUTHORIZATION_CODES.unavailable) {
+        throw new ProviderUnavailableError("fake", "fake bank unavailable");
+      }
+      const parsed = parseAuthorizationCode(code);
+      if (!parsed) {
+        throw new ProviderAuthError("fake", "unknown fake authorisation code");
+      }
+      return {
+        sessionRef: FAKE_SESSION_REFS.valid,
+        aspsp: parsed.aspsp,
+        validUntil: parsed.validUntil,
+        accounts: FAKE_ACCOUNT_SPECS.map(toAccount),
+      };
+    },
+
+    async revokeSession(connection) {
+      authorise(connection);
+    },
 
     async listAccounts(connection) {
       authorise(connection);

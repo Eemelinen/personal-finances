@@ -166,7 +166,8 @@ async function fetchAccounts(
 /**
  * Adds the accounts the provider lists for the first time, updates and
  * restores known ones, archives the connection's accounts it no longer
- * lists (keeping their history) and upserts the balances.
+ * lists (keeping their history) and upserts the balances. A known account
+ * keeps its name and type: the user sets them on /connections (F-007).
  */
 async function storeAccounts(
   tx: Tx,
@@ -189,12 +190,7 @@ async function storeAccounts(
 
   for (const { account, balances } of fetched) {
     seen.add(account.ref);
-    const values = {
-      type: account.type,
-      name: account.name,
-      iban: account.iban,
-      currency: account.currency,
-    };
+    const values = { iban: account.iban, currency: account.currency };
     const stored = byRef.get(account.ref);
     let accountId: string;
     if (!stored) {
@@ -202,6 +198,8 @@ async function storeAccounts(
         .insert(accounts)
         .values({
           ...values,
+          type: account.type,
+          name: account.name,
           connectionId,
           institutionId,
           providerAccountRef: account.ref,
@@ -214,8 +212,6 @@ async function storeAccounts(
       if (stored.archived) counts.accountsRestored++;
       const changed =
         stored.archived ||
-        stored.type !== values.type ||
-        stored.name !== values.name ||
         stored.iban !== values.iban ||
         stored.currency !== values.currency;
       if (changed) {

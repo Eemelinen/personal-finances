@@ -8,11 +8,13 @@ import {
 } from "@/server/investments/decimal";
 import { ProviderAuthError } from "../errors";
 import type {
+  BankConnectorProvider,
   CurrencyCode,
-  FinancialProvider,
   IsoDate,
   ProviderAccount,
+  ProviderAuthorizedSession,
   ProviderBalance,
+  ProviderBank,
   ProviderConnection,
   ProviderTransaction,
   TransactionRange,
@@ -220,26 +222,30 @@ function allowedDateFrom(error: unknown): IsoDate | undefined {
   return parsed.success ? parsed.data.date_from : undefined;
 }
 
-export interface AuthorizedSession {
-  /** The session id: store it encrypted as `connections.session_ref`. */
-  sessionRef: string;
-  aspsp: { name: string; country: string };
-  /** When the consent ends (ISO timestamp). */
-  validUntil: string;
-  accounts: ProviderAccount[];
+export type AuthorizedSession = ProviderAuthorizedSession;
+
+/** The connector's view of an ASPSP. */
+export function mapAspsp(aspsp: Aspsp): ProviderBank {
+  return {
+    name: aspsp.name,
+    country: aspsp.country,
+    maximumConsentSeconds: aspsp.maximum_consent_validity ?? null,
+  };
 }
 
-export interface EnableBankingProvider extends FinancialProvider {
+export interface EnableBankingProvider extends BankConnectorProvider {
   readonly id: "enable_banking";
   environment(): EnableBankingEnvironment;
   /** The banks of a country (ISO 3166 code). */
-  listBanks(country: string): Promise<Aspsp[]>;
+  listBanks(country: string): Promise<ProviderBank[]>;
   /** The bank's authorisation URL to send the user to. */
   startAuthorization(
     input: StartAuthorizationInput,
   ): Promise<{ url: string; authorizationId: string }>;
   /** Exchanges the redirect's `code` for a session and its accounts. */
   completeAuthorization(code: string): Promise<AuthorizedSession>;
+  /** `DELETE /sessions/{id}`: the consent ends at the bank too. */
+  revokeSession(connection: ProviderConnection): Promise<void>;
 }
 
 export interface EnableBankingProviderOptions {
@@ -291,7 +297,8 @@ export function createEnableBankingProvider(
 
     environment: () => client.environment(),
 
-    listBanks: (country) => client.getAspsps(country),
+    listBanks: async (country) =>
+      (await client.getAspsps(country)).map(mapAspsp),
 
     startAuthorization: (input) => client.startAuthorization(input),
 
@@ -304,6 +311,11 @@ export function createEnableBankingProvider(
         validUntil: created.access.valid_until,
         accounts: created.accounts.map(mapAccount),
       };
+    },
+
+    async revokeSession(connection) {
+      await client.deleteSession(connection.sessionRef);
+      aspspBySession.delete(connection.sessionRef);
     },
 
     /** The session's accounts, matched by uid (details per account). */
