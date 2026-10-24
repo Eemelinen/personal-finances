@@ -50,7 +50,10 @@ const PROVIDER_ID = "enable_banking";
  * transaction, D-010); banks not listed are asked
  * without `date_from`, which gives S-Pankki its whole history. A `from`
  * further back than a bank allows is retried once from the day its 422
- * `WRONG_TRANSACTIONS_PERIOD` names.
+ * `WRONG_TRANSACTIONS_PERIOD` names. Cards (`cash_account_type` `CARD`) are
+ * asked like a bank not listed: Nordea's card service answers a `date_from`
+ * 540 days back with a 400 `ASPSP_ERROR`, not the 422, and serves only its
+ * last few months whatever the range (FIN-025).
  */
 export const HISTORY_DAYS_BY_ASPSP: Readonly<Record<string, number>> = {
   Nordea: 540,
@@ -278,16 +281,33 @@ export function createEnableBankingProvider(
     );
   }
 
+  // Whether each account uid is a card, from the details seen by
+  // completeAuthorization() and listAccounts(), else looked up once.
+  const cardByAccount = new Map<string, boolean>();
+
+  function rememberAccount(account: EnableBankingAccount): void {
+    cardByAccount.set(account.uid, account.cash_account_type === "CARD");
+  }
+
+  async function isCard(account: string): Promise<boolean> {
+    if (!cardByAccount.has(account)) {
+      rememberAccount(await client.getAccountDetails(account));
+    }
+    return cardByAccount.get(account) === true;
+  }
+
   /**
    * `range.from`, clamped to the bank's oldest day when its limit is known;
-   * for a first sync (no `from`) that oldest day.
+   * for a first sync (no `from`) that oldest day. Cards are left out of the
+   * limit (see `HISTORY_DAYS_BY_ASPSP`).
    */
   async function dateFrom(
     connection: ProviderConnection,
+    account: string,
     range: TransactionRange,
   ): Promise<IsoDate | undefined> {
     const days = HISTORY_DAYS_BY_ASPSP[await aspspName(connection)];
-    if (days === undefined) return range.from;
+    if (days === undefined || (await isCard(account))) return range.from;
     const oldest = addDays(today(), -days);
     return range.from && range.from > oldest ? range.from : oldest;
   }
@@ -305,6 +325,7 @@ export function createEnableBankingProvider(
     async completeAuthorization(code) {
       const created = await client.createSession(code);
       aspspBySession.set(created.session_id, created.aspsp.name);
+      created.accounts.forEach(rememberAccount);
       return {
         sessionRef: created.session_id,
         aspsp: created.aspsp,
@@ -328,6 +349,7 @@ export function createEnableBankingProvider(
         if (details.uid !== uid) {
           throw new Error("Enable Banking returned another account's details");
         }
+        rememberAccount(details);
         accounts.push(mapAccount(details));
       }
       return accounts;
@@ -342,7 +364,7 @@ export function createEnableBankingProvider(
 
     async getTransactions(connection, account, range, continuationKey) {
       const query = {
-        dateFrom: await dateFrom(connection, range),
+        dateFrom: await dateFrom(connection, account, range),
         dateTo: range.to,
         continuationKey,
       };

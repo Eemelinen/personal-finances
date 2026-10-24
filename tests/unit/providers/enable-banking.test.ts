@@ -540,6 +540,7 @@ describe("transaction pagination", () => {
   it("backfills Nordea from 540 days back, following continuation_key to null", async () => {
     const { fetchFn, calls } = fixtureFetch([
       fixture("nordea/session"),
+      ...detailsOf(nordea),
       ...nordeaPages,
     ]);
     const { provider } = setup(fetchFn);
@@ -553,17 +554,20 @@ describe("transaction pagination", () => {
 
     expect(transactions).toHaveLength(140);
     expect(new Set(transactions.map(({ ref }) => ref)).size).toBe(140);
-    // One session lookup for the bank, then the recorded page requests.
+    // One session lookup for the bank and one details lookup for the
+    // account's type, then the recorded page requests.
     expect(calls.map(({ path }) => path)).toEqual([
       `/sessions/${nordea.session_id}`,
+      `/accounts/${nordeaJoint.uid}/details`,
       ...nordeaPages.map(({ request }) => request.path),
     ]);
-    expect(calls[1].path).toContain("date_from=2025-05-02");
+    expect(calls[2].path).toContain("date_from=2025-05-02");
   });
 
   it("clamps a Nordea `from` older than its history to 540 days", async () => {
     const { fetchFn, calls } = fixtureFetch([
       fixture("nordea/session"),
+      ...detailsOf(nordea),
       nordeaPages[0],
     ]);
     const { provider } = setup(fetchFn);
@@ -577,6 +581,69 @@ describe("transaction pagination", () => {
     expect(page.transactions).toHaveLength(40);
     expect(page.continuationKey).toBe("continuation-key-1");
     expect(calls.at(-1)?.path).toBe(nordeaPages[0].request.path);
+  });
+
+  // FIN-025: a real Nordea card answered a date_from 540 days back with a
+  // 400 ASPSP_ERROR. The sandbox has no Nordea card; its details are the
+  // S-Pankki card's (`CARD`, no IBAN) under another uid.
+  const nordeaCard = {
+    ...(fixture("s-pankki/card-details")
+      .body as SessionCreateBody["accounts"][number]),
+    uid: "00000000-0000-4000-8000-0000000000c1",
+  };
+  const nordeaWithCard = {
+    ...nordea,
+    accounts: [nordeaJoint, nordeaCard],
+  };
+  const cardTransactions = (query: string): Exchange => ({
+    request: {
+      method: "GET",
+      path: `/accounts/${nordeaCard.uid}/transactions${query}`,
+    },
+    status: 200,
+    body: { transactions: [], continuation_key: null },
+  });
+
+  it("asks a Nordea card without date_from on a first sync and from its own `from` later", async () => {
+    const { fetchFn, calls } = fixtureFetch([
+      sessionOf(nordeaWithCard),
+      ...detailsOf(nordeaWithCard),
+      cardTransactions(""),
+      cardTransactions("?date_from=2024-01-01"),
+    ]);
+    const { provider } = setup(fetchFn);
+
+    await provider.getTransactions(nordeaConnection, nordeaCard.uid, {});
+    await provider.getTransactions(nordeaConnection, nordeaCard.uid, {
+      from: "2024-01-01",
+    });
+
+    // The card's details are looked up once, then remembered.
+    expect(calls.map(({ path }) => path)).toEqual([
+      `/sessions/${nordea.session_id}`,
+      `/accounts/${nordeaCard.uid}/details`,
+      `/accounts/${nordeaCard.uid}/transactions`,
+      `/accounts/${nordeaCard.uid}/transactions?date_from=2024-01-01`,
+    ]);
+  });
+
+  it("knows a card from listAccounts() without looking it up again", async () => {
+    const { fetchFn, calls } = fixtureFetch([
+      sessionOf(nordeaWithCard),
+      ...detailsOf(nordeaWithCard),
+      cardTransactions(""),
+      nordeaPages[0],
+    ]);
+    const { provider } = setup(fetchFn);
+
+    await provider.listAccounts(nordeaConnection);
+    await provider.getTransactions(nordeaConnection, nordeaCard.uid, {});
+    await provider.getTransactions(nordeaConnection, nordeaJoint.uid, {});
+
+    expect(calls.slice(3).map(({ path }) => path)).toEqual([
+      `/accounts/${nordeaCard.uid}/transactions`,
+      nordeaPages[0].request.path,
+    ]);
   });
 
   it("asks S-Pankki without date_from and passes each key on", async () => {

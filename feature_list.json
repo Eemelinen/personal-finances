@@ -667,6 +667,27 @@
       ],
       "attempts": 0,
       "notes": "Replaces old FIN-026 and FIN-027."
+    },
+    {
+      "id": "F-025",
+      "priority": 25,
+      "area": "banking",
+      "title": "Nordea card transactions without a 540-day date_from",
+      "user_visible_behavior": "A Nordea credit card connected through Enable Banking (`cash_account_type` `CARD`) syncs its transactions: its first sync asks without `date_from` and gets everything the card serves, instead of failing every sync with `400 ASPSP_ERROR` because it was asked for Nordea's 540 days. Checking and savings accounts keep the 540-day backfill.",
+      "status": "passing",
+      "depends_on": ["F-006"],
+      "ticket": "FIN-025",
+      "spec": "docs/tickets/FIN-025-nordea-card-history.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/providers/enable-banking.test.ts (a Nordea card account is asked without date_from on a first sync and with its own from afterwards; checking accounts still from 540 days back)"
+      ],
+      "evidence": [
+        "2026-10-24 pnpm check → pass (commit 649c89a)",
+        "2026-10-24 pnpm test:unit tests/unit/providers/enable-banking.test.ts → pass (commit 649c89a)"
+      ],
+      "attempts": 0,
+      "notes": "Found in F-013 with real accounts (2026-10-24): the Nordea Gold card answered date_from 540 days back with 400 ASPSP_ERROR, and served only from 2026-07-10 for any range."
     }
   ]
 }

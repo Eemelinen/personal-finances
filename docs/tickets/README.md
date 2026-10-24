@@ -31,6 +31,7 @@ Each ticket is the spec for exactly one harness feature: `FIN-NNN` ↔ `F-NNN` i
 | [FIN-011](FIN-011-consent-expiry-and-renewal.md) | F-011   | Consent expiry and renewal                            | F-007        | L1 L2 L3  | unattended |
 | [FIN-012](FIN-012-csv-import.md)                 | F-012   | CSV import for Nordea and S-Pankki exports            | F-004, F-009 | L1 L2 L3  | unattended |
 | [FIN-013](FIN-013-live-bank-acceptance.md)       | F-013   | Live bank acceptance with real accounts               | F-010, F-011 | L1 manual | human-only |
+| [FIN-025](FIN-025-nordea-card-history.md)        | F-025   | Nordea card transactions without a 540-day date_from  | F-006        | L1        | unattended |
 
 ## M2: Categorization
 
