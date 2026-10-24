@@ -1,0 +1,44 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/accounts/00000000-0000-4000-8000-000000000005/balances"
+  },
+  "status": 200,
+  "body": {
+    "balances": [
+      {
+        "name": "Available balance",
+        "balance_amount": {
+          "currency": "EUR",
+          "amount": "171.38"
+        },
+        "balance_type": "ITAV",
+        "last_change_date_time": null,
+        "reference_date": null,
+        "last_committed_transaction": null
+      },
+      {
+        "name": "Booked balance",
+        "balance_amount": {
+          "currency": "EUR",
+          "amount": "159.28"
+        },
+        "balance_type": "ITBD",
+        "last_change_date_time": null,
+        "reference_date": null,
+        "last_committed_transaction": null
+      },
+      {
+        "name": "Value dated balance",
+        "balance_amount": {
+          "currency": "EUR",
+          "amount": "159.28"
+        },
+        "balance_type": "VALU",
+        "last_change_date_time": null,
+        "reference_date": null,
+        "last_committed_transaction": null
+      }
+    ]
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/sessions/00000000-0000-4000-8000-000000000007"
+  },
+  "status": 200,
+  "body": {
+    "status": "AUTHORIZED",
+    "accounts": [
+      "00000000-0000-4000-8000-000000000009",
+      "00000000-0000-4000-8000-000000000005",
+      "00000000-0000-4000-8000-000000000008"
+    ],
+    "accounts_data": [
+      {
+        "uid": "00000000-0000-4000-8000-000000000009",
+        "identification_hash": "hash-10",
+        "identification_hashes": ["hash-11", "hash-10", "hash-12", "hash-9"]
+      },
+      {
+        "uid": "00000000-0000-4000-8000-000000000005",
+        "identification_hash": "hash-2",
+        "identification_hashes": ["hash-3", "hash-2", "hash-4", "hash-5"]
+      },
+      {
+        "uid": "00000000-0000-4000-8000-000000000008",
+        "identification_hash": "hash-6",
+        "identification_hashes": ["hash-7", "hash-6", "hash-8", "hash-9"]
+      }
+    ],
+    "aspsp": {
+      "name": "Nordea",
+      "country": "FI"
+    },
+    "psu_type": "personal",
+    "psu_id_hash": "hash-1",
+    "access": {
+      "accounts": null,
+      "balances": true,
+      "transactions": true,
+      "valid_until": "2027-04-22T06:34:24.369000Z"
+    },
+    "created": "2026-10-24T06:34:24.956134Z",
+    "authorized": "2026-10-24T06:36:00.391724Z",
+    "closed": null
+  }
+}

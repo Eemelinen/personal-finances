@@ -37,7 +37,7 @@
       "area": "banking",
       "title": "Enable Banking access spike and sandbox fixtures",
       "user_visible_behavior": "Enable Banking sandbox access works for Nordea FI and S-Pankki: an application whose RSA private key lives in `secrets/` (gitignored) authorises against both mock banks and fetches accounts, balances and transactions. Anonymised responses are committed under `tests/fixtures/enable-banking/`, and the facts later features depend on (consent validity, history depth, fetch limits, pending support, restricted-production terms) are recorded in this ticket's Findings.",
-      "status": "not_started",
+      "status": "in_progress",
       "depends_on": ["F-000"],
       "ticket": "FIN-001",
       "spec": "docs/tickets/FIN-001-enable-banking-access-spike.md",

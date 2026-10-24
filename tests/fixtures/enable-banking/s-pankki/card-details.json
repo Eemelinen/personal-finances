@@ -1,0 +1,44 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/accounts/00000000-0000-4000-8000-000000000154/details"
+  },
+  "status": 200,
+  "body": {
+    "account_id": {
+      "iban": null,
+      "other": {
+        "identification": "4000000001",
+        "scheme_name": "CPAN",
+        "issuer": null
+      }
+    },
+    "all_account_ids": [
+      {
+        "identification": "4000000001",
+        "scheme_name": "CPAN",
+        "issuer": null
+      }
+    ],
+    "account_servicer": null,
+    "name": "Customer A",
+    "details": null,
+    "usage": "PRIV",
+    "cash_account_type": "CARD",
+    "product": "S-Etukortti Visa Credit",
+    "currency": "EUR",
+    "psu_status": null,
+    "credit_limit": null,
+    "postal_address": null,
+    "uid": "00000000-0000-4000-8000-000000000154",
+    "identification_hash": "hash-20",
+    "identification_hashes": [
+      "hash-20",
+      "hash-21",
+      "hash-22",
+      "hash-23",
+      "hash-24",
+      "hash-16"
+    ]
+  }
+}

@@ -36,9 +36,9 @@ Nordea and S-Pankki expose PSD2 APIs, but production access is only for **licens
 - **Full production** (other users' accounts) needs a contract, KYB and a quote. We don't need it.
 - **Coverage.** Its Finland page lists all major Finnish banks: OP, Nordea, S-Pankki, Danske Bank, Säästöpankki and Aktia. Personal accounts are supported for both of our banks, and both have sandboxes.
 - **Authentication.** Your application signs a JWT (RS256) with its private key. The bank's own authentication happens in its app: Nordea asks for your 8-digit user ID and then the **Nordea ID** app; S-Pankki uses its own app or credentials.
-- **Consent length.** Up to each bank's `maximum_consent_validity`, about **180 days** for most banks **(unverified)**. Renewal is needed after that (FIN-011).
-- **Fetch limits.** Background (unattended) fetches are reportedly limited to about **4 per day per bank** **(unverified)**. The default 6-hour sync schedule in FIN-010 fits within that.
-- **To confirm in FIN-001:** exact limits, transaction history depth per bank, and whether pending transactions are returned.
+- **Consent length.** Up to each bank's `maximum_consent_validity`: **180 days** for both Nordea and S-Pankki (confirmed in the sandbox, FIN-001). Renewal is needed after that (FIN-011).
+- **Fetch limits.** PSD2 limits unattended fetches to **4 per day** per consent (RTS art. 36(5)(b)); the default 6-hour sync schedule in FIN-010 fits exactly. The sandbox neither enforces nor reports it, so FIN-013 checks it with real accounts.
+- **Confirmed in FIN-001 (sandbox):** history depth (Nordea 540 days with `date_from`, only 7 days without it; S-Pankki returns its whole history), page sizes (40 / 100), no pending transactions in either sandbox, balance types and error formats. Details in [FIN-001 → Findings](tickets/FIN-001-enable-banking-access-spike.md#findings).
 
 ## 2. Nordnet (stocks, funds, osakesäästötili)
 

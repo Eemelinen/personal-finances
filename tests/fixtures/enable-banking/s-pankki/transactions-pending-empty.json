@@ -1,0 +1,11 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/accounts/00000000-0000-4000-8000-000000000152/transactions?transaction_status=PDNG"
+  },
+  "status": 200,
+  "body": {
+    "transactions": [],
+    "continuation_key": "continuation-key-7"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/sessions",
+    "body": {
+      "code": "00000000-0000-4000-8000-000000000003"
+    }
+  },
+  "status": 422,
+  "body": {
+    "code": 422,
+    "message": "Wrong authorization code provided",
+    "error": "WRONG_AUTHORIZATION_CODE",
+    "detail": null
+  }
+}

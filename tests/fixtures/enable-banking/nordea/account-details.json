@@ -1,0 +1,40 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/accounts/00000000-0000-4000-8000-000000000005/details"
+  },
+  "status": 200,
+  "body": {
+    "account_id": {
+      "iban": "FI4312345600000001",
+      "other": null
+    },
+    "all_account_ids": [
+      {
+        "identification": "FI4312345600000001",
+        "scheme_name": "IBAN",
+        "issuer": null
+      }
+    ],
+    "account_servicer": {
+      "bic_fi": "NDEAFIHH",
+      "clearing_system_member_id": null,
+      "name": null
+    },
+    "name": "Maija Meikäläinen;Matti Meikäläinen",
+    "details": null,
+    "usage": null,
+    "cash_account_type": "CACC",
+    "product": "KÄYTTÖTILI",
+    "currency": "EUR",
+    "psu_status": "OPEN",
+    "credit_limit": {
+      "currency": "EUR",
+      "amount": "100.00"
+    },
+    "postal_address": null,
+    "uid": "00000000-0000-4000-8000-000000000005",
+    "identification_hash": "hash-2",
+    "identification_hashes": ["hash-3", "hash-2", "hash-4", "hash-5"]
+  }
+}

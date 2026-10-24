@@ -1,0 +1,33 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/accounts/00000000-0000-4000-8000-000000000152/details"
+  },
+  "status": 200,
+  "body": {
+    "account_id": {
+      "iban": "FI5912345600000004",
+      "other": null
+    },
+    "all_account_ids": [
+      {
+        "identification": "FI5912345600000004",
+        "scheme_name": "IBAN",
+        "issuer": null
+      }
+    ],
+    "account_servicer": null,
+    "name": "Customer A",
+    "details": "My account nickname",
+    "usage": "PRIV",
+    "cash_account_type": "CACC",
+    "product": "S-Tili AO",
+    "currency": "EUR",
+    "psu_status": null,
+    "credit_limit": null,
+    "postal_address": null,
+    "uid": "00000000-0000-4000-8000-000000000152",
+    "identification_hash": "hash-13",
+    "identification_hashes": ["hash-14", "hash-13", "hash-15", "hash-16"]
+  }
+}

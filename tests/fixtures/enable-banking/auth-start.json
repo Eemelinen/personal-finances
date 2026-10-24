@@ -1,0 +1,24 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/auth",
+    "body": {
+      "access": {
+        "valid_until": "2027-04-22T06:34:24.369Z"
+      },
+      "aspsp": {
+        "name": "Nordea",
+        "country": "FI"
+      },
+      "state": "00000000-0000-4000-8000-000000000001",
+      "redirect_url": "http://localhost:3000/connections/callback",
+      "psu_type": "personal"
+    }
+  },
+  "status": 200,
+  "body": {
+    "url": "https://tilisy-sandbox.enablebanking.com/ais/start?sessionid=00000000-0000-4000-8000-000000000002",
+    "authorization_id": "00000000-0000-4000-8000-000000000002",
+    "psu_id_hash": "hash-1"
+  }
+}

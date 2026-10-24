@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/accounts/00000000-0000-4000-8000-000000000004/balances"
+  },
+  "status": 404,
+  "body": {
+    "code": 404,
+    "message": "No account found matching provided id",
+    "error": "ACCOUNT_DOES_NOT_EXIST",
+    "detail": null
+  }
+}
