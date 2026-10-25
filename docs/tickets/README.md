@@ -79,6 +79,8 @@ Each ticket is the spec for exactly one harness feature: `FIN-NNN` ↔ `F-NNN` i
 | [FIN-034](FIN-034-transactions-totals-like-reports.md)     | F-034   | Transactions totals count like the reports          | F-026, F-027, F-030 | L1 L2 L3 | unattended |
 | [FIN-035](FIN-035-name-variant-suggestions.md)             | F-035   | Name-variant suggestions in Settings → Household    | F-030               | L1 L2 L3 | unattended |
 | [FIN-036](FIN-036-household-ibans-in-texts.md)             | F-036   | Household IBANs found in description text           | F-030               | L1 L2    | unattended |
+| [FIN-037](FIN-037-investments-out-of-spending.md)          | F-037   | Investments left out of spending                    | F-026, F-034        | L1 L2 L3 | unattended |
+| [FIN-038](FIN-038-e2e-test-environment.md)                 | F-038   | L3 runs with a test environment of its own          | F-003               | L1 L3    | unattended |
 
 ## Backlog (not in the feature list yet)
 
