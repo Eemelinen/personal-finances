@@ -6,6 +6,7 @@ import {
 import {
   householdMatcher,
   nameMatches,
+  nameVariantParts,
   normalizeName,
 } from "@/server/categorization/names";
 
@@ -191,6 +192,86 @@ describe("household IBANs in texts (F-036)", () => {
         leg({ counterparty: "FI49500094", description: "20028730" }),
       ),
     ).toBe(false);
+  });
+});
+
+describe("nameVariantParts (F-035)", () => {
+  const OWN_NAME = "Matti Mikael Meikäläinen";
+  const MEMBER_NAME = "Liisa Virtanen";
+  const SAVED = [OWN_NAME, MEMBER_NAME];
+
+  it("finds initials with or without dots, surname first or last", () => {
+    for (const counterparty of [
+      "M Meikäläinen",
+      "M. Meikäläinen",
+      "M.M. Meikäläinen",
+      "MEIKÄLÄINEN M M",
+      "Meikäläinen M.",
+      "Matti Meikäläinen",
+      "M Mikael Meikäläinen",
+    ]) {
+      expect(nameVariantParts(counterparty, SAVED), counterparty).toEqual([
+        [OWN_NAME],
+      ]);
+    }
+  });
+
+  it("lists every saved name a variant fits", () => {
+    expect(
+      nameVariantParts("M Meikäläinen", [OWN_NAME, "Maija Meikäläinen"]),
+    ).toEqual([[OWN_NAME, "Maija Meikäläinen"]]);
+  });
+
+  it("does not suggest a saved name itself, in any word order", () => {
+    expect(nameVariantParts("MEIKÄLÄINEN MATTI MIKAEL", SAVED)).toBeNull();
+    expect(nameVariantParts("liisa virtanen", SAVED)).toBeNull();
+  });
+
+  it("never fits a relative, another initial, a company or a surname alone", () => {
+    for (const counterparty of [
+      "Maarit Meikäläinen",
+      "K Meikäläinen",
+      "M M M Meikäläinen",
+      "Meikäläinen Oy",
+      "Matti Meikäläinen Tmi",
+      "Meikäläinen",
+      "Meikalainen M",
+      "M Meikäläinen-Virtanen",
+    ]) {
+      expect(nameVariantParts(counterparty, SAVED), counterparty).toBeNull();
+    }
+  });
+
+  it("splits a joint-holder name on each connector", () => {
+    for (const connector of ["CJ", "ja", "och", "and", "&", "/", "+"]) {
+      const counterparty = `M.M. Meikäläinen ${connector} L. Virtanen`;
+      expect(nameVariantParts(counterparty, SAVED), counterparty).toEqual([
+        [OWN_NAME],
+        [MEMBER_NAME],
+      ]);
+    }
+    expect(nameVariantParts("M Meikäläinen/L Virtanen", SAVED)).toEqual([
+      [OWN_NAME],
+      [MEMBER_NAME],
+    ]);
+    expect(
+      nameVariantParts("Liisa Virtanen & Matti Mikael Meikäläinen", SAVED),
+    ).toEqual([[MEMBER_NAME], [OWN_NAME]]);
+  });
+
+  it("needs every part of a joint name to fit", () => {
+    for (const counterparty of [
+      "M Meikäläinen ja K Virtanen",
+      "M Meikäläinen ja L Virtanen ja M Meikäläinen",
+      "ja L Virtanen",
+      "M Meikäläinen ja",
+    ]) {
+      expect(nameVariantParts(counterparty, SAVED), counterparty).toBeNull();
+    }
+  });
+
+  it("finds nothing without saved names", () => {
+    expect(nameVariantParts("M Meikäläinen", [])).toBeNull();
   });
 });
 

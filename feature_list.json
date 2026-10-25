@@ -912,7 +912,7 @@
       "area": "categorization",
       "title": "Name-variant suggestions in Settings → Household",
       "user_visible_behavior": "Settings → Household lists counterparties that look like a saved own or household name written with initials (in either word order) or like a joint name of two saved names, with their row count and sums, and adds one to the right person with a click, which re-runs categorisation. Nothing is matched automatically; a relative with the same surname or a company containing the name is never suggested.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-030"],
       "ticket": "FIN-035",
       "spec": "docs/tickets/FIN-035-name-variant-suggestions.md",
@@ -922,7 +922,12 @@
         "L2: pnpm test:integration tests/integration/household.int.test.ts (suggestion query skips manual, grouped and household rows; right person, count and sums)",
         "L3: pnpm test:e2e tests/e2e/household-settings.spec.ts (add a suggested variant; its rows become Transfers)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-25 pnpm check → pass (commit 261590e)",
+        "2026-10-25 pnpm test:unit tests/unit/categorization/names.test.ts → pass (commit 261590e)",
+        "2026-10-25 pnpm test:integration tests/integration/household.int.test.ts → pass (commit 261590e, Docker available)",
+        "2026-10-25 pnpm test:e2e tests/e2e/household-settings.spec.ts → pass (commit 261590e, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Found with real data 2026-10-25: 36 rows written with initials or under the joint account's name still counted as about €58k of income although both full names were saved."
     },

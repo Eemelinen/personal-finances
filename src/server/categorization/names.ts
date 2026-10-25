@@ -34,6 +34,98 @@ export function nameMatches(
   return normalized.length > 0 && variants.has(normalized);
 }
 
+/** Words between two holders' names on a joint account (`&`, `/`, `+` too). */
+const JOINT_CONNECTORS = new Set(["&", "ja", "och", "and", "cj"]);
+
+/** Lower-case NFC words in order; `&`, `/` and `+` become the word `&`. */
+function nameWords(value: string): string[] {
+  return (
+    value
+      .normalize("NFC")
+      .toLowerCase()
+      .match(/[\p{L}\p{M}\p{N}]+|[&/+]/gu)
+      ?.map((word) => (word === "/" || word === "+" ? "&" : word)) ?? []
+  );
+}
+
+/** Each word is a different one of `given`, whole or as its initial. */
+function givenNamesMatch(words: string[], given: string[]): boolean {
+  if (words.length === 0) return true;
+  const [word, ...rest] = words;
+  return given.some(
+    (name, index) =>
+      (word === name || (word.length === 1 && name.startsWith(word))) &&
+      givenNamesMatch(
+        rest,
+        given.filter((_, other) => other !== index),
+      ),
+  );
+}
+
+/**
+ * Whether `words` are `saved` with its other words shortened to initials
+ * or left out: one word of `saved` (the surname; which one is not known)
+ * whole, and at least one more. The same words are not a variant.
+ */
+function isInitialsVariant(saved: string[], words: string[]): boolean {
+  if (words.length < 2) return false;
+  return saved.some((surname, index) => {
+    const at = words.indexOf(surname);
+    if (at < 0) return false;
+    return givenNamesMatch(
+      words.filter((_, other) => other !== at),
+      saved.filter((_, other) => other !== index),
+    );
+  });
+}
+
+/**
+ * How `counterparty` is written from the saved names without being one of
+ * them (F-035): one part, a saved name with its given names as initials or
+ * left out (`M. Meikäläinen`, `MEIKÄLÄINEN M M`), or a joint-holder name of
+ * two parts joined by a connector (`ja`, `och`, `and`, `CJ`, `&`, `/`,
+ * `+`), each a saved name or such a variant of one. Returns, per part, the
+ * saved names (as given) it fits; null when it is neither. A given name
+ * that differs (`Maija Meikäläinen` for `Matti Meikäläinen`) or a word that
+ * is no name of theirs (`Meikäläinen Oy`) never fits.
+ */
+export function nameVariantParts(
+  counterparty: string,
+  saved: readonly string[],
+): string[][] | null {
+  const savedWords = saved.map((name) => ({
+    name,
+    words: nameWords(name),
+    normalized: normalizeName(name),
+  }));
+  const normalized = normalizeName(counterparty);
+  if (savedWords.some((entry) => entry.normalized === normalized)) return null;
+
+  const words = nameWords(counterparty);
+  const connectors = words.filter((word) => JOINT_CONNECTORS.has(word));
+  const at = words.findIndex((word) => JOINT_CONNECTORS.has(word));
+  let parts: string[][];
+  if (connectors.length === 0) {
+    parts = [words];
+  } else if (connectors.length === 1 && at > 0 && at < words.length - 1) {
+    parts = [words.slice(0, at), words.slice(at + 1)];
+  } else {
+    return null;
+  }
+
+  const fits = parts.map((part) => {
+    const partNormalized = [...part].sort().join(" ");
+    return savedWords
+      .filter(
+        (entry) =>
+          (parts.length > 1 && entry.normalized === partNormalized) ||
+          isInitialsVariant(entry.words, part),
+      )
+      .map((entry) => entry.name);
+  });
+  return fits.every((names) => names.length > 0) ? fits : null;
+}
+
 export interface HouseholdMember {
   /** Name variants as the user typed them. */
   names: string[];

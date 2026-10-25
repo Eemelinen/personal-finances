@@ -14,10 +14,12 @@ import { E2E_TIME_ZONE, openTestDatabase } from "./support/database";
 
 // Settings → Household (F-030): adding a household member marks a credit
 // from them, and turning on "Ignore transfers with household members"
-// takes it out of the dashboard's income tile. Its own Playwright project
-// runs after `settings-reports` (playwright.config.ts), so nothing else
-// changes this month's income meanwhile; afterAll removes the credit and
-// the household settings again. The name is synthetic.
+// takes it out of the dashboard's income tile. A credit from an own name
+// written with an initial is suggested as a name variant and becomes an
+// own transfer when added (F-035). Its own Playwright project runs after
+// `settings-reports` (playwright.config.ts), so nothing else changes this
+// month's income meanwhile; afterAll removes the credits and the household
+// settings again. The names are synthetic.
 
 test.describe.configure({ mode: "serial" });
 
@@ -28,6 +30,8 @@ const HOUSEHOLD_KEYS = [
 ];
 const MEMBER = "Puoliso Testinen";
 const CREDIT_MINOR = 45_600;
+const OWN_NAME = "Oma Esimerkki";
+const OWN_VARIANT = "O ESIMERKKI";
 
 let db: Db;
 let institutionId: string;
@@ -76,6 +80,15 @@ test.beforeAll(async () => {
     amountMinor: CREDIT_MINOR,
     currency: "EUR",
     counterparty: "TESTINEN PUOLISO",
+  });
+  // A deposit from the user's own account elsewhere, under an initial.
+  await db.insert(transactions).values({
+    accountId: account.id,
+    dedupeHash: "e2e-household-1",
+    bookingDate: `${thisMonth}-01`,
+    amountMinor: 12_300,
+    currency: "EUR",
+    counterparty: OWN_VARIANT,
   });
 });
 
@@ -150,4 +163,39 @@ test("a household member's transfers leave the income while the toggle is on", a
   await expect(page.getByLabel("Member 1: names")).toHaveValue(MEMBER);
 
   expect(await incomeThisMonth(page)).toBe(before - CREDIT_MINOR);
+});
+
+test("a suggested name variant is added with one click and its rows become own transfers", async ({
+  page,
+}) => {
+  await page.goto("/settings/household");
+  const lists = page.locator("form").filter({
+    has: page.getByRole("button", { name: "Save names and members" }),
+  });
+  await lists.getByLabel("Your names").fill(OWN_NAME);
+  await lists.getByRole("button", { name: "Save names and members" }).click();
+  await expect(lists.getByRole("status")).toContainText("Saved.");
+
+  const suggestions = page.getByRole("region", {
+    name: "Possible name variants",
+  });
+  const suggestion = suggestions
+    .getByTestId("name-suggestion")
+    .filter({ hasText: OWN_VARIANT });
+  await expect(suggestion).toContainText("1 transaction");
+  await suggestion.getByRole("button", { name: "Add to your names" }).click();
+  await expect(suggestions.getByRole("status")).toContainText(
+    `Added “${OWN_VARIANT}”. 1 transaction linked as own transfers`,
+  );
+  await expect(suggestion).toHaveCount(0);
+  // The lists form shows the saved names, the added variant included.
+  await expect(lists.getByLabel("Your names")).toHaveValue(
+    `${OWN_NAME}\n${OWN_VARIANT}`,
+  );
+  await expect(page.getByLabel("Member 1: names")).toHaveValue(MEMBER);
+
+  await page.goto(`/transactions?q=${encodeURIComponent(OWN_VARIANT)}`);
+  const row = page.getByTestId("transaction-row");
+  await expect(row).toHaveCount(1);
+  await expect(row).toContainText("Transfer");
 });
