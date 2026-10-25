@@ -962,6 +962,45 @@
       ],
       "attempts": 0,
       "notes": "Found with real data 2026-10-25: 72 rows carried only the other account's IBAN in the description; household matching would miss a member's account written that way."
+    },
+    {
+      "id": "F-037",
+      "priority": 37,
+      "area": "categorization",
+      "title": "Investments left out of spending",
+      "user_visible_behavior": "Settings → Reports has \"Leave investments out of spending and income\" (off by default). On, a transaction that no user rule categorises and whose counterparty is a known broker, crypto exchange or fund company, or whose description is a fund subscription or redemption, goes into Savings & investments › Investments, so it counts as neither spending nor income; saving re-runs categorisation and says how many changed. User rules and manual categories win. The /transactions \"Not counted\" line names them as investments.",
+      "status": "not_started",
+      "depends_on": ["F-026", "F-034"],
+      "ticket": "FIN-037",
+      "spec": "docs/tickets/FIN-037-investments-out-of-spending.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/categorization/investments.test.ts (brokers, exchange entities, fund companies, subscription words; case-insensitive whole words; bank fees and shops do not match)",
+        "L2: pnpm test:integration tests/integration/investments.int.test.ts (off: spending; on: Investments, out of cash flow both ways; user rule and manual win; off again restores; Not counted names investments)",
+        "L3: pnpm test:e2e tests/e2e/settings-reports.spec.ts (turning the setting on lowers this month's expenses by a seeded fund subscription)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Found with real data 2026-10-25: index-fund subscriptions and a crypto exchange deposit counted as about €2,000 of 2026 spending; only Nordnet had a seeded rule."
+    },
+    {
+      "id": "F-038",
+      "priority": 38,
+      "area": "harness",
+      "title": "L3 runs with a test environment of its own",
+      "user_visible_behavior": "pnpm test:e2e passes in a checkout that has a real .env: the e2e build and the served test app get every app variable from a test environment (optional ones empty), the .env files Next.js copies into .next/standalone are deleted before serving, and an invalid test environment stops the run at once with the parser's message instead of a 300 s webServer timeout.",
+      "status": "not_started",
+      "depends_on": ["F-003"],
+      "ticket": "FIN-038",
+      "spec": "docs/tickets/FIN-038-e2e-test-environment.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/e2e/test-env.test.ts (production-like base values never reach the app variables; every schema key present; parses with the app's parsers; unrelated variables pass through; .env* removed from a standalone dir)",
+        "L3: pnpm test:e2e tests/e2e/app-shell.spec.ts (the suite passes through the test environment)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Found on the real machine 2026-10-25: L3 in the main checkout loaded the production .env through .next/standalone and timed out on /api/health; loop worktrees have no .env."
     }
   ]
 }
