@@ -45,7 +45,8 @@ repository, never here.
   - In loop sessions, `db:up/down` and `docker compose` are blocked.
   - Edits to `next-env.d.ts` and `.env*` are denied.
   - The guard asks before edits to `drizzle/` migrations and the Next.js marker block in
-    AGENTS.md.
+    AGENTS.md. A migration the branch generated itself is exempt (`exceptNewOnBranch`, harness
+    v0.3.7+), so a loop session can add its SQL; `drizzle/meta/` is not.
 - **Clean-state checks beyond the core.**
   - no `.only`/`.skip` added under `tests/` or `src/`
   - no `console.log` added under `src/`
