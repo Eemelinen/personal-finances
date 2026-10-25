@@ -27,6 +27,15 @@ export const TRANSFERS_CATEGORY = "Transfers";
  */
 export const EXCLUDED_CATEGORY = "Excluded";
 
+/**
+ * Where recognised investments go while `excludeInvestments` is on
+ * (F-037): `[parent, child]`, created on demand when either is missing.
+ */
+export const INVESTMENTS_CATEGORY = [
+  "Savings & investments",
+  "Investments",
+] as const;
+
 /** The category for what no rule matched, for reports and manual picks. */
 export const UNCATEGORIZED_CATEGORY = "Uncategorized";
 
@@ -98,10 +107,10 @@ export const DEFAULT_CATEGORIES: readonly DefaultCategory[] = [
     children: ["Salary", "Benefits", "Tax refunds"],
   },
   {
-    name: "Savings & investments",
+    name: INVESTMENTS_CATEGORY[0],
     kind: "transfer",
     color: "#0891b2",
-    children: ["Investments"],
+    children: [INVESTMENTS_CATEGORY[1]],
   },
   {
     name: TRANSFERS_CATEGORY,

@@ -25,8 +25,10 @@ import type { Tx } from "@/server/sync/runs";
 import {
   DEFAULT_CATEGORIES,
   EXCLUDED_CATEGORY,
+  INVESTMENTS_CATEGORY,
   TRANSFERS_CATEGORY,
 } from "./defaults";
+import { isInvestment } from "./investments";
 import { householdMatcher, type HouseholdMatcher } from "./names";
 import { compileRules, ruleOutcome, type CompiledRule } from "./rules";
 import {
@@ -44,7 +46,10 @@ import {
 // - A `manual` category is never touched, not even by transfer detection.
 // - A transaction in a transfer group keeps the Transfers category: rules
 //   skip it. The rest gets its first matching rule's category (`rule`), or
-//   none (`none`, no category) when no rule matches.
+//   none (`none`, no category) when no rule matches. While the setting
+//   `excludeInvestments` is on (F-037), a recognised investment
+//   (`investments.ts`) that no rule matches gets Savings & investments ›
+//   Investments (`rule`) instead of none.
 // - Booked transactions that are not manual and in no group (or the only
 //   member of one) are paired as transfers (`transfers.ts`); both legs get
 //   one `transfer_group_id` and the Transfers category with source `rule`.
@@ -162,9 +167,13 @@ export async function lockCategorization(tx: Tx): Promise<void> {
 
 async function categorize(tx: Tx, scope: Scope): Promise<CategorizeSummary> {
   await lockCategorization(tx);
-  const recategorized = await applyRules(tx, scope);
-  const paired = await linkTransfers(tx, scope);
   const settings = await getAppSettings(tx);
+  const recategorized = await applyRules(
+    tx,
+    scope,
+    settings.excludeInvestments,
+  );
+  const paired = await linkTransfers(tx, scope);
   const matcher = householdMatcher({
     ownNames: settings.ownNames,
     members: settings.householdMembers,
@@ -192,8 +201,15 @@ async function loadRules(tx: Tx): Promise<CompiledRule[]> {
   return compileRules(rules);
 }
 
-/** Returns how many transactions changed category. */
-async function applyRules(tx: Tx, scope: Scope): Promise<number> {
+/**
+ * Returns how many transactions changed category. With `investments`,
+ * recognised investments that no rule matches go into Investments.
+ */
+async function applyRules(
+  tx: Tx,
+  scope: Scope,
+  investments: boolean,
+): Promise<number> {
   const rules = await loadRules(tx);
   const rows = await loadScope(
     tx,
@@ -206,8 +222,13 @@ async function applyRules(tx: Tx, scope: Scope): Promise<number> {
 
   // Target category ("" = none) → ids that must change to it.
   const changes = new Map<string, string[]>();
+  let investmentsId: string | null = null;
   for (const row of rows) {
-    const outcome = ruleOutcome(rules, row);
+    const fallback =
+      investments && isInvestment(row)
+        ? (investmentsId ??= await investmentsCategoryId(tx))
+        : null;
+    const outcome = ruleOutcome(rules, row, fallback);
     if (!outcome.change) continue;
     const key = outcome.categoryId ?? "";
     const ids = changes.get(key);
@@ -470,4 +491,34 @@ export async function excludedCategoryId(tx: Tx): Promise<string> {
     (await findTopLevelCategory(tx, EXCLUDED_CATEGORY)) ??
     (await createTopLevelCategory(tx, EXCLUDED_CATEGORY))
   );
+}
+
+/**
+ * Savings & investments › Investments (F-037); the parent and the child
+ * are created when missing, as in a database without the defaults.
+ */
+async function investmentsCategoryId(tx: Tx): Promise<string> {
+  const [parentName, name] = INVESTMENTS_CATEGORY;
+  const parentId =
+    (await findTopLevelCategory(tx, parentName)) ??
+    (await createTopLevelCategory(tx, parentName));
+  const find = async () => {
+    const [row] = await tx
+      .select({ id: categories.id })
+      .from(categories)
+      .where(and(eq(categories.parentId, parentId), eq(categories.name, name)));
+    return row?.id ?? null;
+  };
+  const existing = await find();
+  if (existing) return existing;
+  // A subcategory takes its parent's kind (F-015).
+  const [parent] = await tx
+    .select({ kind: categories.kind, color: categories.color })
+    .from(categories)
+    .where(eq(categories.id, parentId));
+  await tx
+    .insert(categories)
+    .values({ name, parentId, kind: parent.kind, color: parent.color })
+    .onConflictDoNothing();
+  return (await find())!;
 }

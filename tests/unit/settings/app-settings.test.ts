@@ -17,8 +17,10 @@ describe("appSettingsFrom", () => {
       ownNames: [],
       householdMembers: [],
       ignoreHouseholdTransfers: false,
+      excludeInvestments: false,
     });
     expect(DEFAULT_APP_SETTINGS.uncategorizedCreditsAsIncome).toBe(true);
+    expect(DEFAULT_APP_SETTINGS.excludeInvestments).toBe(false);
   });
 
   it("reads stored values over the defaults and ignores unknown keys", () => {
@@ -55,6 +57,15 @@ describe("parseAppSetting", () => {
       expect(() =>
         parseAppSetting("uncategorizedCreditsAsIncome", value),
       ).toThrow(AppSettingError);
+    }
+  });
+
+  it("types excludeInvestments as a boolean", () => {
+    expect(parseAppSetting("excludeInvestments", true)).toBe(true);
+    for (const value of ["true", 1, null]) {
+      expect(() => parseAppSetting("excludeInvestments", value)).toThrow(
+        AppSettingError,
+      );
     }
   });
 

@@ -969,7 +969,7 @@
       "area": "categorization",
       "title": "Investments left out of spending",
       "user_visible_behavior": "Settings → Reports has \"Leave investments out of spending and income\" (off by default). On, a transaction that no user rule categorises and whose counterparty is a known broker, crypto exchange or fund company, or whose description is a fund subscription or redemption, goes into Savings & investments › Investments, so it counts as neither spending nor income; saving re-runs categorisation and says how many changed. User rules and manual categories win. The /transactions \"Not counted\" line names them as investments.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-026", "F-034"],
       "ticket": "FIN-037",
       "spec": "docs/tickets/FIN-037-investments-out-of-spending.md",
@@ -979,7 +979,12 @@
         "L2: pnpm test:integration tests/integration/investments.int.test.ts (off: spending; on: Investments, out of cash flow both ways; user rule and manual win; off again restores; Not counted names investments)",
         "L3: pnpm test:e2e tests/e2e/settings-reports.spec.ts (turning the setting on lowers this month's expenses by a seeded fund subscription)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-25 pnpm check → pass (working tree on 184d9aa)",
+        "2026-10-25 pnpm test:unit tests/unit/categorization/investments.test.ts → pass (working tree on 184d9aa)",
+        "2026-10-25 pnpm test:integration tests/integration/investments.int.test.ts → pass (working tree on 184d9aa, Docker available)",
+        "2026-10-25 pnpm test:e2e tests/e2e/settings-reports.spec.ts → pass (working tree on 184d9aa, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Found with real data 2026-10-25: index-fund subscriptions and a crypto exchange deposit counted as about €2,000 of 2026 spending; only Nordnet had a seeded rule."
     },
