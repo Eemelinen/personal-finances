@@ -886,6 +886,65 @@
       ],
       "attempts": 0,
       "notes": "Found 2026-10-24: Remove deleted imported history with the bank rows, and a reconnect created second accounts beside archived ones."
+    },
+    {
+      "id": "F-034",
+      "priority": 34,
+      "area": "reports",
+      "title": "Transactions totals count like the reports",
+      "user_visible_behavior": "The Income, Expenses and Net figures on /transactions apply the report rules to the filtered rows: own transfers, excluded transactions and (while the toggle is on) household rows do not count, refunds net against expenses, and uncategorised credits follow the income setting (\"Other money in\" when off). A \"Not counted\" line gives the count and sums of the rest and links to them. With only a date range set, the totals equal the cash-flow report for those days.",
+      "status": "not_started",
+      "depends_on": ["F-026", "F-027", "F-030"],
+      "ticket": "FIN-034",
+      "spec": "docs/tickets/FIN-034-transactions-totals-like-reports.md",
+      "verification": [
+        "L1: pnpm check",
+        "L2: pnpm test:integration tests/integration/transactions-view.int.test.ts (totals equal getCashFlowReport for the range with transfers, excluded, household, refund, non-EUR and uncategorised rows; Not counted holds the rest)",
+        "L3: pnpm test:e2e tests/e2e/transactions.spec.ts (an own transfer pair leaves Income and Expenses unchanged and shows under Not counted)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Found with real data 2026-10-25: the page showed about €143k in and €140k out for 2026 against about €30k of salary; own transfers alone added €42k / €63k."
+    },
+    {
+      "id": "F-035",
+      "priority": 35,
+      "area": "categorization",
+      "title": "Name-variant suggestions in Settings → Household",
+      "user_visible_behavior": "Settings → Household lists counterparties that look like a saved own or household name written with initials (in either word order) or like a joint name of two saved names, with their row count and sums, and adds one to the right person with a click, which re-runs categorisation. Nothing is matched automatically; a relative with the same surname or a company containing the name is never suggested.",
+      "status": "not_started",
+      "depends_on": ["F-030"],
+      "ticket": "FIN-035",
+      "spec": "docs/tickets/FIN-035-name-variant-suggestions.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/categorization/names.test.ts (initials variants, word order, joint names; no relative, company or substring)",
+        "L2: pnpm test:integration tests/integration/household.int.test.ts (suggestion query skips manual, grouped and household rows; right person, count and sums)",
+        "L3: pnpm test:e2e tests/e2e/household-settings.spec.ts (add a suggested variant; its rows become Transfers)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Found with real data 2026-10-25: 36 rows written with initials or under the joint account's name still counted as about €58k of income although both full names were saved."
+    },
+    {
+      "id": "F-036",
+      "priority": 36,
+      "area": "categorization",
+      "title": "Household IBANs found in description text",
+      "user_visible_behavior": "A transaction whose counterparty name and account are missing but whose counterparty or description text contains a household member's IBAN is marked as a household row, as own-account IBANs in the text already make a transfer; a counterparty account of someone else still wins.",
+      "status": "not_started",
+      "depends_on": ["F-030"],
+      "ticket": "FIN-036",
+      "spec": "docs/tickets/FIN-036-household-ibans-in-texts.md",
+      "verification": [
+        "L1: pnpm check",
+        "L1: pnpm test:unit tests/unit/categorization/names.test.ts (member IBAN in the description; counterpartyIban precedence; short IBANs ignored)",
+        "L1: pnpm test:unit tests/unit/categorization/transfers.test.ts (text matching unchanged through the shared helper)",
+        "L2: pnpm test:integration tests/integration/household.int.test.ts (a member IBAN only in the description marks the row household; it leaves the totals with the toggle on)"
+      ],
+      "evidence": [],
+      "attempts": 0,
+      "notes": "Found with real data 2026-10-25: 72 rows carried only the other account's IBAN in the description; household matching would miss a member's account written that way."
     }
   ]
 }
