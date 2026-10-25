@@ -31,17 +31,21 @@ import {
   EMPTY_FILTER,
   type TransactionFilter,
 } from "@/server/queries/transaction-filter";
+import { getCashFlowReport } from "@/server/queries/reports";
 import {
   listAccountOptions,
   listTransactions,
   PAGE_SIZE,
 } from "@/server/queries/transactions";
+import { setAppSetting } from "@/server/settings";
 import { startTestDatabase, type TestDatabase } from "./helpers/postgres";
 
 // The /transactions read model and the F-015 edits against Postgres 18:
-// filters and totals, paging through 10k+ rows, inline category changes,
-// notes, marked and unlinked transfers, and managing categories and rules.
-// One seeded database for the file; every test uses its own accounts.
+// filters and totals (counted like the cash-flow report, F-034, with the
+// rest as "not counted"), paging through 10k+ rows, inline category
+// changes, notes, marked and unlinked transfers, and managing categories
+// and rules. One seeded database for the file; every test uses its own
+// accounts.
 
 let testDb: TestDatabase;
 
@@ -142,16 +146,19 @@ describe("listTransactions", () => {
       "2024-03-05",
       "2024-03-02",
     ]);
-    expect(all.totals).toEqual([
-      {
-        currency: "EUR",
-        count: 5,
-        income: 234_567,
-        expense: -19_500,
-        net: 215_067,
-      },
-      { currency: "SEK", count: 1, income: 0, expense: -1_000, net: -1_000 },
-    ]);
+    // The salary is income, the debits expenses; the SEK row does not count.
+    expect(all.totals).toEqual({
+      currency: "EUR",
+      incomeMinor: 234_567,
+      expensesMinor: -19_500,
+      netMinor: 215_067,
+      otherInMinor: 0,
+    });
+    expect(all.notCounted).toEqual({
+      count: 1,
+      sums: [{ currency: "SEK", creditMinor: 0, debitMinor: -1_000 }],
+      reasons: [{ reason: "currency", count: 1, filter: null }],
+    });
     expect(all.rows[0]).toMatchObject({
       accountId: id,
       institutionName: "Other bank",
@@ -199,7 +206,8 @@ describe("listTransactions", () => {
       { id: pending, status: "pending" },
       { id: booked, status: "booked" },
     ]);
-    expect(result.totals[0]).toMatchObject({ count: 2, expense: -800 });
+    expect(result.total).toBe(2);
+    expect(result.totals.expensesMinor).toBe(-800);
   });
 
   it("filters transfers in or out", async () => {
@@ -237,6 +245,13 @@ describe("listTransactions", () => {
       { id: loan, excluded: true },
       { id: kept, excluded: false },
     ]);
+    // The excluded credit is not income (F-034) but is shown as not counted.
+    expect(all.totals).toMatchObject({ incomeMinor: 0, expensesMinor: -100 });
+    expect(all.notCounted).toEqual({
+      count: 1,
+      sums: [{ currency: "EUR", creditMinor: 18_000_000, debitMinor: 0 }],
+      reasons: [{ reason: "excluded", count: 1, filter: "excluded" }],
+    });
     const only = await listTransactions(
       forAccounts([id], { excluded: "only" }),
       1,
@@ -249,7 +264,9 @@ describe("listTransactions", () => {
       db(),
     );
     expect(without.rows.map((row) => row.id)).toEqual([kept]);
-    expect(without.totals[0]).toMatchObject({ count: 1, income: 0 });
+    expect(without.total).toBe(1);
+    expect(without.totals.incomeMinor).toBe(0);
+    expect(without.notCounted.count).toBe(0);
 
     await includeTransaction(loan, db());
     expect(await stored(loan)).toMatchObject({
@@ -282,7 +299,10 @@ describe("listTransactions", () => {
     const first = await listTransactions(forAccounts([id]), 1, db());
     expect(first).toMatchObject({ total: count, page: 1, pageCount: 201 });
     expect(first.rows).toHaveLength(PAGE_SIZE);
-    expect(first.totals[0]).toMatchObject({ expense, income: 0 });
+    expect(first.totals).toMatchObject({
+      expensesMinor: expense,
+      incomeMinor: 0,
+    });
     expect(first.rows[0].bookingDate).toBe(values.at(-1)!.bookingDate);
 
     const last = await listTransactions(forAccounts([id]), 201, db());
@@ -313,6 +333,241 @@ describe("listTransactions", () => {
       institution: "Other bank",
       archived: false,
     });
+  });
+});
+
+describe("totals like the reports (F-034)", () => {
+  // Only this test has rows in 2025, so a date range of 2025 and no other
+  // filter is exactly what the cash-flow report sees.
+  const NOW = new Date("2025-02-15T10:00:00Z");
+  const FEBRUARY = { from: "2025-02-01", to: "2025-02-28" };
+  const YEAR = { from: "2025-01-01", to: "2025-02-28" };
+
+  const cashFlow = () =>
+    getCashFlowReport({
+      db: testDb.db,
+      now: NOW,
+      timeZone: "Europe/Helsinki",
+      months: 1,
+    });
+  const list = (filter: Partial<TransactionFilter>) =>
+    listTransactions({ ...EMPTY_FILTER, ...filter }, 1, db());
+
+  async function setSettings(
+    uncategorizedCreditsAsIncome: boolean,
+    ignoreHouseholdTransfers: boolean,
+  ) {
+    await setAppSetting(
+      "uncategorizedCreditsAsIncome",
+      uncategorizedCreditsAsIncome,
+      testDb.db,
+    );
+    await setAppSetting(
+      "ignoreHouseholdTransfers",
+      ignoreHouseholdTransfers,
+      testDb.db,
+    );
+  }
+
+  it("counts the filtered rows like getCashFlowReport and sums the rest as not counted", async () => {
+    const main = await account();
+    const savings = await account();
+    const [salary, groceries, refund, debit, credit] = await insert(main, [
+      { date: "2025-02-01", amount: 250_000, description: "Palkka helmikuu" },
+      { date: "2025-02-03", amount: -8_000, counterparty: "S-Market Kamppi" },
+      // A refund: a credit in an expense category nets against expenses.
+      { date: "2025-02-04", amount: 1_500, counterparty: "S-Market Kamppi" },
+      { date: "2025-02-05", amount: -2_200, counterparty: "Zyx Store" },
+      { date: "2025-02-06", amount: 4_000, counterparty: "Zyx Friend" },
+    ]);
+    // An own transfer pair, linked by transfer detection on insert.
+    const [out] = await insert(main, [
+      { date: "2025-02-10", amount: -60_000, counterparty: "Zyx Own" },
+    ]);
+    const [into] = await insert(savings, [
+      { date: "2025-02-10", amount: 60_000, counterparty: "Zyx Own" },
+    ]);
+    const [oneSided, loan, household] = await insert(main, [
+      { date: "2025-02-12", amount: -7_500, counterparty: "Zyx Elsewhere" },
+      { date: "2025-02-14", amount: -90_000, counterparty: "Zyx Lender" },
+      { date: "2025-02-20", amount: 3_000, counterparty: "Zyx Spouse" },
+    ]);
+    await insert(main, [
+      { date: "2025-02-21", amount: -1_000, currency: "SEK" },
+    ]);
+    await markTransfer(oneSided, db());
+    await excludeTransaction(loan, db());
+    // As categorisation marks a household member's payment (F-030).
+    await testDb.db
+      .update(transactions)
+      .set({ household: true })
+      .where(eq(transactions.id, household));
+    // January, for the year to date: a row put in Transfers by hand is an
+    // own transfer without a transfer group.
+    const [, , manualTransfer] = await insert(main, [
+      { date: "2025-01-31", amount: 250_000, description: "Palkka tammikuu" },
+      { date: "2025-01-15", amount: -5_000, counterparty: "Zyx January" },
+      { date: "2025-01-20", amount: -12_000, counterparty: "Zyx Moved" },
+    ]);
+    await setTransactionCategory(
+      manualTransfer,
+      await categoryId("Transfers"),
+      db(),
+    );
+
+    expect((await stored(salary)).categoryId).toBe(
+      await categoryId("Income/Salary"),
+    );
+    for (const id of [groceries, refund]) {
+      expect((await stored(id)).categoryId).toBe(
+        await categoryId("Groceries/Supermarkets"),
+      );
+    }
+    for (const id of [debit, credit]) {
+      expect((await stored(id)).categoryId).toBeNull();
+    }
+    const group = (await stored(out)).transferGroupId;
+    expect(group).not.toBeNull();
+    expect((await stored(into)).transferGroupId).toBe(group);
+
+    try {
+      for (const [asIncome, ignoreHousehold] of [
+        [true, false],
+        [false, false],
+        [true, true],
+        [false, true],
+      ]) {
+        await setSettings(asIncome, ignoreHousehold);
+        const label = `credits as income ${asIncome}, ignore household ${ignoreHousehold}`;
+        // The uncategorised credit, and the household one while it counts.
+        const uncategorized = 4_000 + (ignoreHousehold ? 0 : 3_000);
+        const report = await cashFlow();
+
+        const february = await list(FEBRUARY);
+        expect(february.total, label).toBe(11);
+        expect(february.totals, label).toEqual({
+          currency: "EUR",
+          incomeMinor: 250_000 + (asIncome ? uncategorized : 0),
+          expensesMinor: -8_000 + 1_500 - 2_200,
+          netMinor: 250_000 + (asIncome ? uncategorized : 0) - 8_700,
+          otherInMinor: asIncome ? 0 : uncategorized,
+        });
+        const month = report.months[0];
+        expect(month.month).toBe("2025-02");
+        expect(
+          {
+            incomeMinor: february.totals.incomeMinor,
+            expensesMinor: -february.totals.expensesMinor,
+            otherInMinor: february.totals.otherInMinor,
+            netMinor: february.totals.netMinor,
+          },
+          label,
+        ).toEqual({
+          incomeMinor: month.incomeMinor,
+          expensesMinor: month.expensesMinor,
+          otherInMinor: month.otherInMinor,
+          netMinor: month.netMinor,
+        });
+
+        // Not counted: the transfer pair, the one-sided transfer, the
+        // excluded debit, the SEK row and, while ignored, the household
+        // credit; with the counted rows that is every row.
+        expect(february.notCounted, label).toEqual({
+          count: ignoreHousehold ? 6 : 5,
+          sums: [
+            {
+              currency: "EUR",
+              creditMinor: 60_000 + (ignoreHousehold ? 3_000 : 0),
+              debitMinor: -60_000 - 7_500 - 90_000,
+            },
+            { currency: "SEK", creditMinor: 0, debitMinor: -1_000 },
+          ],
+          reasons: [
+            { reason: "transfer", count: 3, filter: "transfers" },
+            { reason: "excluded", count: 1, filter: "excluded" },
+            ...(ignoreHousehold
+              ? [{ reason: "household", count: 1, filter: "household" }]
+              : []),
+            { reason: "currency", count: 1, filter: null },
+          ],
+        });
+        const eurAmounts = [
+          250_000, -8_000, 1_500, -2_200, 4_000, -60_000, 60_000, -7_500,
+          -90_000, 3_000,
+        ];
+        const eur = february.notCounted.sums[0];
+        expect(
+          february.totals.incomeMinor +
+            february.totals.expensesMinor +
+            february.totals.otherInMinor +
+            eur.creditMinor +
+            eur.debitMinor,
+          label,
+        ).toBe(eurAmounts.reduce((sum, amount) => sum + amount, 0));
+
+        // The year to date: the manual Transfers row is an own transfer,
+        // which `transfers=only` (transfer groups) would not list.
+        const year = await list(YEAR);
+        expect(
+          {
+            incomeMinor: year.totals.incomeMinor,
+            expensesMinor: -year.totals.expensesMinor,
+            otherInMinor: year.totals.otherInMinor,
+          },
+          label,
+        ).toEqual({
+          incomeMinor: report.yearToDate.incomeMinor,
+          expensesMinor: report.yearToDate.expensesMinor,
+          otherInMinor: report.yearToDate.otherInMinor,
+        });
+        expect(year.totals.incomeMinor - february.totals.incomeMinor).toBe(
+          250_000,
+        );
+        expect(year.notCounted.count).toBe(february.notCounted.count + 1);
+        expect(year.notCounted.reasons[0]).toEqual({
+          reason: "transfer",
+          count: 4,
+          filter: null,
+        });
+      }
+
+      // Each reason's filter lists exactly its rows, which count nowhere.
+      await setSettings(true, true);
+      const transfers = await list({ ...FEBRUARY, transfers: "only" });
+      expect(transfers.rows.map((row) => row.id).sort()).toEqual(
+        [out, into, oneSided].sort(),
+      );
+      expect(transfers.totals).toMatchObject({
+        incomeMinor: 0,
+        expensesMinor: 0,
+        netMinor: 0,
+      });
+      expect(transfers.notCounted).toEqual({
+        count: 3,
+        sums: [{ currency: "EUR", creditMinor: 60_000, debitMinor: -67_500 }],
+        reasons: [{ reason: "transfer", count: 3, filter: "transfers" }],
+      });
+      const excluded = await list({ ...FEBRUARY, excluded: "only" });
+      expect(excluded.rows.map((row) => row.id)).toEqual([loan]);
+      expect(excluded.notCounted.count).toBe(1);
+      const householdOnly = await list({ ...FEBRUARY, household: "only" });
+      expect(householdOnly.rows.map((row) => row.id)).toEqual([household]);
+      expect(householdOnly.notCounted.reasons).toEqual([
+        { reason: "household", count: 1, filter: "household" },
+      ]);
+
+      // The `type` filter still goes by the sign: money in includes the
+      // refund (which nets against expenses) and the transfer's credit.
+      const moneyIn = await list({ ...FEBRUARY, direction: "income" });
+      expect(moneyIn.total).toBe(5);
+      expect(moneyIn.totals).toMatchObject({
+        incomeMinor: 254_000,
+        expensesMinor: 1_500,
+      });
+      expect(moneyIn.notCounted).toMatchObject({ count: 2 });
+    } finally {
+      await setSettings(true, false);
+    }
   });
 });
 

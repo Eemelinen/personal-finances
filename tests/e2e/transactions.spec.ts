@@ -13,10 +13,11 @@ import {
   type CsvRow,
 } from "./support/transactions";
 
-// /transactions end to end (F-015): filters live in the URL, the category
-// changes inline (manual), notes, one-sided transfers, excluding from
-// reports (F-027), rules created from a transaction, and paging through more
-// than 10 000 rows. The server seeds
+// /transactions end to end (F-015): filters live in the URL, totals that
+// leave own transfers out like the reports (F-034), the category changes
+// inline (manual), notes, one-sided transfers, excluding from reports
+// (F-027), rules created from a transaction, and paging through more than
+// 10 000 rows. The server seeds
 // the default categories and rules, so "Salary" and "rent" texts are
 // categorised on import.
 
@@ -107,7 +108,7 @@ test("filters live in the URL", async ({ page }) => {
   await expect(total(page, "Expenses")).toHaveText(euros(-1_780));
   const filters = page.getByRole("form", { name: "Filters" });
   await expect(filters.getByLabel("Search")).toHaveValue("kiosk");
-  await expect(filters.getByLabel("Income or expense")).toHaveValue("expense");
+  await expect(filters.getByLabel("Money in or out")).toHaveValue("expense");
 
   // Changing the form changes the URL; a reload keeps the result.
   await filters.getByLabel("From", { exact: true }).fill("2024-03-05");
@@ -145,6 +146,70 @@ test("filters live in the URL", async ({ page }) => {
     withParams(url, { from: "yesterday", type: "both", page: "-3" }),
   );
   await expectRowCount(page, 6);
+});
+
+test("an own transfer pair leaves Income and Expenses unchanged and shows under Not counted", async ({
+  page,
+}) => {
+  // Three CSV imports and four filtered views.
+  test.setTimeout(90_000);
+  const { url } = await setUp(page);
+  await expect(total(page, "Income")).toHaveText(euros(234_567));
+  await expect(total(page, "Expenses")).toHaveText(euros(-20_110));
+  await expect(totals(page).getByTestId("not-counted")).toHaveCount(0);
+
+  // Both legs of a transfer between two other own accounts, imported
+  // apart; detection pairs them. A random amount of 3 000–9 000 € keeps
+  // other tests' rows out of the pair.
+  const cents = 300_000 + Math.floor(Math.random() * 600_000);
+  const amount = `${Math.floor(cents / 100)},${String(cents % 100).padStart(2, "0")}`;
+  const outTag = uniqueTag();
+  const inTag = uniqueTag();
+  const from = await importIntoNewAccount(page, outTag, [
+    {
+      date: "25.03.2024",
+      amount: `-${amount}`,
+      counterparty: `Own savings ${outTag}`,
+      description: "Own transfer",
+    },
+  ]);
+  const to = await importIntoNewAccount(page, inTag, [
+    {
+      date: "25.03.2024",
+      amount: `+${amount}`,
+      counterparty: `Own checking ${inTag}`,
+      description: "Own transfer",
+    },
+  ]);
+  const all = new URL(url);
+  for (const name of [from, to]) {
+    const id = (await openAccount(page, name)).searchParams.get("account");
+    all.searchParams.append("account", id!);
+  }
+
+  await page.goto(`${all.pathname}${all.search}`);
+  await expectRowCount(page, 8);
+  await expect(total(page, "Income")).toHaveText(euros(234_567));
+  await expect(total(page, "Expenses")).toHaveText(euros(-20_110));
+  await expect(total(page, "Net")).toHaveText(euros(214_457));
+  const notCounted = totals(page).getByTestId("not-counted");
+  await expect(notCounted).toContainText(
+    `Not counted: 2 transactions (+${euros(cents)} / ${euros(-cents)}): own transfers.`,
+  );
+
+  await notCounted.getByRole("link", { name: "own transfers" }).click();
+  await expect(page).toHaveURL(/transfers=only/);
+  await expectRowCount(page, 2);
+  for (const text of [`Own savings ${outTag}`, `Own checking ${inTag}`]) {
+    await expect(
+      transactionRow(page, text).getByText("Transfer", { exact: true }),
+    ).toBeVisible();
+  }
+  await expect(total(page, "Income")).toHaveText(euros(0));
+  await expect(total(page, "Expenses")).toHaveText(euros(0));
+  await expect(notCounted).toContainText("Not counted: 2 transactions");
+  // The filter already lists them: no link to itself.
+  await expect(notCounted.getByRole("link")).toHaveCount(0);
 });
 
 test("an inline category change is manual and persists", async ({ page }) => {

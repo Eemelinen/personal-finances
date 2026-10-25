@@ -6,7 +6,10 @@ import type { IsoDate } from "@/server/providers/types";
 //   account        an account id; repeated for several accounts
 //   category       a category id (its subcategories included) or `none`
 //   q              text in the counterparty, description or note
-//   type           `income` (credits) or `expense` (debits)
+//   type           `income` (credits) or `expense` (debits), by the sign
+//                  alone: the form says "Money in" / "Money out", since
+//                  the totals' Income and Expenses follow the report rules
+//                  (F-034)
 //   transfers      `exclude` or `only` (own transfers); absent: both
 //   excluded       `exclude` or `only` (excluded from reports, F-027);
 //                  absent: both

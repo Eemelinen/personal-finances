@@ -105,15 +105,17 @@ export function TransactionFilters({
           </NativeSelect>
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`${ids}-type`}>Income or expense</Label>
+          {/* By the sign of the amount, not the report's income and
+              expenses (F-034), hence "money in" and "money out". */}
+          <Label htmlFor={`${ids}-type`}>Money in or out</Label>
           <NativeSelect
             id={`${ids}-type`}
             name="type"
             defaultValue={filter.direction ?? ""}
           >
-            <option value="">Income and expenses</option>
-            <option value="income">Income only</option>
-            <option value="expense">Expenses only</option>
+            <option value="">Money in and out</option>
+            <option value="income">Money in</option>
+            <option value="expense">Money out</option>
           </NativeSelect>
         </div>
         <div className="flex flex-col gap-2">
