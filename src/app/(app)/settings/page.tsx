@@ -17,7 +17,8 @@ const SECTIONS = [
   {
     href: REPORT_SETTINGS_PATH,
     title: "Reports",
-    description: "What the cash-flow report and the dashboard count as income.",
+    description:
+      "What the cash-flow report and the dashboard count as income and spending.",
     icon: ChartPie,
   },
   {

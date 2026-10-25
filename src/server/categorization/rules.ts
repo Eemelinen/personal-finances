@@ -134,18 +134,21 @@ export type RuleOutcome =
 /**
  * What the rules make of a stored transaction: a manual category always
  * wins and a transfer keeps its Transfers category (no change); otherwise
- * the first matching rule's category, or none. Unchanged values are no change.
+ * the first matching rule's category, else `fallbackCategoryId` (a
+ * recognised investment, F-037) with source `rule`, or none. Unchanged
+ * values are no change.
  */
 export function ruleOutcome(
   rules: readonly CompiledRule[],
   txn: CategorizedSubject,
+  fallbackCategoryId: string | null = null,
 ): RuleOutcome {
   if (txn.categorySource === "manual" || txn.transferGroupId !== null) {
     return { change: false };
   }
   const rule = matchRule(rules, txn);
-  const categoryId = rule?.categoryId ?? null;
-  const categorySource = rule ? "rule" : "none";
+  const categoryId = rule?.categoryId ?? fallbackCategoryId;
+  const categorySource = categoryId === null ? "none" : "rule";
   if (txn.categoryId === categoryId && txn.categorySource === categorySource) {
     return { change: false };
   }

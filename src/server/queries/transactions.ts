@@ -104,8 +104,8 @@ export interface NotCountedReason {
   count: number;
   /**
    * The filter whose `only` lists exactly these rows (the rest of the
-   * filter unchanged), or null without one: other currencies, and own
-   * transfers in a transfer-kind category without a transfer group.
+   * filter unchanged), or null without one: other currencies,
+   * investments, and own transfers in Transfers without a transfer group.
    */
   filter: ReasonFilter | null;
 }
@@ -132,6 +132,7 @@ export interface TransactionPage {
 
 export const LEFT_OUT_REASONS: readonly LeftOutReason[] = [
   "transfer",
+  "investment",
   "excluded",
   "household",
   "currency",
@@ -232,6 +233,7 @@ async function countFiltered(
       debits: sumWhere(and(notCounted, lt(transactions.amountMinor, 0))!),
       transfer: countWhere(leftOut.transfer),
       grouped: countWhere(isNotNull(transactions.transferGroupId)),
+      investment: countWhere(leftOut.investment),
       excluded: countWhere(leftOut.excluded),
       household: countWhere(leftOut.household),
       currencyReason: countWhere(leftOut.currency),
@@ -249,6 +251,7 @@ async function countFiltered(
 
   const reasonCounts: Record<LeftOutReason, number> = {
     transfer: sumOf((group) => group.transfer),
+    investment: sumOf((group) => group.investment),
     excluded: sumOf((group) => group.excluded),
     household: sumOf((group) => group.household),
     currency: sumOf((group) => group.currencyReason),
@@ -260,6 +263,7 @@ async function countFiltered(
       sumOf((group) => group.grouped) === reasonCounts.transfer
         ? "transfers"
         : null,
+    investment: null,
     excluded: "excluded",
     household: "household",
     currency: null,

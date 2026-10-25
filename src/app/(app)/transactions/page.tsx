@@ -151,6 +151,7 @@ function Totals({
 
 const REASON_LABELS: Record<LeftOutReason, string> = {
   transfer: "own transfers",
+  investment: "investments",
   excluded: "excluded from reports",
   household: "with household members",
   currency: "in other currencies",
@@ -158,6 +159,7 @@ const REASON_LABELS: Record<LeftOutReason, string> = {
 
 const REASON_EXPLANATIONS: Record<LeftOutReason, string> = {
   transfer: "own transfers only move money between your own accounts",
+  investment: "investments move money between your cash and your own holdings",
   excluded: "excluded transactions are left out of every report",
   household:
     "transactions with household members are ignored (Settings → Household)",

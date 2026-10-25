@@ -12,7 +12,7 @@ export default function ReportSettingsPage() {
     <>
       <PageHeader
         title="Reports"
-        description="What the cash-flow report and the dashboard count as income."
+        description="What the cash-flow report and the dashboard count as income and spending."
       />
       <Suspense
         fallback={<p className="text-muted-foreground">Loading settings…</p>}
@@ -29,6 +29,7 @@ async function ReportSettings() {
   return (
     <ReportSettingsForm
       uncategorizedCreditsAsIncome={settings.uncategorizedCreditsAsIncome}
+      excludeInvestments={settings.excludeInvestments}
     />
   );
 }

@@ -16,6 +16,7 @@ import {
 import { getDb, type Db } from "@/server/db/client";
 import { accounts, categories, transactions } from "@/server/db/schema";
 import {
+  TRANSFERS_CATEGORY,
   UNCATEGORIZED_CATEGORY,
   type CategoryKind,
 } from "@/server/categorization/defaults";
@@ -40,8 +41,9 @@ import {
 // month tiles (F-017, D-014, D-029).
 //
 // What counts: EUR transactions, booked or pending, that are not own
-// transfers (no `transfer_group_id`, category kind not `transfer`) and not
-// excluded (category kind not `excluded`, F-027; balances still count
+// transfers (no `transfer_group_id`, category kind not `transfer`; one
+// other than Transfers, such as Investments, is named an investment,
+// F-037) and not excluded (category kind not `excluded`, F-027; balances still count
 // them, the money moved). A
 // category's kind says whether it is spending or income, so a refund (a
 // credit in an expense category) nets against that category. A
@@ -210,7 +212,8 @@ export function resolveScope(
 }
 
 /** Why a transaction does not count (F-034 names them on /transactions). */
-export type LeftOutReason = "transfer" | "excluded" | "household" | "currency";
+export type LeftOutReason =
+  "transfer" | "investment" | "excluded" | "household" | "currency";
 
 /** The settings the report rules depend on. */
 export interface FlowSettings {
@@ -242,8 +245,23 @@ export function flowParts(
   // of these is ever null.
   const ofKind = (value: CategoryKind) =>
     and(isNotNull(transactions.categoryId), eq(categories.kind, value))!;
+  // A transfer-kind category other than the top-level Transfers, outside a
+  // transfer group, is an investment (F-037), such as Savings &
+  // investments › Investments; the two reasons never overlap.
+  const transfersCategory = and(
+    isNull(categories.parentId),
+    eq(categories.name, TRANSFERS_CATEGORY),
+  )!;
   const leftOut: Record<LeftOutReason, SQL> = {
-    transfer: or(isNotNull(transactions.transferGroupId), ofKind("transfer"))!,
+    transfer: or(
+      isNotNull(transactions.transferGroupId),
+      and(ofKind("transfer"), transfersCategory),
+    )!,
+    investment: and(
+      isNull(transactions.transferGroupId),
+      ofKind("transfer"),
+      not(transfersCategory),
+    )!,
     excluded: ofKind("excluded"),
     household: ignoreHouseholdTransfers
       ? eq(transactions.household, true)

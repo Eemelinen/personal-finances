@@ -35,6 +35,13 @@ const SETTINGS = {
    * both directions; off by default.
    */
   ignoreHouseholdTransfers: { schema: z.boolean(), default: false },
+  /**
+   * Whether categorisation puts recognised investments (brokers, crypto
+   * exchanges, fund companies, fund subscriptions) that no rule matches
+   * into Savings & investments › Investments (F-037, `investments.ts`);
+   * off by default.
+   */
+  excludeInvestments: { schema: z.boolean(), default: false },
 } as const;
 
 export type AppSettings = {
