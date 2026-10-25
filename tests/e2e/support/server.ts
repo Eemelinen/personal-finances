@@ -8,6 +8,13 @@
  * It never touches the dev database. The database URL goes to
  * ./database.ts's file, so specs can seed data directly.
  *
+ * The build and the server get a test environment of their own
+ * (./test-env.ts): every variable the app reads has a test or an empty value,
+ * so a real `.env` in the checkout never reaches them, and the `.env*` files
+ * `next build` copies into `.next/standalone` are deleted before serving. The
+ * environment is parsed with the app's parsers first; an invalid one stops the
+ * run at once with their message.
+ *
  *   E2E_PORT=3100        port to serve on (playwright.config.ts sets it)
  *   E2E_SKIP_BUILD=1     reuse an existing `pnpm build` (CI builds once)
  *
@@ -32,13 +39,14 @@ import type { Readable, Writable } from "node:stream";
 import { encodePasswordHash } from "@/server/auth/hash-encoding";
 import { hashPassword } from "@/server/auth/password";
 import { seedDefaults } from "@/server/categorization/seed";
-import {
-  E2E_ENCRYPTION_KEY,
-  E2E_PASSWORD,
-  E2E_SESSION_SECRET,
-} from "./credentials";
-import { DATABASE_URL_FILE, E2E_TIME_ZONE } from "./database";
+import { E2E_PASSWORD } from "./credentials";
+import { DATABASE_URL_FILE } from "./database";
 import { ERRORS_FILE, isServerErrorLine } from "./server-errors";
+import {
+  checkTestEnvironment,
+  removeEnvFiles,
+  testEnvironment,
+} from "./test-env";
 import {
   startTestDatabase,
   type TestDatabase,
@@ -52,9 +60,13 @@ let database: TestDatabase | undefined;
 let server: ChildProcess | undefined;
 let stopping = false;
 
-function run(command: string, args: string[]): Promise<void> {
+function run(
+  command: string,
+  args: string[],
+  env: NodeJS.ProcessEnv,
+): Promise<void> {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { cwd: root, stdio: "inherit" });
+    const child = spawn(command, args, { cwd: root, stdio: "inherit", env });
     child.on("error", reject);
     child.on("exit", (code) =>
       code === 0
@@ -94,10 +106,16 @@ async function main(): Promise<void> {
   // What the Compose `migrate` service does after the migrations.
   await seedDefaults(database.db);
 
+  const env = testEnvironment(process.env, {
+    databaseUrl: database.url,
+    passwordHash: encodePasswordHash(await hashPassword(E2E_PASSWORD)),
+  });
+  checkTestEnvironment(env);
+
   if (process.env.E2E_SKIP_BUILD === "1") {
     console.info("[e2e] E2E_SKIP_BUILD=1: using the existing build");
   } else {
-    await run("pnpm", ["build"]);
+    await run("pnpm", ["build"], env);
   }
 
   const serverJs = path.join(standaloneDir, "server.js");
@@ -116,6 +134,12 @@ async function main(): Promise<void> {
   cpSync(path.join(root, "public"), path.join(standaloneDir, "public"), {
     recursive: true,
   });
+  // Every app variable is already set, so the served app could not use
+  // these; the build output must not keep a copy of the checkout's secrets
+  // either.
+  for (const name of removeEnvFiles(standaloneDir)) {
+    console.info(`[e2e] removed ${name} from .next/standalone`);
+  }
 
   mkdirSync(path.dirname(path.join(root, ERRORS_FILE)), { recursive: true });
   // For specs that seed the database directly (./database.ts).
@@ -125,18 +149,7 @@ async function main(): Promise<void> {
   server = spawn(process.execPath, [serverJs], {
     cwd: standaloneDir,
     stdio: ["ignore", "pipe", "pipe"],
-    env: {
-      ...process.env,
-      NODE_ENV: "production",
-      PORT: port,
-      HOSTNAME: "127.0.0.1",
-      DATABASE_URL: database.url,
-      AUTH_PASSWORD_HASH: encodePasswordHash(await hashPassword(E2E_PASSWORD)),
-      SESSION_SECRET: E2E_SESSION_SECRET,
-      APP_TIMEZONE: E2E_TIME_ZONE,
-      BANK_PROVIDER: "fake",
-      ENCRYPTION_KEY: E2E_ENCRYPTION_KEY,
-    },
+    env: { ...env, PORT: port, HOSTNAME: "127.0.0.1" },
   });
   watchOutput(server.stdout!, process.stdout);
   watchOutput(server.stderr!, process.stderr);

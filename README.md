@@ -113,6 +113,11 @@ In Claude Code: `/harness:clock-in`, implement, `/harness:verify-feature F-NNN`,
 | `pnpm lint` / `pnpm typecheck`       | ESLint / TypeScript checks                    |
 | `pnpm format` / `pnpm format:check`  | Prettier                                      |
 
+L3 never uses the checkout's `.env`: `tests/e2e/support/server.ts` builds and serves the app
+with a test environment of its own (`tests/e2e/support/test-env.ts`, a test or an empty value
+for every variable in `src/server/env.ts`) and deletes the `.env*` files `next build` copies
+into `.next/standalone`, so `pnpm test:e2e` also runs in a checkout with a real `.env`.
+
 ## Project structure
 
 ```

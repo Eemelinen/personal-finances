@@ -190,7 +190,12 @@ tests/
   unit/                Vitest unit project (L1)
   integration/         Vitest + Testcontainers Postgres 18 (L2); helpers/postgres.ts
   e2e/                 Playwright against the built app (L3); support/server.ts is the
-                       webServer (Testcontainers Postgres + build + standalone server),
+                       webServer (Testcontainers Postgres + build + standalone server);
+                       support/test-env.ts gives the build and the server their own
+                       environment (every variable of src/server/env.ts gets a test
+                       or an empty value, so a checkout's .env never reaches them;
+                       the .env* files next build copies into .next/standalone are
+                       deleted, and an invalid environment stops the run at once),
                        support/database.ts lets specs seed that database directly
                        (dashboard.spec.ts, then reports.spec.ts, run as their own
                        projects before the others);

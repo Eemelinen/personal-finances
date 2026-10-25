@@ -994,7 +994,7 @@
       "area": "harness",
       "title": "L3 runs with a test environment of its own",
       "user_visible_behavior": "pnpm test:e2e passes in a checkout that has a real .env: the e2e build and the served test app get every app variable from a test environment (optional ones empty), the .env files Next.js copies into .next/standalone are deleted before serving, and an invalid test environment stops the run at once with the parser's message instead of a 300 s webServer timeout.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-003"],
       "ticket": "FIN-038",
       "spec": "docs/tickets/FIN-038-e2e-test-environment.md",
@@ -1003,7 +1003,11 @@
         "L1: pnpm test:unit tests/unit/e2e/test-env.test.ts (production-like base values never reach the app variables; every schema key present; parses with the app's parsers; unrelated variables pass through; .env* removed from a standalone dir)",
         "L3: pnpm test:e2e tests/e2e/app-shell.spec.ts (the suite passes through the test environment)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-25 pnpm check → pass (working tree on 142a460)",
+        "2026-10-25 pnpm test:unit tests/unit/e2e/test-env.test.ts → pass (working tree on 142a460)",
+        "2026-10-25 pnpm test:e2e tests/e2e/app-shell.spec.ts → pass (working tree on 142a460, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Found on the real machine 2026-10-25: L3 in the main checkout loaded the production .env through .next/standalone and timed out on /api/health; loop worktrees have no .env."
     }
