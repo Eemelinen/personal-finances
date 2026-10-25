@@ -61,6 +61,17 @@ Repository-local session log. Read it at clock-in, update it at clock-out (AGENT
 
 ## Session Log
 
+### Session 037 — 2026-10-25 (interactive: guard exemption for new migrations)
+
+- Harness v0.3.7 added `exceptNewOnBranch` for guard path rules (harness#20). It was prompted in
+  part by F-032, whose `csv` backfill had to move to `applyMigrations()` because a loop session may
+  not write SQL into a migration (D-011 amendment). The `drizzle/*` rule now sets it, so a
+  migration file missing on `main` can get hand-written SQL on the branch that generated it. A
+  new `drizzle/meta/*` rule before it keeps the snapshots and the journal asking. Migrations
+  already on `main` are guarded as before.
+- AGENTS.md and docs/harness/README.md say the same. The F-032 backfill stays where it is; the next
+  backfill can go into its migration.
+
 ### Session 036 — 2026-10-24 (unattended loop: F-033, attempt 1)
 
 - Goal: F-033 — removing a connection keeps CSV-imported history, and connecting a bank anew reuses existing archived or manual accounts with the same IBAN instead of duplicating them.

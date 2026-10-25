@@ -53,9 +53,15 @@
         "reason": "secrets; document variables in .env.example instead"
       },
       {
+        "match": "drizzle/meta/*",
+        "decision": "ask",
+        "reason": "Drizzle snapshots and the journal come from pnpm db:generate and are never hand-edited (AGENTS.md)"
+      },
+      {
         "match": "drizzle/*",
         "decision": "ask",
-        "reason": "migrations come from pnpm db:generate (AGENTS.md); confirm this generated file is meant to be hand-edited"
+        "reason": "migrations come from pnpm db:generate (AGENTS.md); only a migration this branch generated may get hand-written SQL",
+        "exceptNewOnBranch": true
       },
       {
         "match": "AGENTS.md",
