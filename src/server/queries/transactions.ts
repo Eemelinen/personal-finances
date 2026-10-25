@@ -25,12 +25,29 @@ import {
   transactions,
 } from "@/server/db/schema";
 import { IS_EXCLUDED } from "@/server/categorization/categorize";
+import {
+  loadFlowParts,
+  REPORT_CURRENCY,
+  type FlowSettings,
+  type LeftOutReason,
+} from "./reports";
 import { NO_CATEGORY, type TransactionFilter } from "./transaction-filter";
 
 // Read model of /transactions (F-015): one page of the filtered
 // transactions, newest first, with the totals of the whole filter. Pages
 // are LIMIT/OFFSET over (booking_date, created_at, id), which stays fast
 // for one person's history (tens of thousands of rows).
+//
+// The totals count like the cash-flow report and the dashboard (F-034,
+// D-035): the report rules of `flowParts()` (`reports.ts`) apply to the
+// filtered rows, with the settings from `getAppSettings()`. Only EUR rows
+// count; own transfers, excluded rows and, while `ignoreHouseholdTransfers`
+// is on, household rows do not; a credit in an expense category nets
+// against expenses as a refund; a credit without a category (or in
+// Uncategorized) is income, or other money in while
+// `uncategorizedCreditsAsIncome` is off. The rows that do not count are
+// summed apart ("Not counted") with the reasons they meet. The list and its
+// filters are unchanged: the `type` filter still goes by the sign.
 
 export const PAGE_SIZE = 50;
 
@@ -57,13 +74,49 @@ export interface TransactionRow {
   household: boolean;
 }
 
-/** Sums of the filtered transactions in one currency (minor units). */
-export interface CurrencyTotals {
+/**
+ * What the filtered transactions that count add up to, in
+ * `REPORT_CURRENCY` minor units, as the cash-flow report counts them.
+ */
+export interface TransactionTotals {
   currency: string;
+  incomeMinor: number;
+  /**
+   * Signed: debits plus refunds of the expense rows, so normally negative
+   * (the cash-flow report's `expensesMinor` with the opposite sign).
+   */
+  expensesMinor: number;
+  /** Income plus the (negative) expenses; other money in is not in it. */
+  netMinor: number;
+  /**
+   * Credits without a category (or in Uncategorized) while
+   * `uncategorizedCreditsAsIncome` is off; 0 while it is on.
+   */
+  otherInMinor: number;
+}
+
+/** A filter whose `only` value lists the rows of one reason. */
+export type ReasonFilter = "transfers" | "excluded" | "household";
+
+export interface NotCountedReason {
+  reason: LeftOutReason;
+  /** Rows with this reason; a row can have several reasons. */
   count: number;
-  income: number;
-  expense: number;
-  net: number;
+  /**
+   * The filter whose `only` lists exactly these rows (the rest of the
+   * filter unchanged), or null without one: other currencies, and own
+   * transfers in a transfer-kind category without a transfer group.
+   */
+  filter: ReasonFilter | null;
+}
+
+/** The filtered transactions the reports leave out. */
+export interface NotCounted {
+  count: number;
+  /** Their credits and debits per currency: EUR first, then by code. */
+  sums: { currency: string; creditMinor: number; debitMinor: number }[];
+  /** The reasons present, in `LEFT_OUT_REASONS` order. */
+  reasons: NotCountedReason[];
 }
 
 export interface TransactionPage {
@@ -73,7 +126,19 @@ export interface TransactionPage {
   pageCount: number;
   /** Transactions matching the filter, over all pages. */
   total: number;
-  totals: CurrencyTotals[];
+  totals: TransactionTotals;
+  notCounted: NotCounted;
+}
+
+export const LEFT_OUT_REASONS: readonly LeftOutReason[] = [
+  "transfer",
+  "excluded",
+  "household",
+  "currency",
+];
+
+export interface ListTransactionsOptions extends Partial<FlowSettings> {
+  db?: Db;
 }
 
 /** `%`, `_` and `\` match themselves in an ILIKE pattern. */
@@ -132,37 +197,121 @@ export function filterConditions(filter: TransactionFilter): SQL | undefined {
   return and(...conditions);
 }
 
+const num = (value: string | number | null | undefined) => Number(value ?? 0);
+
+const sumWhere = (condition: SQL) =>
+  sql<string>`coalesce(sum(${transactions.amountMinor}) filter (where ${condition}), 0)`;
+const countWhere = (condition: SQL) =>
+  sql<string>`count(*) filter (where ${condition})`;
+
+/**
+ * The totals and the "Not counted" part of the filtered rows, from one
+ * aggregate per currency over the report rules (`loadFlowParts()`).
+ */
+async function countFiltered(
+  db: Db,
+  where: SQL | undefined,
+  settings: Partial<FlowSettings>,
+): Promise<{
+  total: number;
+  totals: TransactionTotals;
+  notCounted: NotCounted;
+}> {
+  const { join, kind, counted, leftOut } = await loadFlowParts(db, settings);
+  const notCounted = not(counted);
+  const ofKind = (value: string) => and(counted, sql`${kind} = ${value}`)!;
+  const groups = await db
+    .select({
+      currency: transactions.currency,
+      count: count(),
+      income: sumWhere(ofKind("income")),
+      expenses: sumWhere(ofKind("expense")),
+      otherIn: sumWhere(ofKind("other_in")),
+      notCounted: countWhere(notCounted),
+      credits: sumWhere(and(notCounted, gt(transactions.amountMinor, 0))!),
+      debits: sumWhere(and(notCounted, lt(transactions.amountMinor, 0))!),
+      transfer: countWhere(leftOut.transfer),
+      grouped: countWhere(isNotNull(transactions.transferGroupId)),
+      excluded: countWhere(leftOut.excluded),
+      household: countWhere(leftOut.household),
+      currencyReason: countWhere(leftOut.currency),
+    })
+    .from(transactions)
+    .leftJoin(categories, join)
+    .where(where)
+    .groupBy(transactions.currency)
+    .orderBy(asc(transactions.currency));
+
+  const sumOf = (pick: (group: (typeof groups)[number]) => string | number) =>
+    groups.reduce((sum, group) => sum + num(pick(group)), 0);
+  const incomeMinor = sumOf((group) => group.income);
+  const expensesMinor = sumOf((group) => group.expenses);
+
+  const reasonCounts: Record<LeftOutReason, number> = {
+    transfer: sumOf((group) => group.transfer),
+    excluded: sumOf((group) => group.excluded),
+    household: sumOf((group) => group.household),
+    currency: sumOf((group) => group.currencyReason),
+  };
+  // `transfers=only` lists the rows in a transfer group, all of them own
+  // transfers; it lists every own transfer only when each is in a group.
+  const reasonFilters: Record<LeftOutReason, ReasonFilter | null> = {
+    transfer:
+      sumOf((group) => group.grouped) === reasonCounts.transfer
+        ? "transfers"
+        : null,
+    excluded: "excluded",
+    household: "household",
+    currency: null,
+  };
+
+  return {
+    total: sumOf((group) => group.count),
+    totals: {
+      currency: REPORT_CURRENCY,
+      incomeMinor,
+      expensesMinor,
+      netMinor: incomeMinor + expensesMinor,
+      otherInMinor: sumOf((group) => group.otherIn),
+    },
+    notCounted: {
+      count: sumOf((group) => group.notCounted),
+      sums: groups
+        .filter((group) => num(group.notCounted) > 0)
+        .map((group) => ({
+          currency: group.currency,
+          creditMinor: num(group.credits),
+          debitMinor: num(group.debits),
+        }))
+        .sort(
+          (a, b) =>
+            Number(b.currency === REPORT_CURRENCY) -
+              Number(a.currency === REPORT_CURRENCY) ||
+            a.currency.localeCompare(b.currency),
+        ),
+      reasons: LEFT_OUT_REASONS.filter(
+        (reason) => reasonCounts[reason] > 0,
+      ).map((reason) => ({
+        reason,
+        count: reasonCounts[reason],
+        filter: reasonFilters[reason],
+      })),
+    },
+  };
+}
+
 export async function listTransactions(
   filter: TransactionFilter,
   page: number,
-  options: { db?: Db } = {},
+  options: ListTransactionsOptions = {},
 ): Promise<TransactionPage> {
   const db = options.db ?? getDb();
   const where = filterConditions(filter);
 
-  const totalsRows = await db
-    .select({
-      currency: transactions.currency,
-      count: count(),
-      income: sql<string>`coalesce(sum(${transactions.amountMinor}) filter (where ${transactions.amountMinor} > 0), 0)`,
-      expense: sql<string>`coalesce(sum(${transactions.amountMinor}) filter (where ${transactions.amountMinor} < 0), 0)`,
-    })
-    .from(transactions)
-    .where(where)
-    .groupBy(transactions.currency)
-    .orderBy(asc(transactions.currency));
-  const totals = totalsRows.map((row) => {
-    const income = Number(row.income);
-    const expense = Number(row.expense);
-    return {
-      currency: row.currency,
-      count: row.count,
-      income,
-      expense,
-      net: income + expense,
-    };
+  const { total, totals, notCounted } = await countFiltered(db, where, {
+    uncategorizedCreditsAsIncome: options.uncategorizedCreditsAsIncome,
+    ignoreHouseholdTransfers: options.ignoreHouseholdTransfers,
   });
-  const total = totals.reduce((sum, row) => sum + row.count, 0);
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const current = Math.min(Math.max(1, page), pageCount);
 
@@ -207,6 +356,7 @@ export async function listTransactions(
     pageCount,
     total,
     totals,
+    notCounted,
   };
 }
 

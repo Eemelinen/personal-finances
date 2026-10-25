@@ -4,8 +4,12 @@ import {
   desc,
   eq,
   gte,
+  isNotNull,
   isNull,
   lte,
+  ne,
+  not,
+  or,
   sql,
   type SQL,
 } from "drizzle-orm";
@@ -49,6 +53,8 @@ import {
 // While the `ignoreHouseholdTransfers` setting is on (F-030), transactions
 // marked `household` (a household member's name or IBAN) count nowhere,
 // in either direction.
+// `flowParts()` is the only definition of these rules; the `/transactions`
+// totals (F-034) count through it too (`loadFlowParts()`).
 // Months are the `YYYY-MM` of `booking_date`, which is already the bank's
 // calendar day; the caller's "today" is the `APP_TIMEZONE` day.
 
@@ -203,17 +209,28 @@ export function resolveScope(
     : { level: "category", category };
 }
 
+/** Why a transaction does not count (F-034 names them on /transactions). */
+export type LeftOutReason = "transfer" | "excluded" | "household" | "currency";
+
+/** The settings the report rules depend on. */
+export interface FlowSettings {
+  uncategorizedCreditsAsIncome: boolean;
+  ignoreHouseholdTransfers: boolean;
+}
+
 /**
  * The parts of every report query: transactions joined to their category
  * (Uncategorized for none), the counted ones, and each one's kind. A row
- * in Uncategorized gets the kind of a row without a category.
+ * in Uncategorized gets the kind of a row without a category. `leftOut`
+ * holds one condition per reason a row does not count (a row can meet
+ * several); `counted` is meeting none of them.
  */
-function flowParts(
+export function flowParts(
   uncategorizedId: string | null,
   {
     uncategorizedCreditsAsIncome = true,
     ignoreHouseholdTransfers = false,
-  } = {},
+  }: Partial<FlowSettings> = {},
 ) {
   const join = sql`${categories.id} = coalesce(${transactions.categoryId}, ${uncategorizedId}::uuid)`;
   const none = sql`(${transactions.categoryId} is null or ${transactions.categoryId} = ${uncategorizedId}::uuid)`;
@@ -221,13 +238,43 @@ function flowParts(
     uncategorizedCreditsAsIncome ? "'income'" : "'other_in'",
   );
   const kind = sql<Kind>`case when ${none} then (case when ${transactions.amountMinor} < 0 then 'expense' else ${credit} end) else ${categories.kind}::text end`;
-  const counted = and(
-    eq(transactions.currency, REPORT_CURRENCY),
-    isNull(transactions.transferGroupId),
-    sql`(${transactions.categoryId} is null or ${categories.kind} not in ('transfer', 'excluded'))`,
-    ignoreHouseholdTransfers ? eq(transactions.household, false) : undefined,
-  )!;
-  return { join, kind, counted };
+  // A transaction with a category always joins it (foreign key), so none
+  // of these is ever null.
+  const ofKind = (value: CategoryKind) =>
+    and(isNotNull(transactions.categoryId), eq(categories.kind, value))!;
+  const leftOut: Record<LeftOutReason, SQL> = {
+    transfer: or(isNotNull(transactions.transferGroupId), ofKind("transfer"))!,
+    excluded: ofKind("excluded"),
+    household: ignoreHouseholdTransfers
+      ? eq(transactions.household, true)
+      : sql`false`,
+    currency: ne(transactions.currency, REPORT_CURRENCY),
+  };
+  const counted = not(or(...Object.values(leftOut))!);
+  return { join, kind, counted, leftOut };
+}
+
+/**
+ * `flowParts()` with the settings from `getAppSettings()` (an override
+ * wins) and the Uncategorized category of the database, for every query
+ * that counts like the cash-flow report: the report itself and the
+ * `/transactions` totals (F-034).
+ */
+export async function loadFlowParts(
+  db: Db,
+  overrides: Partial<FlowSettings> = {},
+) {
+  const [list, stored] = await Promise.all([
+    loadCategories(db),
+    getAppSettings(db),
+  ]);
+  return flowParts(uncategorizedCategory(list)?.id ?? null, {
+    uncategorizedCreditsAsIncome:
+      overrides.uncategorizedCreditsAsIncome ??
+      stored.uncategorizedCreditsAsIncome,
+    ignoreHouseholdTransfers:
+      overrides.ignoreHouseholdTransfers ?? stored.ignoreHouseholdTransfers,
+  });
 }
 
 function inRange(range: DayRange): SQL {
@@ -649,20 +696,10 @@ export async function getCashFlowReport(
   // The year's months may reach before the chart's.
   const from = [firstDay(months[0]), `${year}-01-01`].sort()[0];
 
-  const [list, settings] = await Promise.all([
-    loadCategories(db),
-    getAppSettings(db),
-  ]);
-  const { join, kind, counted } = flowParts(
-    uncategorizedCategory(list)?.id ?? null,
-    {
-      uncategorizedCreditsAsIncome:
-        options.uncategorizedCreditsAsIncome ??
-        settings.uncategorizedCreditsAsIncome,
-      ignoreHouseholdTransfers:
-        options.ignoreHouseholdTransfers ?? settings.ignoreHouseholdTransfers,
-    },
-  );
+  const { join, kind, counted } = await loadFlowParts(db, {
+    uncategorizedCreditsAsIncome: options.uncategorizedCreditsAsIncome,
+    ignoreHouseholdTransfers: options.ignoreHouseholdTransfers,
+  });
   const month = sql<string>`to_char(${transactions.bookingDate}, 'YYYY-MM')`;
   const [rows, first] = await Promise.all([
     db

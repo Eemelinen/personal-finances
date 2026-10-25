@@ -893,7 +893,7 @@
       "area": "reports",
       "title": "Transactions totals count like the reports",
       "user_visible_behavior": "The Income, Expenses and Net figures on /transactions apply the report rules to the filtered rows: own transfers, excluded transactions and (while the toggle is on) household rows do not count, refunds net against expenses, and uncategorised credits follow the income setting (\"Other money in\" when off). A \"Not counted\" line gives the count and sums of the rest and links to them. With only a date range set, the totals equal the cash-flow report for those days.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-026", "F-027", "F-030"],
       "ticket": "FIN-034",
       "spec": "docs/tickets/FIN-034-transactions-totals-like-reports.md",
@@ -902,7 +902,14 @@
         "L2: pnpm test:integration tests/integration/transactions-view.int.test.ts (totals equal getCashFlowReport for the range with transfers, excluded, household, refund, non-EUR and uncategorised rows; Not counted holds the rest)",
         "L3: pnpm test:e2e tests/e2e/transactions.spec.ts (an own transfer pair leaves Income and Expenses unchanged and shows under Not counted)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-25 pnpm check → pass (working tree on a7b0ef8)",
+        "2026-10-25 pnpm test:integration tests/integration/transactions-view.int.test.ts → pass (working tree on a7b0ef8, Docker available)",
+        "2026-10-25 pnpm test:e2e tests/e2e/transactions.spec.ts → pass (working tree on a7b0ef8, Docker available)",
+        "2026-10-25 pnpm check → pass (commit 966faf9)",
+        "2026-10-25 pnpm test:integration tests/integration/transactions-view.int.test.ts → pass (commit 966faf9, Docker available)",
+        "2026-10-25 pnpm test:e2e tests/e2e/transactions.spec.ts → pass (commit 966faf9, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Found with real data 2026-10-25: the page showed about €143k in and €140k out for 2026 against about €30k of salary; own transfers alone added €42k / €63k."
     },
