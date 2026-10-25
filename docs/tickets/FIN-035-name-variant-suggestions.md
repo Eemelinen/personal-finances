@@ -26,3 +26,10 @@ Banks write the same person's name in many ways: in full, surname first, or with
 ## Notes
 
 - Found with real data on 2026-10-25: with both partners' full names saved as own names, 36 rows written with initials (`<initial> <SURNAME>`, `<initials>. <Surname>`) or under the joint account's name (`<initials>. <Surname> CJ <initial>. <Surname>`) were still uncategorised and counted as about €58k of income. Use synthetic names in fixtures.
+- Implemented in session 2026-10-25 (D-033 amended). Choices beyond the criteria:
+  - `nameVariantParts()` returns, per part, every saved name it fits, so a variant that fits two people (`M Meikäläinen` for Matti and Maija) gets a button for each.
+  - A saved name's other words may also be left out, not only shortened (`Matti Meikäläinen` for `Matti Mikael Meikäläinen`). The surname is any one word of the saved name, kept whole.
+  - Spellings with the same words (`M MEIKÄLÄINEN`, `M. Meikäläinen`) are one suggestion under the most frequent spelling, since one variant covers them all. Sums count EUR rows only.
+  - A joint name that involves members goes to each member involved, usually one.
+  - The member button reads "Add to <the member's first name variant>", for example "Add to Liisa Virtanen", rather than the first word: a name written surname first would give the surname.
+  - The suggestions sit between the toggle and the lists. After a suggestion is added, the lists form shows the saved lists, so saving it cannot drop the variant again; it does the same after its own save, showing the lists as stored.

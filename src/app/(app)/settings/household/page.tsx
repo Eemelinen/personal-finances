@@ -2,8 +2,15 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/page-header";
 import { verifySession } from "@/lib/auth/session";
-import { getHousehold } from "@/server/categorization/household";
-import { HouseholdLists, HouseholdToggle } from "./household-forms";
+import {
+  getHousehold,
+  listNameSuggestions,
+} from "@/server/categorization/household";
+import {
+  HouseholdLists,
+  HouseholdToggle,
+  NameSuggestions,
+} from "./household-forms";
 
 export const metadata: Metadata = { title: "Household" };
 
@@ -25,19 +32,22 @@ export default function HouseholdSettingsPage() {
 
 async function HouseholdSettings() {
   await verifySession();
-  const household = await getHousehold();
+  const [household, suggestions] = await Promise.all([
+    getHousehold(),
+    listNameSuggestions(),
+  ]);
+  const ownNames = household.ownNames.join("\n");
+  const members = household.members.map((member) => ({
+    names: member.names.join("\n"),
+    ibans: member.ibans.join("\n"),
+  }));
   return (
     <div className="flex flex-col gap-6">
       <HouseholdToggle
         ignoreHouseholdTransfers={household.ignoreHouseholdTransfers}
       />
-      <HouseholdLists
-        ownNames={household.ownNames.join("\n")}
-        members={household.members.map((member) => ({
-          names: member.names.join("\n"),
-          ibans: member.ibans.join("\n"),
-        }))}
-      />
+      <NameSuggestions suggestions={suggestions} />
+      <HouseholdLists ownNames={ownNames} members={members} />
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
@@ -5,7 +6,10 @@ import {
   transfersCategoryId,
 } from "@/server/categorization/categorize";
 import {
+  addNameVariant,
   getHousehold,
+  HouseholdInputError,
+  listNameSuggestions,
   saveHousehold,
   setIgnoreHouseholdTransfers,
 } from "@/server/categorization/household";
@@ -313,5 +317,116 @@ describe("household members", () => {
       categoryId: housing.id,
       categorySource: "manual",
     });
+  });
+});
+
+describe("name-variant suggestions (F-035)", () => {
+  const SAVED = {
+    ownNames: ["Matti Mikael Meikäläinen"],
+    members: [{ names: ["Liisa Virtanen"], ibans: [SPOUSE_IBAN] }],
+  };
+
+  it("lists unclaimed initials and joint-name spellings with their person, count and sums", async () => {
+    await saveHousehold(SAVED, { db: testDb.db });
+    // Stored after saving, so nothing has claimed them yet.
+    const initials = [
+      await leg(6_000, { counterparty: "M MEIKÄLÄINEN" }),
+      await leg(4_000, { counterparty: "M MEIKÄLÄINEN" }),
+      await leg(-2_000, { counterparty: "M. Meikäläinen" }),
+    ];
+    await leg(5_000, { counterparty: "M.M. Meikäläinen CJ L. Virtanen" });
+    await leg(3_000, { counterparty: "L Virtanen" });
+    await leg(1_000, { counterparty: "Maarit Meikäläinen" });
+    await leg(1_000, { counterparty: "Meikäläinen Oy" });
+    // Claimed rows are no suggestions.
+    const manual = await leg(9_000, {
+      counterparty: "M Meikäläinen",
+      categorySource: "manual",
+    });
+    const grouped = await leg(9_000, {
+      counterparty: "M Meikäläinen",
+      transferGroupId: randomUUID(),
+    });
+    const household = await leg(9_000, {
+      counterparty: "M Meikäläinen",
+      counterpartyIban: SPOUSE_IBAN,
+      household: true,
+    });
+
+    const member = { kind: "member", index: 0, label: "Liisa Virtanen" };
+    expect(await listNameSuggestions(testDb.db)).toEqual([
+      {
+        counterparty: "M MEIKÄLÄINEN",
+        rows: 3,
+        creditMinor: 10_000,
+        debitMinor: -2_000,
+        targets: [{ kind: "own" }],
+      },
+      {
+        counterparty: "M.M. Meikäläinen CJ L. Virtanen",
+        rows: 1,
+        creditMinor: 5_000,
+        debitMinor: 0,
+        targets: [member],
+      },
+      {
+        counterparty: "L Virtanen",
+        rows: 1,
+        creditMinor: 3_000,
+        debitMinor: 0,
+        targets: [member],
+      },
+    ]);
+
+    // Adding a suggestion saves the list and links its rows.
+    expect(
+      await addNameVariant("M MEIKÄLÄINEN", { kind: "own" }, { db: testDb.db }),
+    ).toEqual({ transfers: 3, household: 0 });
+    expect((await getHousehold(testDb.db)).ownNames).toEqual([
+      "Matti Mikael Meikäläinen",
+      "M MEIKÄLÄINEN",
+    ]);
+    for (const id of initials) {
+      expect((await stored(id)).transferGroupId).not.toBeNull();
+    }
+    expect((await stored(manual)).transferGroupId).toBeNull();
+    expect((await stored(household)).transferGroupId).toBeNull();
+    expect((await stored(grouped)).household).toBe(false);
+    expect(
+      (await listNameSuggestions(testDb.db)).map((s) => s.counterparty),
+    ).toEqual(["M.M. Meikäläinen CJ L. Virtanen", "L Virtanen"]);
+
+    await addNameVariant(
+      "L Virtanen",
+      { kind: "member", index: 0 },
+      { db: testDb.db },
+    );
+    expect((await getHousehold(testDb.db)).members[0].names).toEqual([
+      "Liisa Virtanen",
+      "L Virtanen",
+    ]);
+  });
+
+  it("refuses a variant the form would refuse and a member that is gone", async () => {
+    await saveHousehold(SAVED, { db: testDb.db });
+    await expect(
+      addNameVariant(
+        "Matti Mikael Meikäläinen",
+        { kind: "member", index: 0 },
+        { db: testDb.db },
+      ),
+    ).rejects.toBeInstanceOf(HouseholdInputError);
+    await expect(
+      addNameVariant(
+        "L Virtanen",
+        { kind: "member", index: 3 },
+        { db: testDb.db },
+      ),
+    ).rejects.toBeInstanceOf(HouseholdInputError);
+  });
+
+  it("suggests nothing without saved names", async () => {
+    await leg(6_000, { counterparty: "M Meikäläinen" });
+    expect(await listNameSuggestions(testDb.db)).toEqual([]);
   });
 });
