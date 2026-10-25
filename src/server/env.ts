@@ -131,6 +131,14 @@ const encryptionEnvSchema = z.object({
   }),
 });
 
+// Every variable the three schemas read, so that a test environment
+// (tests/e2e/support/test-env.ts) covers a variable added later too.
+export const APP_ENV_SHAPE = {
+  ...envSchema.shape,
+  ...authEnvSchema.shape,
+  ...encryptionEnvSchema.shape,
+};
+
 export type Env = z.infer<typeof envSchema>;
 export type AuthEnv = z.infer<typeof authEnvSchema>;
 export type EncryptionEnv = z.infer<typeof encryptionEnvSchema>;
