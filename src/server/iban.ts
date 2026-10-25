@@ -1,10 +1,30 @@
 // Account numbers (F-014, F-028): IBANs are compared and stored normalised,
 // so `FI21 1234 5600 0007 85` from a bank and `fi2112345600000785` typed by
-// hand agree.
+// hand agree. A transaction's texts can name an account too (F-014, F-036):
+// `ibanSearchText()` normalises them the same way, so a searchable IBAN is
+// found with `includes()` whatever its spacing and case.
 
 /** Upper-case without whitespace, so `FI12 3456` and `fi123456` agree. */
 export function normalizeIban(value: string): string {
   return value.replace(/\s+/g, "").toUpperCase();
+}
+
+/** IBANs shorter than this (normalised) are never searched for in texts. */
+export const MIN_IBAN_LENGTH = 15;
+
+/** `iban` normalised when it is long enough to search texts for, else null. */
+export function searchableIban(iban: string | null): string | null {
+  if (iban === null) return null;
+  const normalized = normalizeIban(iban);
+  return normalized.length >= MIN_IBAN_LENGTH ? normalized : null;
+}
+
+/**
+ * A transaction's texts (counterparty, description) normalised like IBANs
+ * and joined by `|`, so a searchable IBAN never spans two of them.
+ */
+export function ibanSearchText(...texts: (string | null)[]): string {
+  return normalizeIban(texts.map((text) => text ?? "").join("|"));
 }
 
 /** Country code, two check digits, then 11–30 letters or digits. */

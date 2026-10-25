@@ -260,6 +260,43 @@ describe("household members", () => {
     expect(await octoberFlow()).toMatchObject({ incomeMinor: 70_000 });
   });
 
+  it("finds a member's IBAN written only in the description (F-036)", async () => {
+    const nameless = await leg(70_000, {
+      description: "FI49 5000 9420 0287 30",
+    });
+    const ownName = await leg(-20_000, {
+      counterparty: "Matti Meikäläinen",
+      description: `Siirto ${SPOUSE_IBAN.toLowerCase()}`,
+    });
+    const strangerAccount = await leg(30_000, {
+      counterpartyIban: STRANGER_IBAN,
+      description: `Ref ${SPOUSE_IBAN}`,
+    });
+
+    expect(
+      await saveHousehold(
+        { ...OWN, members: [{ names: [], ibans: [SPOUSE_IBAN] }] },
+        { db: testDb.db },
+      ),
+    ).toEqual({ transfers: 0, household: 2 });
+    expect((await stored(nameless)).household).toBe(true);
+    expect(await stored(ownName)).toMatchObject({
+      household: true,
+      transferGroupId: null,
+    });
+    expect((await stored(strangerAccount)).household).toBe(false);
+
+    expect(await octoberFlow()).toMatchObject({
+      incomeMinor: 100_000,
+      expensesMinor: 20_000,
+    });
+    await setIgnoreHouseholdTransfers(true, { db: testDb.db });
+    expect(await octoberFlow()).toMatchObject({
+      incomeMinor: 30_000,
+      expensesMinor: 0,
+    });
+  });
+
   it("marks a manually categorised transaction and keeps its category", async () => {
     const [housing] = await testDb.db
       .select({ id: categories.id })
