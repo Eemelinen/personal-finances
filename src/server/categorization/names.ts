@@ -1,4 +1,4 @@
-import { normalizeIban } from "@/server/iban";
+import { ibanSearchText, normalizeIban, searchableIban } from "@/server/iban";
 
 // Own names and household members (F-030), pure. A name variant matches a
 // counterparty when both normalise to the same words: case, punctuation and
@@ -6,7 +6,9 @@ import { normalizeIban } from "@/server/iban";
 // kept (`MEIKÄLÄINEN MATTI` = `Matti Meikäläinen`, `M. Meikäläinen` =
 // `M Meikäläinen`, `Meikalainen` ≠ `Meikäläinen`). A variant matches the
 // whole counterparty, never part of it, so a merchant or a relative with
-// the same surname does not match.
+// the same surname does not match. A member's IBAN matches the counterparty
+// account, or, when the bank gave none, the counterparty or description
+// text (F-036), searched as transfer detection searches own IBANs.
 
 /**
  * The name's words in lower case, without punctuation, sorted and joined
@@ -48,10 +50,14 @@ export interface HouseholdNames {
 export interface HouseholdLeg {
   counterparty: string | null;
   counterpartyIban: string | null;
+  description: string | null;
 }
 
 export interface HouseholdMatcher {
-  /** The counterparty's name or account is a household member's. */
+  /**
+   * The counterparty's name or account is a household member's; without a
+   * counterparty account, also when its texts name a member's IBAN.
+   */
   isHousehold(leg: HouseholdLeg): boolean;
   /**
    * The counterparty is one of the own names and not a household member
@@ -79,10 +85,20 @@ export function householdMatcher(names: HouseholdNames): HouseholdMatcher {
   const memberIbans = new Set(
     names.members.flatMap((member) => member.ibans.map(normalizeIban)),
   );
+  const searchable = [...memberIbans].flatMap(
+    (iban) => searchableIban(iban) ?? [],
+  );
+  /** A counterparty account (anyone's) wins over an IBAN in the texts. */
+  const memberAccount = (leg: HouseholdLeg) => {
+    if (leg.counterpartyIban !== null) {
+      return memberIbans.has(normalizeIban(leg.counterpartyIban));
+    }
+    if (searchable.length === 0) return false;
+    const text = ibanSearchText(leg.counterparty, leg.description);
+    return searchable.some((iban) => text.includes(iban));
+  };
   const isHousehold = (leg: HouseholdLeg) =>
-    nameMatches(memberNames, leg.counterparty) ||
-    (leg.counterpartyIban !== null &&
-      memberIbans.has(normalizeIban(leg.counterpartyIban)));
+    nameMatches(memberNames, leg.counterparty) || memberAccount(leg);
   return {
     isHousehold,
     isOwnName: (leg) => nameMatches(own, leg.counterparty) && !isHousehold(leg),

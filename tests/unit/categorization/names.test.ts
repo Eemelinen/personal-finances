@@ -68,12 +68,14 @@ describe("householdMatcher", () => {
       matcher.isOwnName({
         counterparty: "MEIKÄLÄINEN MATTI",
         counterpartyIban: null,
+        description: null,
       }),
     ).toBe(true);
     expect(
       matcher.isOwnName({
         counterparty: "Matti Meikäläinen",
         counterpartyIban: OTHER_IBAN,
+        description: null,
       }),
     ).toBe(true);
   });
@@ -83,18 +85,21 @@ describe("householdMatcher", () => {
       matcher.isHousehold({
         counterparty: "meikäläinen maija",
         counterpartyIban: null,
+        description: null,
       }),
     ).toBe(true);
     expect(
       matcher.isHousehold({
         counterparty: null,
         counterpartyIban: SPOUSE_IBAN.replaceAll(" ", "").toLowerCase(),
+        description: null,
       }),
     ).toBe(true);
     expect(
       matcher.isHousehold({
         counterparty: "K-Market Kamppi",
         counterpartyIban: null,
+        description: null,
       }),
     ).toBe(false);
   });
@@ -103,6 +108,7 @@ describe("householdMatcher", () => {
     const leg = {
       counterparty: "Matti Meikäläinen",
       counterpartyIban: SPOUSE_IBAN,
+      description: null,
     };
     expect(matcher.isHousehold(leg)).toBe(true);
     expect(matcher.isOwnName(leg)).toBe(false);
@@ -111,6 +117,80 @@ describe("householdMatcher", () => {
   it("is empty without names or IBANs", () => {
     expect(householdMatcher({ ownNames: [], members: [] }).empty).toBe(true);
     expect(matcher.empty).toBe(false);
+  });
+});
+
+describe("household IBANs in texts (F-036)", () => {
+  const matcher = householdMatcher({
+    ownNames: ["Matti Meikäläinen"],
+    members: [{ names: [], ibans: ["FI4950009420028730"] }],
+  });
+  const leg = (
+    overrides: Partial<Parameters<typeof matcher.isHousehold>[0]>,
+  ) => ({
+    counterparty: null,
+    counterpartyIban: null,
+    description: null,
+    ...overrides,
+  });
+
+  it("finds a member's IBAN in the description or counterparty, with any spacing and case", () => {
+    expect(
+      matcher.isHousehold(leg({ description: "FI4950009420028730" })),
+    ).toBe(true);
+    expect(
+      matcher.isHousehold(
+        leg({ description: `Siirto ${SPOUSE_IBAN.toLowerCase()}` }),
+      ),
+    ).toBe(true);
+    expect(matcher.isHousehold(leg({ counterparty: SPOUSE_IBAN }))).toBe(true);
+    expect(matcher.isHousehold(leg({ description: OTHER_IBAN }))).toBe(false);
+  });
+
+  it("lets a counterparty account win over an IBAN in the texts", () => {
+    expect(
+      matcher.isHousehold(
+        leg({ counterpartyIban: OTHER_IBAN, description: SPOUSE_IBAN }),
+      ),
+    ).toBe(false);
+    expect(
+      matcher.isHousehold(
+        leg({ counterpartyIban: SPOUSE_IBAN, description: OTHER_IBAN }),
+      ),
+    ).toBe(true);
+  });
+
+  it("makes an own name with a member's IBAN in the texts a household row", () => {
+    const own = leg({
+      counterparty: "Matti Meikäläinen",
+      description: SPOUSE_IBAN,
+    });
+    expect(matcher.isHousehold(own)).toBe(true);
+    expect(matcher.isOwnName(own)).toBe(false);
+    expect(
+      matcher.isOwnName(
+        leg({ counterparty: "Matti Meikäläinen", description: OTHER_IBAN }),
+      ),
+    ).toBe(true);
+  });
+
+  it("never searches the texts for an IBAN shorter than MIN_IBAN_LENGTH", () => {
+    const short = householdMatcher({
+      ownNames: [],
+      members: [{ names: [], ibans: ["FI12"] }],
+    });
+    expect(short.isHousehold(leg({ description: "Viite FI12 3456" }))).toBe(
+      false,
+    );
+    expect(short.isHousehold(leg({ counterpartyIban: "fi12" }))).toBe(true);
+  });
+
+  it("does not let an IBAN span the counterparty and the description", () => {
+    expect(
+      matcher.isHousehold(
+        leg({ counterparty: "FI49500094", description: "20028730" }),
+      ),
+    ).toBe(false);
   });
 });
 

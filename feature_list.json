@@ -1,6 +1,6 @@
 {
   "project": "personal-finances",
-  "last_updated": "2026-10-24",
+  "last_updated": "2026-10-25",
   "rules": {
     "single_active_feature": true,
     "passing_requires_evidence": true,
@@ -932,7 +932,7 @@
       "area": "categorization",
       "title": "Household IBANs found in description text",
       "user_visible_behavior": "A transaction whose counterparty name and account are missing but whose counterparty or description text contains a household member's IBAN is marked as a household row, as own-account IBANs in the text already make a transfer; a counterparty account of someone else still wins.",
-      "status": "not_started",
+      "status": "passing",
       "depends_on": ["F-030"],
       "ticket": "FIN-036",
       "spec": "docs/tickets/FIN-036-household-ibans-in-texts.md",
@@ -942,7 +942,12 @@
         "L1: pnpm test:unit tests/unit/categorization/transfers.test.ts (text matching unchanged through the shared helper)",
         "L2: pnpm test:integration tests/integration/household.int.test.ts (a member IBAN only in the description marks the row household; it leaves the totals with the toggle on)"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-10-25 pnpm check → pass (commit ed5e092)",
+        "2026-10-25 pnpm test:unit tests/unit/categorization/names.test.ts → pass (commit ed5e092)",
+        "2026-10-25 pnpm test:unit tests/unit/categorization/transfers.test.ts → pass (commit ed5e092)",
+        "2026-10-25 pnpm test:integration tests/integration/household.int.test.ts → pass (commit ed5e092, Docker available)"
+      ],
       "attempts": 0,
       "notes": "Found with real data 2026-10-25: 72 rows carried only the other account's IBAN in the description; household matching would miss a member's account written that way."
     }

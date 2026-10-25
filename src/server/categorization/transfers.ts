@@ -1,4 +1,4 @@
-import { normalizeIban } from "@/server/iban";
+import { ibanSearchText, normalizeIban, searchableIban } from "@/server/iban";
 import type { IsoDate } from "@/server/providers/types";
 
 // Own-transfer detection (F-014, D-012), pure. A debit on one own account
@@ -19,9 +19,6 @@ import type { IsoDate } from "@/server/providers/types";
 export const TRANSFER_WINDOW_DAYS = 3;
 
 export { normalizeIban };
-
-/** IBANs shorter than this (normalised) are never searched for in texts. */
-const MIN_IBAN_LENGTH = 15;
 
 export interface TransferCandidate {
   id: string;
@@ -75,8 +72,8 @@ export function findTransfers(input: {
   accounts: readonly OwnAccount[];
 }): TransferMatches {
   const ibans = input.accounts.flatMap((account) => {
-    const iban = account.iban === null ? "" : normalizeIban(account.iban);
-    return iban.length >= MIN_IBAN_LENGTH ? [{ id: account.id, iban }] : [];
+    const iban = searchableIban(account.iban);
+    return iban === null ? [] : [{ id: account.id, iban }];
   });
   /**
    * The other own account the leg's counterparty account is, else the one
@@ -91,9 +88,7 @@ export function findTransfers(input: {
       );
       if (own) return own.id;
     }
-    const text = normalizeIban(
-      `${leg.counterparty ?? ""}|${leg.description ?? ""}`,
-    );
+    const text = ibanSearchText(leg.counterparty, leg.description);
     const named = ibans.find(
       (account) => account.id !== leg.accountId && text.includes(account.iban),
     );
